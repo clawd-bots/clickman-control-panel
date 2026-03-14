@@ -4,7 +4,7 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { targets as initialTargets, targetTrend, targetAISuggestions } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
-import { Pencil, Check, X, AlertTriangle, User, Bot, Users as UsersIcon } from 'lucide-react';
+import { Pencil, Check, X, AlertTriangle, User, Bot, Users as UsersIcon, ChevronDown, ChevronRight, ExternalLink } from 'lucide-react';
 import { finalItems as initialFinalItems, getAllDone, getPendingCount, type FinalItem } from '@/lib/final-items';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -33,17 +33,16 @@ function formatValue(value: number, unit: string): string {
   return value.toString();
 }
 
-const ownerLabel: Record<FinalItem['owner'], { label: string; icon: typeof User }> = {
-  jordan: { label: 'Jordan', icon: User },
-  alfred: { label: 'Alfred', icon: Bot },
-  both: { label: 'Both', icon: UsersIcon },
+const ownerConfig: Record<FinalItem['owner'], { label: string; icon: typeof User; color: string }> = {
+  jordan: { label: 'Jordan', icon: User, color: 'text-warm-gold' },
+  alfred: { label: 'Alfred', icon: Bot, color: 'text-brand-blue-light' },
+  both: { label: 'Both', icon: UsersIcon, color: 'text-text-secondary' },
 };
 
 const categoryColor: Record<FinalItem['category'], string> = {
   data: 'bg-brand-blue/20 text-brand-blue-light',
   integration: 'bg-purple-500/20 text-purple-400',
   config: 'bg-warm-gold/20 text-warm-gold',
-  access: 'bg-success/20 text-success',
 };
 
 export default function TargetsPage() {
@@ -52,6 +51,7 @@ export default function TargetsPage() {
   const [editValue, setEditValue] = useState('');
   const [activeTab, setActiveTab] = useState<'targets' | 'final'>('targets');
   const [items] = useState<FinalItem[]>(initialFinalItems);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const showFinalTab = !getAllDone(items);
   const pendingCount = getPendingCount(items);
@@ -71,7 +71,10 @@ export default function TargetsPage() {
   };
 
   const cancelEdit = () => setEditingIdx(null);
+  const toggleExpand = (id: string) => setExpandedId(prev => prev === id ? null : id);
 
+  const pendingItems = items.filter(i => i.status !== 'done');
+  const doneItems = items.filter(i => i.status === 'done');
   const jordanItems = items.filter(i => (i.owner === 'jordan' || i.owner === 'both') && i.status !== 'done');
   const alfredItems = items.filter(i => (i.owner === 'alfred' || i.owner === 'both') && i.status !== 'done');
 
@@ -167,7 +170,6 @@ export default function TargetsPage() {
                       )}
                     </div>
 
-                    {/* Progress Bar */}
                     <div className="w-full h-1.5 bg-bg-primary rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
@@ -275,7 +277,6 @@ export default function TargetsPage() {
             </div>
           </div>
 
-          {/* AI Suggestions */}
           <AISuggestionsPanel suggestions={targetAISuggestions} title="Target Intelligence" />
         </>
       )}
@@ -283,6 +284,14 @@ export default function TargetsPage() {
       {/* ─── FINAL ITEMS TAB ─── */}
       {activeTab === 'final' && (
         <>
+          {/* Intro */}
+          <div className="bg-danger/5 border border-danger/20 rounded-lg p-4">
+            <p className="text-sm text-text-primary">
+              <strong className="text-danger">Everything below needs to happen before go-live.</strong>{' '}
+              Click any item to see exactly what to do. Most items just need you to send Alfred an API key or share access. Once everything is done, this tab disappears.
+            </p>
+          </div>
+
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-bg-surface border border-danger/30 rounded-lg p-4">
@@ -299,7 +308,7 @@ export default function TargetsPage() {
                 <span className="text-xs font-medium text-warm-gold">Waiting on Jordan</span>
               </div>
               <span className="text-2xl font-bold text-text-primary">{jordanItems.length}</span>
-              <p className="text-[10px] text-text-tertiary mt-1">items need your input</p>
+              <p className="text-[10px] text-text-tertiary mt-1">send access or info to Alfred</p>
             </div>
             <div className="bg-bg-surface border border-border rounded-lg p-4">
               <div className="flex items-center gap-2 mb-1">
@@ -307,71 +316,124 @@ export default function TargetsPage() {
                 <span className="text-xs font-medium text-brand-blue-light">On Alfred</span>
               </div>
               <span className="text-2xl font-bold text-text-primary">{alfredItems.length}</span>
-              <p className="text-[10px] text-text-tertiary mt-1">items I&apos;m handling</p>
+              <p className="text-[10px] text-text-tertiary mt-1">Alfred handles once access is granted</p>
             </div>
           </div>
 
-          {/* Items List */}
-          <div className="bg-bg-surface border border-danger/20 rounded-lg p-5">
+          {/* Expandable Items List */}
+          <div className="bg-bg-surface border border-danger/20 rounded-lg p-4 md:p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-semibold text-danger flex items-center gap-2">
                 <AlertTriangle size={14} />
-                All Final Items
+                What&apos;s Needed
               </h3>
-              <span className="text-[10px] text-text-tertiary">This tab disappears when all items are done</span>
+              <span className="text-[10px] text-text-tertiary hidden sm:block">Click an item for instructions</span>
             </div>
 
             <div className="space-y-2">
-              {items.filter(i => i.status !== 'done').map((item) => {
-                const OwnerIcon = ownerLabel[item.owner].icon;
+              {pendingItems.map((item) => {
+                const isExpanded = expandedId === item.id;
+                const { label: ownerName, icon: OwnerIcon, color: ownerColor } = ownerConfig[item.owner];
+
                 return (
                   <div
                     key={item.id}
-                    className="flex items-start gap-4 bg-bg-elevated rounded-lg p-4 border border-border/50 hover:border-danger/30 transition-colors"
+                    className={`bg-bg-elevated rounded-lg border transition-all ${
+                      isExpanded ? 'border-danger/40' : 'border-border/50 hover:border-border'
+                    }`}
                   >
-                    {/* Status indicator */}
-                    <div className="mt-0.5">
-                      <div className={`w-3 h-3 rounded-full border-2 ${
-                        item.status === 'in-progress'
-                          ? 'border-warm-gold bg-warm-gold/30 animate-pulse'
-                          : 'border-danger/50 bg-transparent'
-                      }`} />
-                    </div>
+                    {/* Header row — always visible */}
+                    <button
+                      onClick={() => toggleExpand(item.id)}
+                      className="w-full flex items-center gap-3 p-4 text-left"
+                    >
+                      <div className="shrink-0">
+                        {isExpanded
+                          ? <ChevronDown size={14} className="text-danger" />
+                          : <ChevronRight size={14} className="text-text-tertiary" />
+                        }
+                      </div>
 
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium text-text-primary">{item.title}</span>
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${categoryColor[item.category]}`}>
-                          {item.category}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-medium text-text-primary">{item.title}</span>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${categoryColor[item.category]}`}>
+                            {item.category}
+                          </span>
+                        </div>
+                        {!isExpanded && (
+                          <p className="text-xs text-text-tertiary mt-0.5 truncate">{item.why}</p>
+                        )}
+                      </div>
+
+                      {/* Owner badge */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <OwnerIcon size={12} className={ownerColor} />
+                        <span className={`text-[10px] font-medium ${ownerColor} hidden sm:inline`}>
+                          {ownerName}
                         </span>
                       </div>
-                      <p className="text-xs text-text-secondary">{item.description}</p>
-                    </div>
 
-                    {/* Owner */}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <OwnerIcon size={12} className={
-                        item.owner === 'jordan' ? 'text-warm-gold' :
-                        item.owner === 'alfred' ? 'text-brand-blue-light' : 'text-text-secondary'
-                      } />
-                      <span className={`text-[10px] font-medium ${
-                        item.owner === 'jordan' ? 'text-warm-gold' :
-                        item.owner === 'alfred' ? 'text-brand-blue-light' : 'text-text-secondary'
-                      }`}>
-                        {ownerLabel[item.owner].label}
-                      </span>
-                    </div>
+                      {/* Pages unlocked */}
+                      <div className="hidden md:flex items-center gap-1 shrink-0">
+                        {item.pages.slice(0, 2).map(page => (
+                          <span key={page} className="text-[9px] bg-bg-surface px-1.5 py-0.5 rounded text-text-tertiary">
+                            {page}
+                          </span>
+                        ))}
+                        {item.pages.length > 2 && (
+                          <span className="text-[9px] text-text-tertiary">+{item.pages.length - 2}</span>
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Expanded content */}
+                    {isExpanded && (
+                      <div className="px-4 pb-4 pt-0 border-t border-border/30 mx-4 mb-0">
+                        {/* Why this matters */}
+                        <div className="mt-3 mb-4">
+                          <p className="text-xs text-text-secondary">{item.why}</p>
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            <span className="text-[10px] text-text-tertiary">Unlocks:</span>
+                            {item.pages.map(page => (
+                              <span key={page} className="text-[10px] bg-brand-blue/10 text-brand-blue-light px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <ExternalLink size={8} />
+                                {page}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Action options */}
+                        <div className="space-y-3">
+                          {item.actions.map((action, actionIdx) => (
+                            <div key={actionIdx} className="bg-bg-surface rounded-lg p-3 border border-border/50">
+                              <h4 className="text-xs font-semibold text-text-primary mb-2">{action.label}</h4>
+                              <ol className="space-y-1.5">
+                                {action.steps.map((step, stepIdx) => (
+                                  <li key={stepIdx} className="flex items-start gap-2 text-xs text-text-secondary">
+                                    <span className="shrink-0 w-4 h-4 rounded-full bg-brand-blue/15 text-brand-blue-light text-[10px] font-bold flex items-center justify-center mt-0.5">
+                                      {stepIdx + 1}
+                                    </span>
+                                    <span>{step}</span>
+                                  </li>
+                                ))}
+                              </ol>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
 
-            {/* Done items (collapsed) */}
-            {items.filter(i => i.status === 'done').length > 0 && (
+            {/* Done items */}
+            {doneItems.length > 0 && (
               <div className="mt-4 pt-4 border-t border-border/30">
                 <h4 className="text-xs text-success font-medium mb-2">✓ Completed</h4>
-                {items.filter(i => i.status === 'done').map((item) => (
+                {doneItems.map((item) => (
                   <div key={item.id} className="flex items-center gap-3 py-1.5 opacity-50">
                     <div className="w-3 h-3 rounded-full bg-success/30 border-2 border-success flex items-center justify-center">
                       <Check size={8} className="text-success" />
