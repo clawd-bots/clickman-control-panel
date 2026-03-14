@@ -1,0 +1,267 @@
+// ─── Dashboard Overview ───
+export const dailyMetrics = [
+  { date: 'Mar 1', revenue: 285000, spend: 82000, orders: 142, newCustomers: 98, sessions: 4200 },
+  { date: 'Mar 2', revenue: 312000, spend: 85000, orders: 156, newCustomers: 108, sessions: 4600 },
+  { date: 'Mar 3', revenue: 298000, spend: 79000, orders: 149, newCustomers: 103, sessions: 4350 },
+  { date: 'Mar 4', revenue: 335000, spend: 91000, orders: 168, newCustomers: 115, sessions: 5100 },
+  { date: 'Mar 5', revenue: 320000, spend: 88000, orders: 160, newCustomers: 110, sessions: 4800 },
+  { date: 'Mar 6', revenue: 345000, spend: 93000, orders: 172, newCustomers: 120, sessions: 5300 },
+  { date: 'Mar 7', revenue: 358000, spend: 95000, orders: 179, newCustomers: 125, sessions: 5500 },
+];
+
+export const kpiCards = {
+  netRevenue: { value: 2253000, prev: 2058000, sparkline: [285, 312, 298, 335, 320, 345, 358] },
+  netOrders: { value: 1126, prev: 1042, sparkline: [142, 156, 149, 168, 160, 172, 179] },
+  marketingCosts: { value: 613000, prev: 578000, sparkline: [82, 85, 79, 91, 88, 93, 95] },
+  mer: { value: 3.67, prev: 3.56, sparkline: [3.48, 3.67, 3.77, 3.68, 3.64, 3.71, 3.77] },
+  newCustomers: { value: 779, prev: 715, sparkline: [98, 108, 103, 115, 110, 120, 125] },
+  ncac: { value: 787, prev: 808, sparkline: [837, 787, 767, 791, 800, 775, 760] },
+  nmer: { value: 1.92, prev: 1.78, sparkline: [1.72, 1.88, 1.95, 1.90, 1.87, 1.94, 1.99] },
+  cac: { value: 544, prev: 555, sparkline: [577, 545, 530, 542, 550, 541, 531] },
+};
+
+export const channelAttribution = [
+  { channel: 'Meta Ads', costs: 320000, revenue: 1250000, roas: 3.91, orders: 580, cpo: 552, newCustomers: 410, ncPct: 70.7 },
+  { channel: 'Google Ads', costs: 165000, revenue: 580000, roas: 3.52, orders: 290, cpo: 569, newCustomers: 185, ncPct: 63.8 },
+  { channel: 'TikTok Ads', costs: 88000, revenue: 280000, roas: 3.18, orders: 156, cpo: 564, newCustomers: 120, ncPct: 76.9 },
+  { channel: 'Organic Search', costs: 0, revenue: 85000, roas: 0, orders: 52, cpo: 0, newCustomers: 35, ncPct: 67.3 },
+  { channel: 'Direct', costs: 0, revenue: 42000, roas: 0, orders: 32, cpo: 0, newCustomers: 18, ncPct: 56.3 },
+  { channel: 'Referral', costs: 40000, revenue: 16000, roas: 0.40, orders: 16, cpo: 2500, newCustomers: 11, ncPct: 68.8 },
+];
+
+export const productKPIs = [
+  { product: 'GLP-1 Weight Loss Program (Semaglutide)', revenue: 985000, units: 328, priceReduction: 2.1, discountCode: 8.5 },
+  { product: 'Hair Regrowth Kit (Minoxidil + Finasteride)', revenue: 520000, units: 412, priceReduction: 5.2, discountCode: 12.3 },
+  { product: "Men's Health Starter Pack", revenue: 365000, units: 245, priceReduction: 0, discountCode: 15.1 },
+  { product: 'Skin Care Essentials Bundle', revenue: 198000, units: 165, priceReduction: 3.8, discountCode: 10.2 },
+  { product: 'Consultation Only (Follow-up)', revenue: 105000, units: 210, priceReduction: 0, discountCode: 0 },
+  { product: 'Sleep & Stress Support', revenue: 80000, units: 89, priceReduction: 1.5, discountCode: 7.8 },
+];
+
+export const revenueInsights = {
+  ncRevenue: 1320000,
+  rcRevenue: 933000,
+  ncAOV: 1694,
+  rcAOV: 2688,
+  firstPurchasePct: 58.6,
+  repeatPct: 41.4,
+  monthly: [
+    { month: 'Oct', nc: 980000, rc: 620000 },
+    { month: 'Nov', nc: 1050000, rc: 710000 },
+    { month: 'Dec', nc: 1180000, rc: 830000 },
+    { month: 'Jan', nc: 1150000, rc: 850000 },
+    { month: 'Feb', nc: 1250000, rc: 900000 },
+    { month: 'Mar', nc: 1320000, rc: 933000 },
+  ],
+};
+
+// ─── P&L ───
+export const pnlData = {
+  gmv: { value: 2850000, items: [
+    { label: 'Price Reductions', value: -85500, pct: -3.0 },
+    { label: 'Discount Codes', value: -256500, pct: -9.0 },
+    { label: 'Shipping Revenue', value: 45000, pct: 1.6 },
+  ]},
+  grossRevenue: { value: 2553000, items: [
+    { label: 'Gross Orders', value: 1240 },
+    { label: 'AOV', value: 2059 },
+    { label: 'Returns', value: -210000, pct: -8.2 },
+    { label: 'Taxes', value: -90000, pct: -3.5 },
+  ]},
+  netRevenue: { value: 2253000, items: [
+    { label: 'Net Orders', value: 1126 },
+    { label: 'Net AOV', value: 2001 },
+    { label: 'COGS', value: -675900, pct: -30.0 },
+  ]},
+  cm1: { value: 1577100, pct: 70.0, items: [
+    { label: 'CM1%', value: 70.0 },
+    { label: 'Logistics', value: -225300, pct: -10.0 },
+    { label: 'Transaction Costs', value: -112650, pct: -5.0 },
+  ]},
+  cm2: { value: 1239150, pct: 55.0, items: [
+    { label: 'CM2%', value: 55.0 },
+    { label: 'Marketing Costs', value: -613000, pct: -27.2 },
+  ]},
+  cm3: { value: 626150, pct: 27.8, items: [
+    { label: 'CM3%', value: 27.8 },
+  ]},
+  ebitda: { value: 476150, pct: 21.1 },
+};
+
+export const pnlTrend = [
+  { month: 'Oct', netRevenue: 1600000, cm1: 1120000, cm2: 870000, cm3: 380000 },
+  { month: 'Nov', netRevenue: 1760000, cm1: 1232000, cm2: 960000, cm3: 430000 },
+  { month: 'Dec', netRevenue: 2010000, cm1: 1407000, cm2: 1085000, cm3: 510000 },
+  { month: 'Jan', netRevenue: 2000000, cm1: 1400000, cm2: 1090000, cm3: 490000 },
+  { month: 'Feb', netRevenue: 2150000, cm1: 1505000, cm2: 1170000, cm3: 560000 },
+  { month: 'Mar', netRevenue: 2253000, cm1: 1577100, cm2: 1239150, cm3: 626150 },
+];
+
+// ─── Cash Flow ───
+export const cashFlowDefaults = {
+  aov: 2001,
+  cpa: 787,
+  grossMargin: 70,
+  monthlyGrowth: 8,
+  m1Spend: 350000,
+  retentionModel: 'ecommerce' as const,
+  untrackedLift: 15,
+  cpaEscalation: 3,
+};
+
+export const cohortWaterfall = [
+  { cohort: 'C1', m1: -180, m2: 45, m3: 38, m4: 32, m5: 28, m6: 25, m7: 22, m8: 19, m9: 17, m10: 15, m11: 13, m12: 12, breakEvenMonth: 5 },
+  { cohort: 'C2', m1: -195, m2: 48, m3: 41, m4: 35, m5: 30, m6: 27, m7: 24, m8: 21, m9: 18, m10: 16, m11: 14, m12: 0, breakEvenMonth: 5 },
+  { cohort: 'C3', m1: -210, m2: 52, m3: 44, m4: 37, m5: 32, m6: 29, m7: 25, m8: 22, m9: 19, m10: 17, m11: 0, m12: 0, breakEvenMonth: 5 },
+  { cohort: 'C4', m1: -227, m2: 56, m3: 47, m4: 40, m5: 35, m6: 31, m7: 27, m8: 24, m9: 21, m10: 0, m11: 0, m12: 0, breakEvenMonth: 6 },
+  { cohort: 'C5', m1: -245, m2: 61, m3: 51, m4: 43, m5: 38, m6: 33, m7: 29, m8: 26, m9: 0, m10: 0, m11: 0, m12: 0, breakEvenMonth: 6 },
+  { cohort: 'C6', m1: -265, m2: 66, m3: 55, m4: 47, m5: 41, m6: 36, m7: 32, m8: 0, m9: 0, m10: 0, m11: 0, m12: 0, breakEvenMonth: 6 },
+  { cohort: 'C7', m1: -286, m2: 71, m3: 60, m4: 51, m5: 44, m6: 39, m7: 0, m8: 0, m9: 0, m10: 0, m11: 0, m12: 0, breakEvenMonth: 6 },
+  { cohort: 'C8', m1: -309, m2: 77, m3: 65, m4: 55, m5: 48, m6: 0, m7: 0, m8: 0, m9: 0, m10: 0, m11: 0, m12: 0, breakEvenMonth: 7 },
+  { cohort: 'C9', m1: -334, m2: 83, m3: 70, m4: 59, m5: 0, m6: 0, m7: 0, m8: 0, m9: 0, m10: 0, m11: 0, m12: 0, breakEvenMonth: 7 },
+  { cohort: 'C10', m1: -360, m2: 90, m3: 76, m4: 0, m5: 0, m6: 0, m7: 0, m8: 0, m9: 0, m10: 0, m11: 0, m12: 0, breakEvenMonth: 7 },
+  { cohort: 'C11', m1: -389, m2: 97, m3: 0, m4: 0, m5: 0, m6: 0, m7: 0, m8: 0, m9: 0, m10: 0, m11: 0, m12: 0, breakEvenMonth: 8 },
+  { cohort: 'C12', m1: -420, m2: 0, m3: 0, m4: 0, m5: 0, m6: 0, m7: 0, m8: 0, m9: 0, m10: 0, m11: 0, m12: 0, breakEvenMonth: 8 },
+];
+
+export const monthlySummary = [
+  { month: 'M1', newCust: 445, acqSpend: 350000, repeatOrders: 0, totalRevenue: 890445, grossProfit: 623312, netCash: 273312, cumulative: 273312, ltvCac: 1.42 },
+  { month: 'M2', newCust: 480, acqSpend: 378000, repeatOrders: 142, totalRevenue: 1098240, grossProfit: 768768, netCash: 390768, cumulative: 664080, ltvCac: 1.58 },
+  { month: 'M3', newCust: 519, acqSpend: 408240, repeatOrders: 298, totalRevenue: 1335420, grossProfit: 934794, netCash: 526554, cumulative: 1190634, ltvCac: 1.75 },
+  { month: 'M4', newCust: 560, acqSpend: 440899, repeatOrders: 425, totalRevenue: 1582560, grossProfit: 1107792, netCash: 666893, cumulative: 1857527, ltvCac: 1.89 },
+  { month: 'M5', newCust: 605, acqSpend: 476171, repeatOrders: 538, totalRevenue: 1847505, grossProfit: 1293254, netCash: 817083, cumulative: 2674610, ltvCac: 2.05 },
+  { month: 'M6', newCust: 653, acqSpend: 514265, repeatOrders: 642, totalRevenue: 2131653, grossProfit: 1492157, netCash: 977892, cumulative: 3652502, ltvCac: 2.22 },
+  { month: 'M7', newCust: 706, acqSpend: 555406, repeatOrders: 735, totalRevenue: 2430706, grossProfit: 1701494, netCash: 1146088, cumulative: 4798590, ltvCac: 2.38 },
+  { month: 'M8', newCust: 762, acqSpend: 599838, repeatOrders: 822, totalRevenue: 2751762, grossProfit: 1926233, netCash: 1326395, cumulative: 6124985, ltvCac: 2.55 },
+  { month: 'M9', newCust: 823, acqSpend: 647825, repeatOrders: 901, totalRevenue: 3088823, grossProfit: 2162176, netCash: 1514351, cumulative: 7639336, ltvCac: 2.70 },
+  { month: 'M10', newCust: 889, acqSpend: 699651, repeatOrders: 978, totalRevenue: 3449889, grossProfit: 2414922, netCash: 1715271, cumulative: 9354607, ltvCac: 2.85 },
+  { month: 'M11', newCust: 960, acqSpend: 755623, repeatOrders: 1052, totalRevenue: 3838960, grossProfit: 2687272, netCash: 1931649, cumulative: 11286256, ltvCac: 3.01 },
+  { month: 'M12', newCust: 1037, acqSpend: 816073, repeatOrders: 1122, totalRevenue: 4254037, grossProfit: 2977826, netCash: 2161753, cumulative: 13448009, ltvCac: 3.15 },
+];
+
+export const sensitivityCards = [
+  { label: 'CPA −₱100', metric: 'Break-Even', current: 'Month 6', adjusted: 'Month 4', impact: '+₱420K cumulative' },
+  { label: 'AOV +₱200', metric: 'Year-End Cash', current: '₱13.4M', adjusted: '₱15.1M', impact: '+12.7% improvement' },
+  { label: 'Retention +5pts', metric: 'LTV:CAC', current: '3.15x', adjusted: '3.68x', impact: '+16.8% improvement' },
+  { label: 'Margin +5pts', metric: 'CM3%', current: '27.8%', adjusted: '32.8%', impact: '+₱1.8M annual' },
+];
+
+// ─── Attribution ───
+export const attributionSurvey = [
+  { source: 'Facebook/Instagram Ad', pct: 35 },
+  { source: 'TikTok', pct: 22 },
+  { source: 'Google Search', pct: 18 },
+  { source: 'Friend/Family Referral', pct: 12 },
+  { source: 'YouTube', pct: 7 },
+  { source: 'Other', pct: 6 },
+];
+
+export const trackingHealth = [
+  { system: 'Meta Pixel', status: 'healthy' as const, events: '14,230/day', matchRate: '92%' },
+  { system: 'Meta CAPI', status: 'healthy' as const, events: '13,850/day', matchRate: '89%' },
+  { system: 'Google Ads Tag', status: 'healthy' as const, events: '8,920/day', matchRate: '94%' },
+  { system: 'TikTok Pixel', status: 'warning' as const, events: '5,100/day', matchRate: '71%' },
+  { system: 'GA4', status: 'healthy' as const, events: '22,400/day', matchRate: 'N/A' },
+  { system: 'Server-side GTM', status: 'error' as const, events: '0/day', matchRate: '0%' },
+];
+
+export const adScatterData = [
+  { name: 'GLP-1 Testimonial V3', spend: 45000, cpa: 650, platform: 'Meta' },
+  { name: 'Hair Before/After', spend: 38000, cpa: 580, platform: 'Meta' },
+  { name: 'Doc Consultation UGC', spend: 32000, cpa: 720, platform: 'Meta' },
+  { name: 'Weight Loss Journey', spend: 28000, cpa: 690, platform: 'TikTok' },
+  { name: 'Generic Brand Search', spend: 52000, cpa: 420, platform: 'Google' },
+  { name: 'Competitor KW Pack', spend: 35000, cpa: 890, platform: 'Google' },
+  { name: 'Hair Regrowth Demo', spend: 22000, cpa: 610, platform: 'TikTok' },
+  { name: 'Mens Health Awareness', spend: 18000, cpa: 950, platform: 'Meta' },
+  { name: 'Semaglutide Explainer', spend: 41000, cpa: 670, platform: 'Meta' },
+  { name: 'Promo Code Push', spend: 15000, cpa: 520, platform: 'Meta' },
+];
+
+export const attributionAISuggestions = [
+  'Meta CPA trending up 12% MoM. Consider refreshing top-of-funnel creative — the "GLP-1 Testimonial V3" is showing fatigue after 6 weeks.',
+  'Survey data shows TikTok driving 22% of first touches but only getting 15% of budget. Consider reallocating ₱50K from Google non-brand to TikTok.',
+  'Cohort LTV for Meta customers is 2.1x vs TikTok at 1.4x. Adjust CPA targets: Meta can sustain ₱850, TikTok should cap at ₱600.',
+  'Server-side GTM is down — you\'re losing ~15% of conversion data. Fix this before making any budget decisions.',
+  'Post-purchase survey "Friend/Family" is at 12%. Consider launching a formal referral program to amplify this organic channel.',
+];
+
+// ─── Creative & MTA ───
+export const creativePerformance = [
+  { name: 'GLP-1 Testimonial V3', platform: 'Meta', spend: 45200, impressions: 892000, clicks: 12480, ctr: 1.40, cpc: 3.62, conversions: 69, cpa: 655, roas: 3.05, status: 'Active' },
+  { name: 'Hair Before/After Carousel', platform: 'Meta', spend: 38100, impressions: 756000, clicks: 10584, ctr: 1.40, cpc: 3.60, conversions: 66, cpa: 577, roas: 3.47, status: 'Active' },
+  { name: 'Doc Consultation UGC', platform: 'Meta', spend: 32400, impressions: 645000, clicks: 8385, ctr: 1.30, cpc: 3.86, conversions: 45, cpa: 720, roas: 2.78, status: 'Active' },
+  { name: 'Weight Loss Journey TikTok', platform: 'TikTok', spend: 28300, impressions: 1250000, clicks: 18750, ctr: 1.50, cpc: 1.51, conversions: 41, cpa: 690, roas: 2.90, status: 'Active' },
+  { name: 'Brand Search Exact', platform: 'Google', spend: 52100, impressions: 125000, clicks: 31250, ctr: 25.0, cpc: 1.67, conversions: 124, cpa: 420, roas: 4.76, status: 'Active' },
+  { name: 'Competitor Keywords', platform: 'Google', spend: 35200, impressions: 98000, clicks: 5880, ctr: 6.0, cpc: 5.99, conversions: 40, cpa: 880, roas: 2.27, status: 'Under Review' },
+  { name: 'Hair Regrowth Demo', platform: 'TikTok', spend: 22100, impressions: 980000, clicks: 14700, ctr: 1.50, cpc: 1.50, conversions: 36, cpa: 614, roas: 3.26, status: 'Active' },
+  { name: 'Semaglutide Explainer', platform: 'Meta', spend: 41500, impressions: 820000, clicks: 10660, ctr: 1.30, cpc: 3.89, conversions: 62, cpa: 669, roas: 2.99, status: 'Active' },
+];
+
+export const creativeAISuggestions = [
+  'Hair Before/After Carousel has the best ROAS at 3.47x with a low CPA of ₱577. Scale spend by 30% this week.',
+  'Competitor Keywords campaign has ₱880 CPA — well above the ₱787 target. Pause low-performing ad groups and reallocate to Brand Search.',
+  '"Doc Consultation UGC" CTR dropped from 1.8% to 1.3% over 2 weeks. Creative fatigue likely — queue replacement creative.',
+  'TikTok CPCs are 60% lower than Meta (₱1.50 vs ₱3.75). Test moving top Meta concepts to TikTok format for cheaper reach.',
+  'Top 3 creatives drive 48% of total conversions (Pareto effect). Diversify creative pipeline to reduce concentration risk.',
+];
+
+// ─── Cohort Analysis ───
+export const cohortRetention = [
+  { cohort: 'Sep 2025', customers: 380, cac: 820, firstOrder: 1580, periods: [100, 28.5, 22.1, 18.4, 15.8, 13.2, 11.5] },
+  { cohort: 'Oct 2025', customers: 420, cac: 795, firstOrder: 1620, periods: [100, 30.2, 23.8, 19.5, 16.8, 14.1, 0] },
+  { cohort: 'Nov 2025', customers: 465, cac: 780, firstOrder: 1685, periods: [100, 31.5, 24.7, 20.2, 17.1, 0, 0] },
+  { cohort: 'Dec 2025', customers: 510, cac: 770, firstOrder: 1710, periods: [100, 32.8, 25.9, 21.0, 0, 0, 0] },
+  { cohort: 'Jan 2026', customers: 545, cac: 800, firstOrder: 1750, periods: [100, 29.8, 23.5, 0, 0, 0, 0] },
+  { cohort: 'Feb 2026', customers: 590, cac: 790, firstOrder: 1820, periods: [100, 31.2, 0, 0, 0, 0, 0] },
+  { cohort: 'Mar 2026', customers: 635, cac: 787, firstOrder: 1850, periods: [100, 0, 0, 0, 0, 0, 0] },
+];
+
+export const clvExtension = [
+  { product: 'GLP-1 Weight Loss', firstOrder: 2999, clr90: 4850, clr365: 9200, beyond365: 2100 },
+  { product: 'Hair Regrowth Kit', firstOrder: 1499, clr90: 2450, clr365: 5800, beyond365: 1800 },
+  { product: "Men's Health Pack", firstOrder: 1799, clr90: 2800, clr365: 5200, beyond365: 1200 },
+  { product: 'Skin Care Bundle', firstOrder: 1299, clr90: 1950, clr365: 3800, beyond365: 900 },
+  { product: 'Sleep & Stress', firstOrder: 999, clr90: 1500, clr365: 2800, beyond365: 600 },
+];
+
+export const productComparison = [
+  { product: 'GLP-1 Weight Loss', customers: 1850, daysSinceFirst: 185, lag2nd: 32, lag3rd: 68, lag4th: 110, avgOrders: 3.1, r30: 28.5, r60: 42.1, r90: 51.8, r180: 62.3, r365: 71.2 },
+  { product: 'Hair Regrowth Kit', customers: 2340, daysSinceFirst: 210, lag2nd: 45, lag3rd: 95, lag4th: 150, avgOrders: 2.8, r30: 22.1, r60: 35.8, r90: 45.2, r180: 55.8, r365: 64.5 },
+  { product: "Men's Health Pack", customers: 1420, daysSinceFirst: 175, lag2nd: 38, lag3rd: 82, lag4th: 130, avgOrders: 2.5, r30: 20.5, r60: 33.2, r90: 42.8, r180: 52.1, r365: 60.8 },
+  { product: 'Skin Care Bundle', customers: 980, daysSinceFirst: 160, lag2nd: 52, lag3rd: 110, lag4th: 170, avgOrders: 2.2, r30: 18.2, r60: 28.5, r90: 36.4, r180: 45.2, r365: 53.1 },
+  { product: 'Sleep & Stress', customers: 520, daysSinceFirst: 120, lag2nd: 58, lag3rd: 120, lag4th: 185, avgOrders: 1.9, r30: 15.8, r60: 24.2, r90: 31.5, r180: 39.8, r365: 46.2 },
+];
+
+// ─── Targets & Goals ───
+export const targets = [
+  { metric: 'Net Revenue', target: 2500000, actual: 2253000, unit: '₱' },
+  { metric: 'MER', target: 4.0, actual: 3.67, unit: 'x' },
+  { metric: 'aMER', target: 4.5, actual: 4.22, unit: 'x' },
+  { metric: 'nMER', target: 2.2, actual: 1.92, unit: 'x' },
+  { metric: 'New Customers', target: 850, actual: 779, unit: '#' },
+  { metric: 'CAC', target: 500, actual: 544, unit: '₱', inverse: true },
+  { metric: 'nCAC', target: 750, actual: 787, unit: '₱', inverse: true },
+  { metric: 'CM3', target: 700000, actual: 626150, unit: '₱' },
+  { metric: 'CM3%', target: 30, actual: 27.8, unit: '%' },
+  { metric: 'Repeat Rate (30d)', target: 30, actual: 28.5, unit: '%' },
+  { metric: 'Net Orders', target: 1200, actual: 1126, unit: '#' },
+  { metric: 'AOV', target: 2100, actual: 2001, unit: '₱' },
+];
+
+export const targetTrend = [
+  { month: 'Oct', revenue: 1600000, target: 1800000, cm3: 380000, cm3Target: 450000 },
+  { month: 'Nov', revenue: 1760000, target: 1900000, cm3: 430000, cm3Target: 480000 },
+  { month: 'Dec', revenue: 2010000, target: 2100000, cm3: 510000, cm3Target: 550000 },
+  { month: 'Jan', revenue: 2000000, target: 2200000, cm3: 490000, cm3Target: 600000 },
+  { month: 'Feb', revenue: 2150000, target: 2350000, cm3: 560000, cm3Target: 650000 },
+  { month: 'Mar', revenue: 2253000, target: 2500000, cm3: 626150, cm3Target: 700000 },
+];
+
+export const targetAISuggestions = [
+  'Revenue is at 90.1% of target with 2 weeks remaining. Need ₱247K more — achievable if you maintain current daily run rate of ₱322K.',
+  'nCAC at ₱787 is 5% above the ₱750 target. TikTok CPA is dragging the average up. Tighten TikTok bid caps or shift budget to Meta.',
+  'CM3% at 27.8% vs 30% target. The gap is primarily driven by high discount code usage (9%). Consider reducing promo frequency.',
+  'New Customer acquisition pace suggests 850 target is reachable if you increase spend by 8% in the final 2 weeks.',
+  'Repeat Rate (28.5% vs 30%) is close. Send a targeted re-engagement email to November cohort — they have the highest 30d repeat potential.',
+];
