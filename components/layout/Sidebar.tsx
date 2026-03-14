@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -32,15 +33,16 @@ export default function Sidebar() {
     <aside className={`${collapsed ? 'w-16' : 'w-56'} shrink-0 h-screen sticky top-0 bg-bg-surface border-r border-border flex flex-col transition-all duration-200`}>
       {/* Logo */}
       <div className="h-14 flex items-center px-4 border-b border-border">
-        {!collapsed && (
-          <Link href="/dashboard" className="flex items-center gap-1">
-            <span className="text-2xl font-bold text-brand-blue-light">&amp;</span>
-            <span className="text-lg font-semibold text-text-primary">you</span>
-          </Link>
-        )}
-        {collapsed && (
-          <Link href="/dashboard" className="text-2xl font-bold text-brand-blue-light mx-auto">&amp;</Link>
-        )}
+        <Link href="/dashboard" className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
+          <Image
+            src="/andyou-logo.jpg"
+            alt="&you"
+            width={collapsed ? 32 : 80}
+            height={collapsed ? 14 : 28}
+            className="brightness-0 invert"
+            priority
+          />
+        </Link>
       </div>
 
       {/* Nav */}
