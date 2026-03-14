@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useTheme } from '@/components/ThemeProvider';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -27,10 +28,11 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { theme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <aside className={`${collapsed ? 'w-16' : 'w-56'} shrink-0 h-screen sticky top-0 bg-bg-surface border-r border-border flex flex-col transition-all duration-200`}>
+    <aside className={`${collapsed ? 'w-16' : 'w-56'} shrink-0 h-screen sticky top-0 bg-bg-surface border-r border-border flex flex-col transition-all duration-200 transition-colors`}>
       {/* Logo */}
       <div className="h-14 flex items-center px-4 border-b border-border">
         <Link href="/dashboard" className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
@@ -39,7 +41,7 @@ export default function Sidebar() {
             alt="&you"
             width={collapsed ? 28 : 44}
             height={collapsed ? 28 : 44}
-            className="brightness-0 invert"
+            className={theme === 'dark' ? 'brightness-0 invert' : ''}
             priority
           />
         </Link>

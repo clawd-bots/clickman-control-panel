@@ -197,10 +197,10 @@ export default function CohortsPage() {
             <h3 className="text-sm font-medium text-text-secondary mb-4">Customer Lifetime Value Extension <InfoTooltip metric="CLV" /></h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={clvExtension} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
-                <XAxis type="number" tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
-                <YAxis dataKey="product" type="category" tick={{ fill: '#94A3B8', fontSize: 10 }} width={120} />
-                <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }}
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis type="number" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
+                <YAxis dataKey="product" type="category" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} width={120} />
+                <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(v: any) => `₱${Number(v).toLocaleString()}`} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />

@@ -183,10 +183,10 @@ export default function CashFlowPage() {
               repeat: m.repeatOrders * inputs.aov * 0.7,
               subscription: m.newCust * inputs.aov * (inputs.subAttachRate / 100) * (inputs.subRetentionM6 / 100),
             }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
-              <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
-              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+              <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Area type="monotone" dataKey="new" name="New (One-time)" stackId="1" fill="#4A6BD6" stroke="#4A6BD6" fillOpacity={0.6} />
               <Area type="monotone" dataKey="repeat" name="Repeat (One-time)" stackId="1" fill="#34D399" stroke="#34D399" fillOpacity={0.6} />
               <Area type="monotone" dataKey="subscription" name="Subscription" stackId="1" fill="#EDBF63" stroke="#EDBF63" fillOpacity={0.6} />
@@ -199,10 +199,10 @@ export default function CashFlowPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">Cumulative Cash Flow</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={monthlySummary}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
-              <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
-              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+              <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Bar dataKey="cumulative" name="Cumulative Cash" fill="#34D399" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

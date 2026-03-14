@@ -78,10 +78,10 @@ export default function PnLPage() {
         <h3 className="text-sm font-medium text-text-secondary mb-4">Margin Levels Over Time</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={pnlTrend}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
-            <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 11 }} />
-            <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
-            <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+            <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+            <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+            <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Line type="monotone" dataKey="netRevenue" name="Net Revenue" stroke="#34D399" strokeWidth={2} dot={false} />
             <Line type="monotone" dataKey="cm1" name="CM1" stroke="#EDBF63" strokeWidth={2} dot={false} />

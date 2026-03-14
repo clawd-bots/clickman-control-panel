@@ -1,7 +1,8 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Calendar, ChevronDown, RefreshCw, User } from 'lucide-react';
+import { Calendar, ChevronDown, RefreshCw, User, Sun, Moon } from 'lucide-react';
+import { useTheme } from '@/components/ThemeProvider';
 
 const datePresets = [
   { label: 'Today', value: 'today' },
@@ -38,6 +39,7 @@ const hideDatePickerPages = ['/cashflow', '/cohorts'];
 
 export default function TopBar() {
   const pathname = usePathname();
+  const { theme, toggleTheme } = useTheme();
   const [datePreset, setDatePreset] = useState('7d');
   const [comparison, setComparison] = useState('prev-period');
   const [showDateDropdown, setShowDateDropdown] = useState(false);
@@ -57,7 +59,7 @@ export default function TopBar() {
   }, []);
 
   return (
-    <header className="h-14 bg-bg-surface border-b border-border flex items-center px-6 sticky top-0 z-40">
+    <header className="h-14 bg-bg-surface border-b border-border flex items-center px-6 sticky top-0 z-40 transition-colors">
       {/* Left spacer */}
       <div className="flex-1" />
 
@@ -132,6 +134,15 @@ export default function TopBar() {
             </div>
           </>
         )}
+
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="p-2 rounded-md hover:bg-bg-elevated text-text-tertiary hover:text-text-primary transition-colors"
+          title={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+        >
+          {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+        </button>
 
         <button className="p-2 rounded-md hover:bg-bg-elevated text-text-tertiary hover:text-text-secondary transition-colors">
           <RefreshCw size={14} />

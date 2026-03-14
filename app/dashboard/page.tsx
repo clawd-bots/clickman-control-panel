@@ -46,10 +46,10 @@ export default function DashboardPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue & Marketing Costs</h3>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={dailyMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
-              <XAxis dataKey="date" tick={{ fill: '#94A3B8', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
-              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
+              <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="revenue" name="Net Revenue" stroke="#34D399" strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="spend" name="Marketing Costs" stroke="#EDBF63" strokeWidth={2} dot={false} />
@@ -61,10 +61,10 @@ export default function DashboardPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">Net Orders & New Customers</h3>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={dailyMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
-              <XAxis dataKey="date" tick={{ fill: '#94A3B8', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} />
-              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="orders" name="Orders" stroke="#4A6BD6" strokeWidth={2} dot={false} />
               <Line type="monotone" dataKey="newCustomers" name="New Customers" stroke="#EDBF63" strokeWidth={2} dot={false} />
@@ -100,10 +100,10 @@ export default function DashboardPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">Marketing Metrics Trend</h3>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={dailyMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
-              <XAxis dataKey="date" tick={{ fill: '#94A3B8', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} />
-              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Bar dataKey="sessions" name="Sessions" fill="#334FB4" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -167,10 +167,10 @@ export default function DashboardPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue Composition (NC vs RC)</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={revenueInsights.monthly}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
-              <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
-              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+              <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Bar dataKey="nc" name="New Customer Rev" stackId="a" fill="#4A6BD6" radius={[0, 0, 0, 0]} />
               <Bar dataKey="rc" name="Repeat Customer Rev" stackId="a" fill="#34D399" radius={[2, 2, 0, 0]} />
@@ -205,7 +205,7 @@ export default function DashboardPage() {
                   <Cell fill="#4A6BD6" />
                   <Cell fill="#34D399" />
                 </Pie>
-                <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
+                <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               </PieChart>
             </ResponsiveContainer>
             <div className="text-xs text-text-secondary space-y-1">

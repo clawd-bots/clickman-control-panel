@@ -196,7 +196,7 @@ export default function AttributionPage() {
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -224,12 +224,12 @@ export default function AttributionPage() {
           </h3>
           <ResponsiveContainer width="100%" height={320}>
             <ScatterChart>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
-              <XAxis dataKey="spend" name="Spend" tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
-              <YAxis dataKey="cpa" name="CPA" tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${v}`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="spend" name="Spend" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
+              <YAxis dataKey="cpa" name="CPA" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${v}`} />
               <ZAxis dataKey="spend" range={[60, 400]} />
               <Tooltip
-                contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(value: any, name: any) => [name === 'Spend' ? `₱${(Number(value)/1000).toFixed(1)}K` : `₱${value}`, name || '']}
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.name || ''}

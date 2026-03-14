@@ -1,6 +1,26 @@
 @import "tailwindcss";
 
+/* ─── Light Mode (Default) ─── */
 @theme inline {
+  --color-bg-primary: #F8FAFC;
+  --color-bg-surface: #FFFFFF;
+  --color-bg-elevated: #F1F5F9;
+  --color-brand-blue: #334FB4;
+  --color-brand-blue-light: #2563EB;
+  --color-warm-gold: #D97706;
+  --color-warm-gold-light: #F59E0B;
+  --color-warm-gold-dark: #B45309;
+  --color-warm-cream: #FFFBEB;
+  --color-success: #059669;
+  --color-danger: #DC2626;
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #94A3B8;
+  --color-border: #E2E8F0;
+}
+
+/* ─── Dark Mode ─── */
+.dark {
   --color-bg-primary: #101312;
   --color-bg-surface: #1A1D1B;
   --color-bg-elevated: #232724;
@@ -20,13 +40,14 @@
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2A2E2B #101312;
+  scrollbar-color: var(--color-border) var(--color-bg-primary);
 }
 
 body {
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-family: 'Sofia Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Heatmap cell colors */
@@ -40,3 +61,14 @@ body {
 .heatmap-7 { background: rgba(52, 211, 153, 0.30); }
 .heatmap-8 { background: rgba(52, 211, 153, 0.50); }
 .heatmap-9 { background: rgba(52, 211, 153, 0.70); }
+
+/* Dark mode heatmap adjustments */
+.dark .heatmap-0 { background: rgba(51, 79, 180, 0.05); }
+.dark .heatmap-7 { background: rgba(52, 211, 153, 0.30); }
+.dark .heatmap-8 { background: rgba(52, 211, 153, 0.50); }
+.dark .heatmap-9 { background: rgba(52, 211, 153, 0.70); }
+
+/* Recharts tooltip override for light mode */
+.recharts-default-tooltip {
+  transition: background-color 0.2s ease;
+}

@@ -185,11 +185,11 @@ export default function CreativePage() {
           </h3>
           <ResponsiveContainer width="100%" height={320}>
             <BarChart data={paretoData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
-              <XAxis dataKey="name" tick={{ fill: '#94A3B8', fontSize: 9 }} angle={-30} textAnchor="end" height={80} />
-              <YAxis yAxisId="left" tick={{ fill: '#94A3B8', fontSize: 11 }} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fill: '#94A3B8', fontSize: 11 }} domain={[0, 100]} tickFormatter={v => `${v}%`} />
-              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+              <XAxis dataKey="name" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-30} textAnchor="end" height={80} />
+              <YAxis yAxisId="left" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} domain={[0, 100]} tickFormatter={v => `${v}%`} />
+              <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Bar yAxisId="left" dataKey="conversions" name="Conversions" fill="#4A6BD6" radius={[3, 3, 0, 0]} />
               <Bar yAxisId="right" dataKey="cumPct" name="Cumulative %" fill="#EDBF63" radius={[3, 3, 0, 0]} />
             </BarChart>
