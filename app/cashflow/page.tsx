@@ -5,15 +5,27 @@ import ExportButton from '@/components/ui/ExportButton';
 import { cashFlowDefaults, cohortWaterfall, monthlySummary, sensitivityCards } from '@/lib/sample-data';
 import { formatCurrency } from '@/lib/utils';
 import {
-  BarChart, Bar, LineChart, Line, AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { Check, AlertTriangle } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 export default function CashFlowPage() {
-  const [inputs, setInputs] = useState(cashFlowDefaults);
+  const [inputs, setInputs] = useState({
+    ...cashFlowDefaults,
+    subAttachRate: 0,
+    subRetentionM1: 85,
+    subRetentionM3: 70,
+    subRetentionM6: 55,
+    subRetentionM12: 40,
+  });
 
   const months = ['m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','m11','m12'] as const;
+
+  const allSensitivityCards = [
+    ...sensitivityCards,
+    { label: 'Sub Attach +10%', metric: 'Year-End Cash', current: '₱13.4M', adjusted: '₱14.8M', impact: '+₱1.4M from recurring rev' },
+  ];
 
   return (
     <div className="space-y-6 max-w-[1400px]">
@@ -32,30 +44,73 @@ export default function CashFlowPage() {
             { label: 'Untracked Lift %', key: 'untrackedLift' as const, suffix: '%' },
           ].map(({ label, key, prefix, suffix }) => (
             <div key={key}>
-              <label className="block text-xs text-text-tertiary mb-1.5">{label} <InfoTooltip metric={label === 'AOV' ? 'AOV' : label === 'CPA' ? 'nCAC' : label} /></label>
+              <label className="block text-xs text-text-secondary mb-1.5">{label} <InfoTooltip metric={label} /></label>
               <div className="flex items-center bg-bg-elevated border border-border rounded-md">
-                {prefix && <span className="pl-2.5 text-xs text-text-tertiary">{prefix}</span>}
+                {prefix && <span className="pl-2.5 text-xs text-text-secondary">{prefix}</span>}
                 <input
                   type="number"
                   value={inputs[key]}
                   onChange={(e) => setInputs(prev => ({ ...prev, [key]: Number(e.target.value) }))}
                   className="w-full bg-transparent px-2.5 py-2 text-sm text-text-primary outline-none"
                 />
-                {suffix && <span className="pr-2.5 text-xs text-text-tertiary">{suffix}</span>}
+                {suffix && <span className="pr-2.5 text-xs text-text-secondary">{suffix}</span>}
               </div>
             </div>
           ))}
         </div>
-        <div className="mt-3 flex items-center gap-4">
-          <label className="text-xs text-text-tertiary">Retention Model:</label>
-          {['E-Commerce', 'Subscription', 'Custom'].map((model) => (
-            <button
-              key={model}
-              className={`px-3 py-1 rounded-md text-xs ${inputs.retentionModel === model.toLowerCase().replace('-','') ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-tertiary hover:text-text-secondary'}`}
-            >
-              {model}
-            </button>
-          ))}
+
+        {/* Subscription Model Section */}
+        <div className="mt-5 pt-4 border-t border-border">
+          <h4 className="text-xs font-semibold text-text-primary mb-3 uppercase tracking-wide">Subscription Model (Hybrid)</h4>
+          <div className="grid grid-cols-5 gap-4">
+            <div>
+              <label className="block text-xs text-text-secondary mb-1.5">Attach Rate <InfoTooltip metric="Subscription Attach Rate" /></label>
+              <div className="flex items-center bg-bg-elevated border border-border rounded-md">
+                <input
+                  type="number"
+                  value={inputs.subAttachRate}
+                  onChange={(e) => setInputs(prev => ({ ...prev, subAttachRate: Number(e.target.value) }))}
+                  className="w-full bg-transparent px-2.5 py-2 text-sm text-text-primary outline-none"
+                />
+                <span className="pr-2.5 text-xs text-text-secondary">%</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1.5">Sub Retention M1</label>
+              <div className="flex items-center bg-bg-elevated border border-border rounded-md">
+                <input type="number" value={inputs.subRetentionM1} onChange={(e) => setInputs(prev => ({ ...prev, subRetentionM1: Number(e.target.value) }))}
+                  className="w-full bg-transparent px-2.5 py-2 text-sm text-text-primary outline-none" />
+                <span className="pr-2.5 text-xs text-text-secondary">%</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1.5">Sub Retention M3</label>
+              <div className="flex items-center bg-bg-elevated border border-border rounded-md">
+                <input type="number" value={inputs.subRetentionM3} onChange={(e) => setInputs(prev => ({ ...prev, subRetentionM3: Number(e.target.value) }))}
+                  className="w-full bg-transparent px-2.5 py-2 text-sm text-text-primary outline-none" />
+                <span className="pr-2.5 text-xs text-text-secondary">%</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1.5">Sub Retention M6</label>
+              <div className="flex items-center bg-bg-elevated border border-border rounded-md">
+                <input type="number" value={inputs.subRetentionM6} onChange={(e) => setInputs(prev => ({ ...prev, subRetentionM6: Number(e.target.value) }))}
+                  className="w-full bg-transparent px-2.5 py-2 text-sm text-text-primary outline-none" />
+                <span className="pr-2.5 text-xs text-text-secondary">%</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1.5">Sub Retention M12</label>
+              <div className="flex items-center bg-bg-elevated border border-border rounded-md">
+                <input type="number" value={inputs.subRetentionM12} onChange={(e) => setInputs(prev => ({ ...prev, subRetentionM12: Number(e.target.value) }))}
+                  className="w-full bg-transparent px-2.5 py-2 text-sm text-text-primary outline-none" />
+                <span className="pr-2.5 text-xs text-text-secondary">%</span>
+              </div>
+            </div>
+          </div>
+          <p className="text-xs text-text-secondary mt-2">
+            Currently {inputs.subAttachRate}% subscription attach rate. {inputs.subAttachRate === 0 ? 'Projected subscription launch in 1–2 months.' : ''}
+          </p>
         </div>
       </div>
 
@@ -68,10 +123,10 @@ export default function CashFlowPage() {
           { label: 'Total Spend', value: '₱5.93M', desc: '12-month acquisition spend', metric: 'Marketing Costs' },
           { label: 'LTV:CAC', value: '3.15x', desc: 'Healthy unit economics', metric: 'LTV:CAC' },
         ].map((card) => (
-          <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4">
-            <div className="text-xs text-text-tertiary mb-1 flex items-center">{card.label} <InfoTooltip metric={card.metric} /></div>
-            <div className="text-xl font-bold text-text-primary">{card.value}</div>
-            <div className="text-xs text-text-secondary mt-1">{card.desc}</div>
+          <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4 min-w-0">
+            <div className="text-xs text-text-secondary mb-1 flex items-center truncate">{card.label} <InfoTooltip metric={card.metric} /></div>
+            <div className="text-xl font-bold text-text-primary truncate">{card.value}</div>
+            <div className="text-xs text-text-secondary mt-1 truncate">{card.desc}</div>
           </div>
         ))}
       </div>
@@ -85,7 +140,7 @@ export default function CashFlowPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border text-text-tertiary uppercase">
+              <tr className="border-b border-border text-text-secondary uppercase">
                 <th className="text-left py-2 px-2 font-medium">Cohort</th>
                 {months.map((m, i) => (
                   <th key={m} className="text-right py-2 px-2 font-medium">M{i + 1}</th>
@@ -107,7 +162,7 @@ export default function CashFlowPage() {
                   })}
                   <td className="py-2 px-2 text-center">
                     <Check size={14} className="inline text-success" />
-                    <span className="text-text-tertiary ml-1">M{row.breakEvenMonth}</span>
+                    <span className="text-text-secondary ml-1">M{row.breakEvenMonth}</span>
                   </td>
                 </tr>
               ))}
@@ -118,21 +173,23 @@ export default function CashFlowPage() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-2 gap-4">
-        {/* Revenue Composition */}
+        {/* Revenue Composition — now with 3 streams */}
         <div className="bg-bg-surface border border-border rounded-lg p-5">
           <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue Composition</h3>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={monthlySummary.map(m => ({
               month: m.month,
-              new: m.newCust * inputs.aov,
+              new: m.newCust * inputs.aov * (1 - inputs.subAttachRate / 100),
               repeat: m.repeatOrders * inputs.aov * 0.7,
+              subscription: m.newCust * inputs.aov * (inputs.subAttachRate / 100) * (inputs.subRetentionM6 / 100),
             }))}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-              <XAxis dataKey="month" tick={{ fill: '#64748B', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
-              <Tooltip contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }} />
-              <Area type="monotone" dataKey="new" name="New Revenue" stackId="1" fill="#4A6BD6" stroke="#4A6BD6" fillOpacity={0.6} />
-              <Area type="monotone" dataKey="repeat" name="Repeat Revenue" stackId="1" fill="#34D399" stroke="#34D399" fillOpacity={0.6} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
+              <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
+              <Area type="monotone" dataKey="new" name="New (One-time)" stackId="1" fill="#4A6BD6" stroke="#4A6BD6" fillOpacity={0.6} />
+              <Area type="monotone" dataKey="repeat" name="Repeat (One-time)" stackId="1" fill="#34D399" stroke="#34D399" fillOpacity={0.6} />
+              <Area type="monotone" dataKey="subscription" name="Subscription" stackId="1" fill="#EDBF63" stroke="#EDBF63" fillOpacity={0.6} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -142,10 +199,10 @@ export default function CashFlowPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">Cumulative Cash Flow</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={monthlySummary}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-              <XAxis dataKey="month" tick={{ fill: '#64748B', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
-              <Tooltip contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
+              <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
               <Bar dataKey="cumulative" name="Cumulative Cash" fill="#34D399" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -153,11 +210,11 @@ export default function CashFlowPage() {
       </div>
 
       {/* Sensitivity Analysis */}
-      <div className="grid grid-cols-4 gap-4">
-        {sensitivityCards.map((card) => (
-          <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4">
-            <div className="text-xs font-medium text-warm-gold mb-2">{card.label}</div>
-            <div className="text-xs text-text-tertiary mb-1">{card.metric}</div>
+      <div className="grid grid-cols-5 gap-4">
+        {allSensitivityCards.map((card) => (
+          <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4 min-w-0">
+            <div className="text-xs font-medium text-warm-gold mb-2 truncate">{card.label}</div>
+            <div className="text-xs text-text-secondary mb-1">{card.metric}</div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-text-secondary">Current: {card.current}</span>
               <span className="text-xs text-success">→ {card.adjusted}</span>
@@ -176,7 +233,7 @@ export default function CashFlowPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border text-text-tertiary uppercase">
+              <tr className="border-b border-border text-text-secondary uppercase">
                 <th className="text-left py-2 px-2 font-medium">Month</th>
                 <th className="text-right py-2 px-2 font-medium">New Cust</th>
                 <th className="text-right py-2 px-2 font-medium">Acq Spend</th>

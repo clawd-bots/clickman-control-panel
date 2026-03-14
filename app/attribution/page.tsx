@@ -1,59 +1,152 @@
 'use client';
 import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
-import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { attributionSurvey, trackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
-import { Star, GitBranch, Activity, Database, Layers, ChevronDown, ChevronRight } from 'lucide-react';
+import { Star, GitBranch, Activity, Database, Layers, Sparkles } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ScatterChart, Scatter,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis,
 } from 'recharts';
 
-const COLORS = ['#334FB4', '#4A6BD6', '#E8C872', '#34D399', '#EF4444', '#94A3B8'];
+const COLORS = ['#334FB4', '#4A6BD6', '#EDBF63', '#34D399', '#EF4444', '#94A3B8'];
 
 const treeLayers = [
-  { id: 'star', label: 'MER / nCAC', icon: Star, description: 'Top-level efficiency metrics — the north star', color: '#E8C872' },
-  { id: 'upper', label: 'Post-Purchase Surveys, MMM, Geo-Lift', icon: GitBranch, description: 'Directional measurement — budget allocation layer', color: '#4A6BD6' },
-  { id: 'lower', label: 'MTA & Platform Reporting', icon: Activity, description: 'Ad-level optimization — tactical decisions', color: '#334FB4' },
-  { id: 'trunk', label: 'GA4, CAPI, Server-side Tracking', icon: Database, description: 'Tracking infrastructure — the foundation', color: '#34D399' },
-  { id: 'roots', label: 'Cohort-based LTV', icon: Layers, description: 'Long-term value — customer quality measurement', color: '#A855F7' },
+  { id: 'star', label: 'MER / nCAC', icon: Star, description: 'Top-level efficiency metrics — your north star for marketing health', color: '#EDBF63' },
+  { id: 'upper', label: 'Surveys & MMM', icon: GitBranch, description: 'Directional measurement — budget allocation layer using survey data and modeling', color: '#4A6BD6' },
+  { id: 'lower', label: 'MTA & Platform', icon: Activity, description: 'Ad-level optimization — tactical decisions based on multi-touch and platform data', color: '#334FB4' },
+  { id: 'trunk', label: 'Tracking Infra', icon: Database, description: 'The foundation — GA4, CAPI, and server-side tracking health', color: '#34D399' },
+  { id: 'roots', label: 'Cohort LTV', icon: Layers, description: 'Long-term value — measuring customer quality by acquisition source', color: '#A855F7' },
+];
+
+interface LayerInsights {
+  working: string[];
+  notWorking: string[];
+  doNext: string[];
+  stopDoing: string[];
+}
+
+const layerInsights: Record<string, LayerInsights> = {
+  star: {
+    working: ['MER at 3.67x is above the 3.5x healthy threshold — marketing is generating strong returns', 'nCAC trending down 2.6% MoM from ₱808 to ₱787 — acquisition getting more efficient'],
+    notWorking: ['nMER at 1.92x means new customer revenue alone doesn\'t cover spend — reliant on repeats', 'MER variance across channels is high (Meta 3.91x vs Referral 0.40x)'],
+    doNext: ['Set a max CPA ceiling by channel based on LTV:CAC ratios', 'Build an automated alert when MER drops below 3.0x'],
+    stopDoing: ['Don\'t optimize purely on blended MER — it hides channel-level inefficiencies'],
+  },
+  upper: {
+    working: ['Post-purchase survey captures 1,240 responses/month — statistically significant sample', 'TikTok shows 22% survey attribution, validating its top-of-funnel role beyond click tracking'],
+    notWorking: ['No MMM model built yet — relying solely on survey data for channel allocation', 'No geo-lift tests run to validate incrementality of any channel'],
+    doNext: ['Commission an MMM study — even a simple one using 6 months of data', 'Run a geo-lift test on TikTok to prove incremental value vs. organic discovery'],
+    stopDoing: ['Stop treating survey data as ground truth for budget decisions without cross-validation'],
+  },
+  lower: {
+    working: ['Brand Search at ₱420 CPA and 4.76x ROAS — the most efficient channel by far', 'Hair Before/After creative achieves ₱577 CPA — well below target'],
+    notWorking: ['Competitor Keywords at ₱880 CPA is 12% above target and losing money', 'Platform reporting overlap inflates total attributed conversions by ~30%'],
+    doNext: ['Deduplicate conversions across platforms before making budget decisions', 'Test moving top Meta creatives to TikTok format for potentially lower CPCs'],
+    stopDoing: ['Stop trusting individual platform ROAS numbers at face value — always cross-reference with MER'],
+  },
+  trunk: {
+    working: ['Meta Pixel + CAPI dual setup achieving 89-92% match rates', 'GA4 processing 22,400 events/day with stable tracking'],
+    notWorking: ['Server-side GTM is completely down (0 events/day) — losing ~15% of conversion data', 'TikTok Pixel match rate at 71% — significant data loss'],
+    doNext: ['Fix Server-side GTM immediately — this is the #1 priority before any budget decisions', 'Improve TikTok tracking with enhanced match keys (email, phone hashing)'],
+    stopDoing: ['Stop making budget allocation decisions while server-side GTM is broken'],
+  },
+  roots: {
+    working: ['Google Brand customers have 3.8x LTV:CAC — excellent unit economics', 'GLP-1 product has highest LTV (₱9,200 at 365d) driving overall retention'],
+    notWorking: ['TikTok LTV:CAC at 1.4x is below the 2.0x minimum threshold', 'TikTok payback period of 6.8 months creates cash flow pressure'],
+    doNext: ['Cap TikTok CPA at ₱600 until LTV:CAC improves above 2.0x', 'Segment TikTok cohorts by product to see if specific products have better TikTok LTV'],
+    stopDoing: ['Stop scaling TikTok spend without addressing the LTV:CAC gap first'],
+  },
+};
+
+const globalInsights = [
+  '🔑 Overall, your attribution stack is functioning but incomplete. MER is healthy (3.67x), but you\'re flying partially blind with server-side GTM down and no MMM model.',
+  '📊 Meta drives the lion\'s share of tracked conversions but survey data suggests TikTok is under-credited by platform reporting. Run a geo-lift test to validate.',
+  '⚠️ Your nMER of 1.92x means you\'re relying heavily on repeat purchases to make the economics work. This is fine if retention holds, but risky if cohort quality drops.',
+  '💰 Brand Search is your most efficient channel at ₱420 CPA. Ensure you\'re maxing out impression share before increasing spend elsewhere.',
+  '🛠️ Fix server-side GTM before making any major budget reallocation. You\'re missing ~15% of conversion data, which skews all analysis.',
+  '📈 Consider building a simple MMM model using the past 6 months of spend + revenue data. This will give you a second opinion on channel allocation beyond surveys.',
+  '🎯 Set channel-specific CPA ceilings: Meta ₱850, Google ₱500, TikTok ₱600. Review weekly and pause anything consistently above ceiling.',
 ];
 
 export default function AttributionPage() {
-  const [activeLayer, setActiveLayer] = useState<string | null>(null);
+  const [activeLayer, setActiveLayer] = useState<string>('star');
+
+  const activeInfo = treeLayers.find(l => l.id === activeLayer)!;
+  const insights = layerInsights[activeLayer];
 
   return (
     <div className="space-y-6 max-w-[1400px]">
-      <h2 className="text-lg font-semibold">Attribution Tree</h2>
+      <h2 className="text-lg font-semibold">Attribution Framework</h2>
 
-      {/* Visual Tree */}
-      <div className="bg-bg-surface border border-border rounded-lg p-6">
-        <h3 className="text-sm font-medium text-text-secondary mb-6 text-center">The Christmas Tree Framework</h3>
-        <div className="flex flex-col items-center gap-2 max-w-2xl mx-auto">
-          {treeLayers.map((layer, i) => {
-            const isActive = activeLayer === layer.id;
-            const Icon = layer.icon;
-            const widthPct = i === 0 ? 'w-48' : i === 1 ? 'w-72' : i === 2 ? 'w-96' : i === 3 ? 'w-56' : 'w-80';
-            return (
-              <button
-                key={layer.id}
-                onClick={() => setActiveLayer(isActive ? null : layer.id)}
-                className={`${widthPct} flex items-center justify-center gap-2 px-4 py-3 rounded-lg border transition-all ${
-                  isActive
-                    ? 'border-brand-blue bg-brand-blue/15 shadow-lg shadow-brand-blue/10'
-                    : 'border-border bg-bg-elevated hover:border-text-tertiary'
-                }`}
-                style={{ borderColor: isActive ? layer.color : undefined }}
-              >
-                <Icon size={16} style={{ color: layer.color }} />
-                <span className="text-xs font-medium text-text-primary">{layer.label}</span>
-                {isActive ? <ChevronDown size={14} className="text-text-tertiary" /> : <ChevronRight size={14} className="text-text-tertiary" />}
-              </button>
-            );
-          })}
-          {/* Visual connector lines */}
-          <div className="text-[10px] text-text-tertiary mt-2 text-center">
-            Click any layer to expand details
+      {/* Global AI Insights */}
+      <div className="bg-bg-surface border border-border rounded-lg p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles size={18} className="text-warm-gold" />
+          <h3 className="text-sm font-semibold text-text-primary">Cross-Layer AI Analysis</h3>
+        </div>
+        <div className="space-y-3">
+          {globalInsights.map((insight, i) => (
+            <div key={i} className="text-sm text-text-secondary leading-relaxed">{insight}</div>
+          ))}
+        </div>
+      </div>
+
+      {/* Horizontal Tab Buttons */}
+      <div className="flex gap-2 flex-wrap">
+        {treeLayers.map((layer) => {
+          const isActive = activeLayer === layer.id;
+          const Icon = layer.icon;
+          return (
+            <button
+              key={layer.id}
+              onClick={() => setActiveLayer(layer.id)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium transition-all border ${
+                isActive
+                  ? 'border-transparent shadow-md'
+                  : 'border-border bg-bg-surface text-text-secondary hover:text-text-primary hover:border-text-tertiary'
+              }`}
+              style={isActive ? { backgroundColor: `${layer.color}20`, color: layer.color, borderBottom: `2px solid ${layer.color}` } : undefined}
+            >
+              <Icon size={15} style={{ color: isActive ? layer.color : undefined }} />
+              {layer.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Layer Description */}
+      <div className="text-sm text-text-secondary">{activeInfo.description}</div>
+
+      {/* Per-Layer AI Insights */}
+      <div className="bg-bg-surface border border-border rounded-lg p-5">
+        <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+          <Sparkles size={16} className="text-warm-gold" />
+          {activeInfo.label} — AI Insights
+        </h3>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-success flex items-center gap-1.5">✅ What&apos;s Working</div>
+            {insights.working.map((item, i) => (
+              <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-danger flex items-center gap-1.5">⚠️ What&apos;s Not</div>
+            {insights.notWorking.map((item, i) => (
+              <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-brand-blue-light flex items-center gap-1.5">🎯 Do Next</div>
+            {insights.doNext.map((item, i) => (
+              <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            <div className="text-xs font-semibold text-warm-gold flex items-center gap-1.5">🛑 Stop Doing</div>
+            {insights.stopDoing.map((item, i) => (
+              <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+            ))}
           </div>
         </div>
       </div>
@@ -66,22 +159,22 @@ export default function AttributionPage() {
           </h3>
           <div className="grid grid-cols-4 gap-4">
             <div className="bg-bg-elevated rounded-md p-4">
-              <div className="text-xs text-text-tertiary flex items-center">MER <InfoTooltip metric="MER" /></div>
+              <div className="text-xs text-text-secondary flex items-center">MER <InfoTooltip metric="MER" /></div>
               <div className="text-2xl font-bold text-text-primary mt-1">3.67x</div>
               <div className="text-xs text-success mt-1">↑ 3.1% MoM</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4">
-              <div className="text-xs text-text-tertiary flex items-center">nCAC <InfoTooltip metric="nCAC" /></div>
+              <div className="text-xs text-text-secondary flex items-center">nCAC <InfoTooltip metric="nCAC" /></div>
               <div className="text-2xl font-bold text-text-primary mt-1">₱787</div>
               <div className="text-xs text-success mt-1">↓ 2.6% MoM</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4">
-              <div className="text-xs text-text-tertiary">Max Mktg Spend</div>
+              <div className="text-xs text-text-secondary">Max Mktg Spend</div>
               <div className="text-2xl font-bold text-text-primary mt-1">₱680K</div>
               <div className="text-xs text-text-secondary mt-1">At 25% CM3 target</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4">
-              <div className="text-xs text-text-tertiary">Target CPA</div>
+              <div className="text-xs text-text-secondary">Target CPA</div>
               <div className="text-2xl font-bold text-text-primary mt-1">₱750</div>
               <div className="text-xs text-text-secondary mt-1">Based on 3.15x LTV:CAC</div>
             </div>
@@ -103,7 +196,7 @@ export default function AttributionPage() {
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -131,18 +224,18 @@ export default function AttributionPage() {
           </h3>
           <ResponsiveContainer width="100%" height={320}>
             <ScatterChart>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-              <XAxis dataKey="spend" name="Spend" tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
-              <YAxis dataKey="cpa" name="CPA" tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(v) => `₱${v}`} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
+              <XAxis dataKey="spend" name="Spend" tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
+              <YAxis dataKey="cpa" name="CPA" tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${v}`} />
               <ZAxis dataKey="spend" range={[60, 400]} />
               <Tooltip
-                contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }}
+                contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(value: any, name: any) => [name === 'Spend' ? `₱${(Number(value)/1000).toFixed(1)}K` : `₱${value}`, name || '']}
                 labelFormatter={(_, payload) => payload?.[0]?.payload?.name || ''}
               />
               <Scatter data={adScatterData.filter(d => d.platform === 'Meta')} fill="#4A6BD6" name="Meta" />
-              <Scatter data={adScatterData.filter(d => d.platform === 'Google')} fill="#E8C872" name="Google" />
+              <Scatter data={adScatterData.filter(d => d.platform === 'Google')} fill="#EDBF63" name="Google" />
               <Scatter data={adScatterData.filter(d => d.platform === 'TikTok')} fill="#34D399" name="TikTok" />
             </ScatterChart>
           </ResponsiveContainer>
@@ -160,7 +253,7 @@ export default function AttributionPage() {
                 <div className="flex items-center gap-3">
                   <span className={`w-2.5 h-2.5 rounded-full ${item.status === 'healthy' ? 'bg-success' : item.status === 'warning' ? 'bg-warm-gold' : 'bg-danger'}`} />
                   <span className="text-sm font-medium text-text-primary">{item.system}</span>
-                  <InfoTooltip metric={item.system === 'Meta CAPI' ? 'CAPI' : item.system} />
+                  <InfoTooltip metric={item.system} />
                 </div>
                 <div className="flex items-center gap-6 text-xs text-text-secondary">
                   <span>Events: {item.events}</span>
@@ -193,21 +286,18 @@ export default function AttributionPage() {
               <div key={ch.channel} className="bg-bg-elevated rounded-md p-4 space-y-2">
                 <div className="text-sm font-medium text-text-primary">{ch.channel}</div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-text-tertiary">LTV:CAC</span>
+                  <span className="text-xs text-text-secondary">LTV:CAC</span>
                   <span className={`text-lg font-bold ${ch.ltvCac >= 3 ? 'text-success' : ch.ltvCac >= 2 ? 'text-warm-gold' : 'text-danger'}`}>
                     {ch.ltvCac}x
                   </span>
                 </div>
                 <div className="text-xs text-text-secondary">LTV: {ch.ltv} · CAC: {ch.cac}</div>
-                <div className="text-xs text-text-tertiary">Payback: {ch.payback}</div>
+                <div className="text-xs text-text-secondary">Payback: {ch.payback}</div>
               </div>
             ))}
           </div>
         </div>
       )}
-
-      {/* AI Suggestions */}
-      <AISuggestionsPanel suggestions={attributionAISuggestions} />
     </div>
   );
 }

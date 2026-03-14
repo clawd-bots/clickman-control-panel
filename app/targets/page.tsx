@@ -1,11 +1,21 @@
 'use client';
+import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
-import { targets, targetTrend, targetAISuggestions } from '@/lib/sample-data';
+import { targets as initialTargets, targetTrend, targetAISuggestions } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
+import { Pencil, Check, X } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
+
+interface TargetItem {
+  metric: string;
+  target: number;
+  actual: number;
+  unit: string;
+  inverse?: boolean;
+}
 
 function getStatus(actual: number, target: number, inverse?: boolean): 'green' | 'yellow' | 'red' {
   const ratio = inverse ? target / actual : actual / target;
@@ -23,54 +33,106 @@ function formatValue(value: number, unit: string): string {
 }
 
 export default function TargetsPage() {
+  const [targets, setTargets] = useState<TargetItem[]>(initialTargets.map(t => ({ ...t })));
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  const startEdit = (idx: number) => {
+    setEditingIdx(idx);
+    setEditValue(targets[idx].target.toString());
+  };
+
+  const saveEdit = () => {
+    if (editingIdx === null) return;
+    const num = Number(editValue);
+    if (!isNaN(num) && num > 0) {
+      setTargets(prev => prev.map((t, i) => i === editingIdx ? { ...t, target: num } : t));
+    }
+    setEditingIdx(null);
+  };
+
+  const cancelEdit = () => setEditingIdx(null);
+
   return (
     <div className="space-y-6 max-w-[1400px]">
-      <h2 className="text-lg font-semibold">Targets & Goals</h2>
+      <div>
+        <h2 className="text-lg font-semibold">Targets & Goals</h2>
+        <p className="text-sm text-text-secondary mt-1">
+          Set what <strong className="text-text-primary">should</strong> happen — goals, gaps, and recommendations.
+          The Dashboard shows what <em>is</em> happening. This page tracks where you want to be.
+        </p>
+      </div>
 
-      {/* Target Cards Grid */}
-      <div className="grid grid-cols-3 gap-4">
-        {targets.map((t) => {
-          const status = getStatus(t.actual, t.target, 'inverse' in t && t.inverse);
-          const progress = 'inverse' in t && t.inverse
-            ? Math.min((t.target / t.actual) * 100, 100)
-            : Math.min((t.actual / t.target) * 100, 100);
+      {/* Set Monthly Targets Section */}
+      <div className="bg-bg-surface border border-border rounded-lg p-5">
+        <h3 className="text-sm font-semibold text-text-primary mb-4">Monthly Targets — Click any target value to edit</h3>
+        <div className="grid grid-cols-4 gap-4">
+          {targets.map((t, idx) => {
+            const status = getStatus(t.actual, t.target, t.inverse);
+            const progress = t.inverse
+              ? Math.min((t.target / t.actual) * 100, 100)
+              : Math.min((t.actual / t.target) * 100, 100);
+            const isEditing = editingIdx === idx;
 
-          return (
-            <div key={t.metric} className="bg-bg-surface border border-border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center text-xs text-text-secondary font-medium">
-                  {t.metric} <InfoTooltip metric={t.metric} />
-                </div>
-                <span className={`w-2.5 h-2.5 rounded-full ${
-                  status === 'green' ? 'bg-success' : status === 'yellow' ? 'bg-warm-gold' : 'bg-danger'
-                }`} />
-              </div>
-
-              <div className="flex items-baseline gap-2 mb-3">
-                <span className="text-xl font-bold text-text-primary">{formatValue(t.actual, t.unit)}</span>
-                <span className="text-xs text-text-tertiary">/ {formatValue(t.target, t.unit)}</span>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="w-full h-2 bg-bg-elevated rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full transition-all ${
+            return (
+              <div key={t.metric} className="bg-bg-elevated rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center text-xs text-text-secondary font-medium">
+                    {t.metric} <InfoTooltip metric={t.metric} />
+                  </div>
+                  <span className={`w-2 h-2 rounded-full ${
                     status === 'green' ? 'bg-success' : status === 'yellow' ? 'bg-warm-gold' : 'bg-danger'
-                  }`}
-                  style={{ width: `${progress}%` }}
-                />
+                  }`} />
+                </div>
+
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-lg font-bold text-text-primary">{formatValue(t.actual, t.unit)}</span>
+                  <span className="text-xs text-text-secondary">/</span>
+                  {isEditing ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') saveEdit(); if (e.key === 'Escape') cancelEdit(); }}
+                        className="w-20 bg-bg-primary border border-warm-gold rounded px-2 py-0.5 text-xs text-text-primary outline-none"
+                        autoFocus
+                      />
+                      <button onClick={saveEdit} className="text-success"><Check size={12} /></button>
+                      <button onClick={cancelEdit} className="text-danger"><X size={12} /></button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => startEdit(idx)}
+                      className="flex items-center gap-1 text-xs text-text-secondary hover:text-warm-gold transition-colors group"
+                    >
+                      {formatValue(t.target, t.unit)}
+                      <Pencil size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full h-1.5 bg-bg-primary rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      status === 'green' ? 'bg-success' : status === 'yellow' ? 'bg-warm-gold' : 'bg-danger'
+                    }`}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[10px] text-text-secondary">{progress.toFixed(0)}%</span>
+                  <span className={`text-[10px] font-medium ${
+                    status === 'green' ? 'text-success' : status === 'yellow' ? 'text-warm-gold' : 'text-danger'
+                  }`}>
+                    {status === 'green' ? 'On Track' : status === 'yellow' ? 'At Risk' : 'Behind'}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center justify-between mt-1.5">
-                <span className="text-[10px] text-text-tertiary">{progress.toFixed(0)}% of target</span>
-                <span className={`text-[10px] font-medium ${
-                  status === 'green' ? 'text-success' : status === 'yellow' ? 'text-warm-gold' : 'text-danger'
-                }`}>
-                  {status === 'green' ? 'On Track' : status === 'yellow' ? 'At Risk' : 'Behind'}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Trend Charts */}
@@ -79,10 +141,10 @@ export default function TargetsPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue: Actual vs Target</h3>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={targetTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-              <XAxis dataKey="month" tick={{ fill: '#64748B', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
-              <Tooltip contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
+              <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="revenue" name="Actual Revenue" stroke="#34D399" strokeWidth={2} dot={{ fill: '#34D399', r: 3 }} />
               <Line type="monotone" dataKey="target" name="Target" stroke="#64748B" strokeWidth={2} strokeDasharray="5 5" dot={false} />
@@ -94,10 +156,10 @@ export default function TargetsPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">CM3: Actual vs Target</h3>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={targetTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-              <XAxis dataKey="month" tick={{ fill: '#64748B', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
-              <Tooltip contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
+              <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
+              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="cm3" name="Actual CM3" stroke="#A855F7" strokeWidth={2} dot={{ fill: '#A855F7', r: 3 }} />
               <Line type="monotone" dataKey="cm3Target" name="Target" stroke="#64748B" strokeWidth={2} strokeDasharray="5 5" dot={false} />
@@ -106,13 +168,13 @@ export default function TargetsPage() {
         </div>
       </div>
 
-      {/* Monthly Target Entry */}
+      {/* Gap Analysis Table */}
       <div className="bg-bg-surface border border-border rounded-lg p-5">
-        <h3 className="text-sm font-medium text-text-primary mb-4">Monthly Targets <InfoTooltip metric="Target Pace" /></h3>
+        <h3 className="text-sm font-medium text-text-primary mb-4">Gap Analysis <InfoTooltip metric="Target Pace" /></h3>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-border text-text-tertiary uppercase">
+              <tr className="border-b border-border text-text-secondary uppercase">
                 <th className="text-left py-2 px-3 font-medium">Metric</th>
                 <th className="text-right py-2 px-3 font-medium">Target</th>
                 <th className="text-right py-2 px-3 font-medium">Actual</th>
@@ -123,7 +185,7 @@ export default function TargetsPage() {
             </thead>
             <tbody>
               {targets.map((t) => {
-                const isInverse = 'inverse' in t && t.inverse;
+                const isInverse = !!t.inverse;
                 const gap = t.target - t.actual;
                 const status = getStatus(t.actual, t.target, isInverse);
                 const progress = isInverse

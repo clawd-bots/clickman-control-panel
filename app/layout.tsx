@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Sidebar from '@/components/layout/Sidebar';
 import TopBar from '@/components/layout/TopBar';
+import ReportToAlfred from '@/components/ui/ReportToAlfred';
 
 export const metadata: Metadata = {
   title: 'Click-Man Control Panel | &you',
@@ -14,13 +15,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased">
         <div className="flex min-h-screen">
           <Sidebar />
-          <div className="flex-1 flex flex-col min-w-0">
+          <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
             <TopBar />
             <main className="flex-1 p-6 overflow-auto">
               {children}
             </main>
           </div>
         </div>
+        <ReportToAlfred />
       </body>
     </html>
   );

@@ -4,11 +4,10 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 import ExportButton from '@/components/ui/ExportButton';
 import { cohortRetention, clvExtension, productComparison } from '@/lib/sample-data';
 import { getHeatmapClass } from '@/lib/utils';
+import { Sparkles } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
-
-const COLORS = ['#334FB4', '#4A6BD6', '#E8C872', '#34D399'];
 
 export default function CohortsPage() {
   const [activeTab, setActiveTab] = useState<'analysis' | 'comparison'>('analysis');
@@ -17,7 +16,6 @@ export default function CohortsPage() {
   const [heatmap, setHeatmap] = useState(true);
   const [mode, setMode] = useState<'incremental' | 'accumulative'>('incremental');
 
-  // Find max retention value for heatmap
   const maxRetention = Math.max(...cohortRetention.flatMap(c => c.periods.filter(p => p > 0 && p < 100)));
 
   return (
@@ -25,10 +23,10 @@ export default function CohortsPage() {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Cohort Analysis & Retention</h2>
         <div className="flex gap-1">
-          <button onClick={() => setActiveTab('analysis')} className={`px-3 py-1.5 rounded-md text-xs font-medium ${activeTab === 'analysis' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-tertiary hover:text-text-secondary'}`}>
+          <button onClick={() => setActiveTab('analysis')} className={`px-3 py-1.5 rounded-md text-xs font-medium ${activeTab === 'analysis' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>
             Cohort Analysis
           </button>
-          <button onClick={() => setActiveTab('comparison')} className={`px-3 py-1.5 rounded-md text-xs font-medium ${activeTab === 'comparison' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-tertiary hover:text-text-secondary'}`}>
+          <button onClick={() => setActiveTab('comparison')} className={`px-3 py-1.5 rounded-md text-xs font-medium ${activeTab === 'comparison' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>
             Cohort Comparison
           </button>
         </div>
@@ -39,23 +37,23 @@ export default function CohortsPage() {
           {/* Controls */}
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-tertiary">Metric:</span>
+              <span className="text-xs text-text-secondary font-medium">Metric:</span>
               {['Net Revenue', 'CM2', 'Orders'].map(m => (
-                <button key={m} onClick={() => setMetric(m)} className={`px-2.5 py-1 rounded-md text-xs ${metric === m ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-tertiary hover:text-text-secondary'}`}>{m}</button>
+                <button key={m} onClick={() => setMetric(m)} className={`px-2.5 py-1 rounded-md text-xs ${metric === m ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>{m}</button>
               ))}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-tertiary">Mode:</span>
-              <button onClick={() => setMode('incremental')} className={`px-2.5 py-1 rounded-md text-xs ${mode === 'incremental' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-tertiary'}`}>Incremental</button>
-              <button onClick={() => setMode('accumulative')} className={`px-2.5 py-1 rounded-md text-xs ${mode === 'accumulative' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-tertiary'}`}>Accumulative</button>
+              <span className="text-xs text-text-secondary font-medium">Mode:</span>
+              <button onClick={() => setMode('incremental')} className={`px-2.5 py-1 rounded-md text-xs ${mode === 'incremental' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary'}`}>Incremental</button>
+              <button onClick={() => setMode('accumulative')} className={`px-2.5 py-1 rounded-md text-xs ${mode === 'accumulative' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary'}`}>Accumulative</button>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-tertiary">Format:</span>
-              <button onClick={() => setFormat('%')} className={`px-2.5 py-1 rounded-md text-xs ${format === '%' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-tertiary'}`}>%</button>
-              <button onClick={() => setFormat('#')} className={`px-2.5 py-1 rounded-md text-xs ${format === '#' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-tertiary'}`}>#</button>
+              <span className="text-xs text-text-secondary font-medium">Format:</span>
+              <button onClick={() => setFormat('%')} className={`px-2.5 py-1 rounded-md text-xs ${format === '%' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary'}`}>%</button>
+              <button onClick={() => setFormat('#')} className={`px-2.5 py-1 rounded-md text-xs ${format === '#' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary'}`}>#</button>
             </div>
             <div className="flex items-center gap-2">
-              <label className="text-xs text-text-tertiary flex items-center gap-1.5 cursor-pointer">
+              <label className="text-xs text-text-secondary flex items-center gap-1.5 cursor-pointer">
                 <input type="checkbox" checked={heatmap} onChange={() => setHeatmap(!heatmap)} className="rounded" />
                 Heatmap
               </label>
@@ -71,7 +69,7 @@ export default function CohortsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-border text-text-tertiary uppercase">
+                  <tr className="border-b border-border text-text-secondary uppercase">
                     <th className="text-left py-2 px-2 font-medium">Cohort</th>
                     <th className="text-right py-2 px-2 font-medium">New Cust.</th>
                     <th className="text-right py-2 px-2 font-medium">CAC <InfoTooltip metric="nCAC" /></th>
@@ -119,6 +117,76 @@ export default function CohortsPage() {
               </table>
             </div>
           </div>
+
+          {/* Comprehensive AI Analysis */}
+          <div className="bg-bg-surface border border-border rounded-lg p-5">
+            <div className="flex items-center gap-2 mb-5">
+              <Sparkles size={18} className="text-warm-gold" />
+              <h3 className="text-sm font-semibold text-text-primary">Cohort Intelligence — AI Analysis</h3>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              {/* Spending Recommendations */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-success uppercase tracking-wide">💰 Spending Recommendations</h4>
+                <div className="space-y-2 text-sm text-text-secondary leading-relaxed">
+                  <p>• <strong className="text-text-primary">Scale Meta spend +15%:</strong> Oct–Dec cohorts show consistently improving M1 retention (28.5% → 32.8%), suggesting recent targeting improvements are working.</p>
+                  <p>• <strong className="text-text-primary">Maintain Google Brand:</strong> Lowest CAC channel with best LTV. Max out impression share before expanding elsewhere.</p>
+                  <p>• <strong className="text-text-primary">Cap TikTok at current levels:</strong> March cohort has lowest first-order AOV (₱1,850 isn&apos;t bad but TikTok LTV:CAC needs monitoring before scaling).</p>
+                </div>
+              </div>
+
+              {/* Caution Areas */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-danger uppercase tracking-wide">⚠️ Caution Areas</h4>
+                <div className="space-y-2 text-sm text-text-secondary leading-relaxed">
+                  <p>• <strong className="text-text-primary">Jan 2026 cohort dipped:</strong> M1 retention dropped to 29.8% from Dec&apos;s 32.8%. Could be post-holiday buyer quality or seasonal effects — monitor closely.</p>
+                  <p>• <strong className="text-text-primary">CAC volatility:</strong> Range of ₱770–₱820 across cohorts. Jan spike to ₱800 coincides with competitive Q1 ad costs.</p>
+                  <p>• <strong className="text-text-primary">Late-cohort retention unknown:</strong> Feb and Mar cohorts don&apos;t have enough maturity data yet. Don&apos;t extrapolate from M0–M1 alone.</p>
+                </div>
+              </div>
+
+              {/* Channel Breakdown */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-brand-blue-light uppercase tracking-wide">📊 Channel Breakdown</h4>
+                <div className="space-y-2 text-sm text-text-secondary leading-relaxed">
+                  <p>• <strong className="text-text-primary">Meta customers:</strong> 30-day repeat rate of 26.2%, 90-day of 48.5%. Strong mid-funnel but acquisition CPAs trending up 12% MoM.</p>
+                  <p>• <strong className="text-text-primary">Google customers:</strong> Highest 30-day repeat at 32.1%. Brand search buyers are highest quality — they already know you.</p>
+                  <p>• <strong className="text-text-primary">TikTok customers:</strong> Lowest 30-day repeat (19.8%) but youngest cohorts. TikTok attracts first-time wellness buyers who need more nurturing.</p>
+                </div>
+              </div>
+
+              {/* Product Impact */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-warm-gold uppercase tracking-wide">🛒 Product Impact</h4>
+                <div className="space-y-2 text-sm text-text-secondary leading-relaxed">
+                  <p>• <strong className="text-text-primary">GLP-1 is the retention engine:</strong> 51.8% 90-day repeat rate and 3.1 avg orders. Its recurring nature (monthly refills) makes it the ideal subscription candidate.</p>
+                  <p>• <strong className="text-text-primary">Hair Regrowth cross-sell opportunity:</strong> 45.2% 90-day repeat but only 2.8 avg orders. Product education + refill reminders could push this higher.</p>
+                  <p>• <strong className="text-text-primary">Sleep &amp; Stress underperforms:</strong> Only 31.5% 90-day retention with 1.9 avg orders. Consider repositioning as an add-on rather than a lead product.</p>
+                </div>
+              </div>
+
+              {/* AOV Analysis */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-purple-400 uppercase tracking-wide">💵 AOV Analysis</h4>
+                <div className="space-y-2 text-sm text-text-secondary leading-relaxed">
+                  <p>• <strong className="text-text-primary">First-order AOV trending up:</strong> ₱1,580 (Sep) → ₱1,850 (Mar) = +17% improvement. Better targeting or product mix shift toward GLP-1.</p>
+                  <p>• <strong className="text-text-primary">Repeat AOV 59% higher:</strong> RC AOV of ₱2,688 vs NC AOV of ₱1,694. Repeat customers trade up to larger sizes and bundles.</p>
+                  <p>• <strong className="text-text-primary">Bundle opportunity:</strong> Products with highest lag-to-second-order (Skin Care: 52d, Sleep: 58d) may benefit from first-order bundle incentives.</p>
+                </div>
+              </div>
+
+              {/* Key Outcome */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-warm-gold uppercase tracking-wide">🎯 Key Outcome</h4>
+                <div className="bg-bg-elevated rounded-lg p-4">
+                  <p className="text-sm text-text-primary leading-relaxed font-medium">
+                    Cohort quality is improving: newer cohorts have higher first-order AOV, better M1 retention, and lower CAC. The business is becoming more efficient at acquiring better customers. Priority action: launch a subscription option for GLP-1 (highest repeat rate product) and send targeted re-engagement to the Nov cohort (highest 30d repeat potential at 31.5%).
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </>
       )}
 
@@ -129,15 +197,16 @@ export default function CohortsPage() {
             <h3 className="text-sm font-medium text-text-secondary mb-4">Customer Lifetime Value Extension <InfoTooltip metric="CLV" /></h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={clvExtension} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-                <XAxis type="number" tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
+                <XAxis type="number" tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
                 <YAxis dataKey="product" type="category" tick={{ fill: '#94A3B8', fontSize: 10 }} width={120} />
-                <Tooltip contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }} // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(v: any) => `₱${Number(v).toLocaleString()}`} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="firstOrder" name="First Order" stackId="a" fill="#334FB4" />
                 <Bar dataKey="clr90" name="90d CLR" stackId="a" fill="#4A6BD6" />
-                <Bar dataKey="clr365" name="365d CLR" stackId="a" fill="#E8C872" />
+                <Bar dataKey="clr365" name="365d CLR" stackId="a" fill="#EDBF63" />
                 <Bar dataKey="beyond365" name=">365d" stackId="a" fill="#34D399" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -152,7 +221,7 @@ export default function CohortsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="border-b border-border text-text-tertiary uppercase">
+                  <tr className="border-b border-border text-text-secondary uppercase">
                     <th className="text-left py-2 px-2 font-medium">Product</th>
                     <th className="text-right py-2 px-2 font-medium">Cust.</th>
                     <th className="text-right py-2 px-2 font-medium">Days</th>
@@ -174,7 +243,7 @@ export default function CohortsPage() {
                       <tr key={row.product} className="border-b border-border/30 hover:bg-bg-elevated/50">
                         <td className="py-2.5 px-2 font-medium text-text-primary">{row.product}</td>
                         <td className="py-2.5 px-2 text-right text-text-secondary">{row.customers.toLocaleString()}</td>
-                        <td className="py-2.5 px-2 text-right text-text-tertiary">{row.daysSinceFirst}</td>
+                        <td className="py-2.5 px-2 text-right text-text-secondary">{row.daysSinceFirst}</td>
                         <td className="py-2.5 px-2 text-right text-text-secondary">{row.lag2nd}d</td>
                         <td className="py-2.5 px-2 text-right text-text-secondary">{row.lag3rd}d</td>
                         <td className="py-2.5 px-2 text-right text-text-secondary">{row.lag4th}d</td>

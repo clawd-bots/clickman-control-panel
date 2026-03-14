@@ -43,7 +43,7 @@ export default function KPICard({ label, value, change, sparkline }: KPICardProp
         }`}>
           {isPositive ? '↑' : '↓'} {Math.abs(change).toFixed(1)}%
         </span>
-        <span className="text-xs text-text-tertiary">vs prior period</span>
+        <span className="text-xs text-text-secondary">vs prior period</span>
       </div>
     </div>
   );

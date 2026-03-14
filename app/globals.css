@@ -1,23 +1,26 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-bg-primary: #0D0F17;
-  --color-bg-surface: #161927;
-  --color-bg-elevated: #1E2235;
+  --color-bg-primary: #101312;
+  --color-bg-surface: #1A1D1B;
+  --color-bg-elevated: #232724;
   --color-brand-blue: #334FB4;
   --color-brand-blue-light: #4A6BD6;
-  --color-warm-gold: #E8C872;
+  --color-warm-gold: #EDBF63;
+  --color-warm-gold-light: #FFDF85;
+  --color-warm-gold-dark: #C69346;
+  --color-warm-cream: #F0EDE3;
   --color-success: #34D399;
   --color-danger: #EF4444;
   --color-text-primary: #F1F5F9;
   --color-text-secondary: #94A3B8;
   --color-text-tertiary: #64748B;
-  --color-border: #1E293B;
+  --color-border: #2A2E2B;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #1E293B #0D0F17;
+  scrollbar-color: #2A2E2B #101312;
 }
 
 body {
@@ -32,8 +35,8 @@ body {
 .heatmap-2 { background: rgba(51, 79, 180, 0.25); }
 .heatmap-3 { background: rgba(51, 79, 180, 0.40); }
 .heatmap-4 { background: rgba(51, 79, 180, 0.55); }
-.heatmap-5 { background: rgba(232, 200, 114, 0.30); }
-.heatmap-6 { background: rgba(232, 200, 114, 0.50); }
+.heatmap-5 { background: rgba(237, 191, 99, 0.30); }
+.heatmap-6 { background: rgba(237, 191, 99, 0.50); }
 .heatmap-7 { background: rgba(52, 211, 153, 0.30); }
 .heatmap-8 { background: rgba(52, 211, 153, 0.50); }
 .heatmap-9 { background: rgba(52, 211, 153, 0.70); }

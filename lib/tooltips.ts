@@ -17,6 +17,7 @@ export const tooltips: Record<string, string> = {
 
   // P&L
   'GMV': 'Gross Merchandise Value — the total value of all items sold before any deductions. The "sticker price" total.',
+  'Gross Revenue': 'Revenue after price reductions and discounts but before returns and taxes. Closer to what was actually transacted.',
   'CM1': 'Contribution Margin 1 = Net Revenue − COGS. Profit after product costs but before logistics and marketing.',
   'CM2': 'Contribution Margin 2 = CM1 − Logistics − Transaction Costs. Profit after fulfillment but before marketing.',
   'CM3': 'Contribution Margin 3 = CM2 − Marketing Costs. True profit from operations after all variable costs.',
@@ -31,6 +32,10 @@ export const tooltips: Record<string, string> = {
   'Price Reductions': 'Revenue lost from sale prices vs. original retail price. Tracks markdown impact.',
   'Discount Codes': 'Revenue lost from promo codes and vouchers applied at checkout.',
   'Returns': 'Revenue reversed from returned or refunded orders. Track return rate to identify product issues.',
+  'Shipping Revenue': 'Revenue collected from shipping charges added to orders.',
+  'Gross Orders': 'Total number of orders before cancellations and returns.',
+  'Net AOV': 'Average Order Value after all deductions (returns, taxes). The real average revenue per fulfilled order.',
+  'Taxes': 'Tax obligations deducted from gross revenue. Includes VAT and other applicable taxes.',
 
   // Cash Flow
   'Peak Deficit': 'The maximum negative cash position during the projection period. This is how much working capital you need.',
@@ -39,6 +44,11 @@ export const tooltips: Record<string, string> = {
   'Gross Margin %': 'Percentage of revenue retained after COGS. For AndYou, this should be 65-75%.',
   'CPA Escalation': 'Expected monthly increase in Cost Per Acquisition as you scale. Accounts for audience saturation.',
   'Untracked Lift': 'Additional conversions driven by marketing but not attributed by tracking. Usually 10-30% for DTC brands.',
+  'Untracked Lift %': 'Additional conversions driven by marketing but not attributed by tracking. Usually 10-30% for DTC brands.',
+  'Monthly Growth %': 'Expected month-over-month growth rate in customer acquisition. Compounds monthly.',
+  'M1 Spend': 'Month 1 acquisition spend — the starting point for projected marketing investment.',
+  'Subscription Attach Rate': 'Percentage of new customers who subscribe to a recurring plan vs. one-time purchase.',
+  'CPA': 'Cost Per Acquisition — how much it costs to acquire one new customer.',
 
   // Attribution
   'Post-Purchase Survey': 'Self-reported attribution from "How did you hear about us?" surveys. Best for understanding awareness channels like TikTok and word-of-mouth.',
@@ -47,6 +57,12 @@ export const tooltips: Record<string, string> = {
   'MTA': 'Multi-Touch Attribution — assigns credit to touchpoints in the customer journey using tracking data. Good for ad-level optimization.',
   'Platform Reporting': 'Native reporting from Meta, Google, TikTok dashboards. Often inflated due to overlapping attribution windows.',
   'CAPI': 'Conversions API — server-side event tracking that bypasses browser limitations and ad blockers.',
+  'Meta Pixel': 'Client-side tracking pixel that fires events in the browser when users interact with your site after seeing Meta ads.',
+  'Meta CAPI': 'Server-side Conversions API for Meta — sends events directly from your server, bypassing ad blockers for better match rates.',
+  'Google Ads Tag': 'Google\'s conversion tracking tag that measures actions users take after clicking or viewing your Google ads.',
+  'TikTok Pixel': 'TikTok\'s tracking pixel for measuring conversions from TikTok ad campaigns.',
+  'GA4': 'Google Analytics 4 — Google\'s current analytics platform for measuring website and app activity.',
+  'Server-side GTM': 'Server-side Google Tag Manager — processes tracking events on your server instead of the user\'s browser for better reliability.',
 
   // Creative
   'Ad Churn': 'Rate at which ad creatives lose effectiveness over time. High churn means you need more frequent creative refreshes.',
@@ -68,4 +84,13 @@ export const tooltips: Record<string, string> = {
   // Targets
   'aMER': 'Adjusted MER — MER calculated with estimated untracked conversions included. More realistic efficiency view.',
   'Target Pace': 'Current run rate vs. monthly target. Green = on track, Yellow = at risk, Red = behind.',
+  'Repeat Rate (30d)': 'Percentage of customers who make a repeat purchase within 30 days of their first order.',
+
+  // Creative tab-specific
+  'Performance': 'Overview of all active ad creatives with key metrics: spend, CTR, CPA, ROAS, and conversion status.',
+  'Campaign Spend': 'Budget allocation and spend pacing across campaigns. Tracks under/over-spending vs. daily budget.',
+  'Y/Y Comp': 'Year-over-year comparison of creative performance. Identifies seasonal trends and long-term creative health.',
+  'Demographics': 'Audience demographic breakdown by age, gender, and location. Shows which segments convert best.',
+  'Top Creatives': 'Ranked list of your best-performing ad creatives by ROAS and conversion volume.',
+  'Creative Launches': 'Timeline of new creative launches and their initial performance signals.',
 };

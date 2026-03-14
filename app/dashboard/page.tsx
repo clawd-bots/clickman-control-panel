@@ -10,7 +10,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 
-const COLORS = ['#334FB4', '#E8C872', '#34D399', '#EF4444', '#4A6BD6', '#94A3B8'];
+const COLORS = ['#334FB4', '#EDBF63', '#34D399', '#EF4444', '#4A6BD6', '#94A3B8'];
 
 function pctChange(curr: number, prev: number) {
   return ((curr - prev) / prev) * 100;
@@ -19,7 +19,10 @@ function pctChange(curr: number, prev: number) {
 export default function DashboardPage() {
   return (
     <div className="space-y-6 max-w-[1400px]">
-      <h2 className="text-lg font-semibold">Daily Overview</h2>
+      <div>
+        <h2 className="text-lg font-semibold">Daily Overview</h2>
+        <p className="text-sm text-text-secondary mt-0.5">What&apos;s happening right now — actuals, trends, and channel performance.</p>
+      </div>
 
       {/* KPI Cards Row 1 */}
       <div className="grid grid-cols-4 gap-4">
@@ -43,13 +46,13 @@ export default function DashboardPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue & Marketing Costs</h3>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={dailyMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-              <XAxis dataKey="date" tick={{ fill: '#64748B', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
-              <Tooltip contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
+              <XAxis dataKey="date" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
+              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="revenue" name="Net Revenue" stroke="#34D399" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="spend" name="Marketing Costs" stroke="#E8C872" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="spend" name="Marketing Costs" stroke="#EDBF63" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -58,13 +61,13 @@ export default function DashboardPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">Net Orders & New Customers</h3>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={dailyMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-              <XAxis dataKey="date" tick={{ fill: '#64748B', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#64748B', fontSize: 11 }} />
-              <Tooltip contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
+              <XAxis dataKey="date" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="orders" name="Orders" stroke="#4A6BD6" strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="newCustomers" name="New Customers" stroke="#E8C872" strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="newCustomers" name="New Customers" stroke="#EDBF63" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -97,10 +100,10 @@ export default function DashboardPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">Marketing Metrics Trend</h3>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={dailyMetrics}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-              <XAxis dataKey="date" tick={{ fill: '#64748B', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#64748B', fontSize: 11 }} />
-              <Tooltip contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
+              <XAxis dataKey="date" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} />
+              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
               <Bar dataKey="sessions" name="Sessions" fill="#334FB4" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -114,7 +117,7 @@ export default function DashboardPage() {
             <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
             <div className="flex gap-3 mt-2">
               {['Data Driven', 'Order Date', 'Validated'].map((tab, i) => (
-                <button key={tab} className={`text-xs px-3 py-1 rounded-md ${i === 0 ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-tertiary hover:text-text-secondary'}`}>
+                <button key={tab} className={`text-xs px-3 py-1 rounded-md ${i === 0 ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>
                   {tab}
                 </button>
               ))}
@@ -125,7 +128,7 @@ export default function DashboardPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-xs text-text-tertiary uppercase">
+              <tr className="border-b border-border text-xs text-text-secondary uppercase">
                 <th className="text-left py-3 px-3 font-medium">Channel</th>
                 <th className="text-right py-3 px-3 font-medium">Costs</th>
                 <th className="text-right py-3 px-3 font-medium">Net Revenue</th>
@@ -164,10 +167,10 @@ export default function DashboardPage() {
           <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue Composition (NC vs RC)</h3>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={revenueInsights.monthly}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E293B" />
-              <XAxis dataKey="month" tick={{ fill: '#64748B', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#64748B', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
-              <Tooltip contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#2A2E2B" />
+              <XAxis dataKey="month" tick={{ fill: '#94A3B8', fontSize: 11 }} />
+              <YAxis tick={{ fill: '#94A3B8', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+              <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Bar dataKey="nc" name="New Customer Rev" stackId="a" fill="#4A6BD6" radius={[0, 0, 0, 0]} />
               <Bar dataKey="rc" name="Repeat Customer Rev" stackId="a" fill="#34D399" radius={[2, 2, 0, 0]} />
@@ -185,7 +188,7 @@ export default function DashboardPage() {
               { label: 'RC AOV', value: formatCurrency(revenueInsights.rcAOV), metric: 'RC AOV' },
             ].map((item) => (
               <div key={item.label} className="bg-bg-elevated rounded-md p-3">
-                <div className="flex items-center text-xs text-text-tertiary mb-1">
+                <div className="flex items-center text-xs text-text-secondary mb-1">
                   {item.label} <InfoTooltip metric={item.metric} />
                 </div>
                 <div className="text-lg font-bold text-text-primary">{item.value}</div>
@@ -202,7 +205,7 @@ export default function DashboardPage() {
                   <Cell fill="#4A6BD6" />
                   <Cell fill="#34D399" />
                 </Pie>
-                <Tooltip contentStyle={{ background: '#161927', border: '1px solid #1E293B', borderRadius: 8, fontSize: 12 }} />
+                <Tooltip contentStyle={{ background: '#1A1D1B', border: '1px solid #2A2E2B', borderRadius: 8, fontSize: 12 }} />
               </PieChart>
             </ResponsiveContainer>
             <div className="text-xs text-text-secondary space-y-1">
@@ -222,7 +225,7 @@ export default function DashboardPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border text-xs text-text-tertiary uppercase">
+              <tr className="border-b border-border text-xs text-text-secondary uppercase">
                 <th className="text-left py-3 px-3 font-medium">Product</th>
                 <th className="text-right py-3 px-3 font-medium">Net Revenue</th>
                 <th className="text-right py-3 px-3 font-medium">Units Sold</th>
