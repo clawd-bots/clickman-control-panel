@@ -25,7 +25,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards Row 1 */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard label="Net Revenue" value={formatCurrency(kpiCards.netRevenue.value)} change={pctChange(kpiCards.netRevenue.value, kpiCards.netRevenue.prev)} sparkline={kpiCards.netRevenue.sparkline} />
         <KPICard label="Net Orders" value={formatNumber(kpiCards.netOrders.value)} change={pctChange(kpiCards.netOrders.value, kpiCards.netOrders.prev)} sparkline={kpiCards.netOrders.sparkline} />
         <KPICard label="Marketing Costs" value={formatCurrency(kpiCards.marketingCosts.value)} change={pctChange(kpiCards.marketingCosts.value, kpiCards.marketingCosts.prev)} sparkline={kpiCards.marketingCosts.sparkline} />
@@ -33,7 +33,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards Row 2 */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard label="New Customers" value={formatNumber(kpiCards.newCustomers.value)} change={pctChange(kpiCards.newCustomers.value, kpiCards.newCustomers.prev)} sparkline={kpiCards.newCustomers.sparkline} />
         <KPICard label="nCAC" value={formatCurrency(kpiCards.ncac.value)} change={pctChange(kpiCards.ncac.value, kpiCards.ncac.prev)} sparkline={kpiCards.ncac.sparkline} />
         <KPICard label="nMER" value={`${kpiCards.nmer.value}x`} change={pctChange(kpiCards.nmer.value, kpiCards.nmer.prev)} sparkline={kpiCards.nmer.sparkline} />
@@ -41,7 +41,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Revenue & Marketing Chart */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-bg-surface border border-border rounded-lg p-5">
           <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue & Marketing Costs</h3>
           <ResponsiveContainer width="100%" height={260}>
@@ -74,7 +74,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Marketing Insights */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-bg-surface border border-border rounded-lg p-5 space-y-4">
           <h3 className="text-sm font-medium text-text-secondary">Marketing Insights</h3>
           {[
@@ -162,7 +162,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Revenue Insights */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-bg-surface border border-border rounded-lg p-5">
           <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue Composition (NC vs RC)</h3>
           <ResponsiveContainer width="100%" height={240}>
@@ -180,7 +180,7 @@ export default function DashboardPage() {
 
         <div className="bg-bg-surface border border-border rounded-lg p-5 space-y-4">
           <h3 className="text-sm font-medium text-text-secondary">Revenue Breakdown</h3>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { label: 'NC Revenue', value: formatCurrency(revenueInsights.ncRevenue), metric: 'NC Revenue' },
               { label: 'RC Revenue', value: formatCurrency(revenueInsights.rcRevenue), metric: 'RC Revenue' },

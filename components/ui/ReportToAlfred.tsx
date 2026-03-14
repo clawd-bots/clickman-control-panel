@@ -26,17 +26,18 @@ export default function ReportToAlfred() {
       {/* Fixed button */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 left-5 z-50 flex items-center gap-2 bg-warm-gold text-bg-primary px-4 py-2.5 rounded-full shadow-lg hover:bg-warm-gold-light transition-colors text-sm font-semibold"
+        className="fixed bottom-5 left-5 z-50 flex items-center gap-2 bg-warm-gold text-bg-primary px-3 py-2 md:px-4 md:py-2.5 rounded-full shadow-lg hover:bg-warm-gold-light transition-colors text-xs md:text-sm font-semibold"
         style={{ marginLeft: '0' }}
       >
         <MessageCircle size={16} />
-        Report to Alfred 🎩
+        <span className="hidden sm:inline">Report to Alfred 🎩</span>
+        <span className="sm:hidden">🎩</span>
       </button>
 
       {/* Modal overlay */}
       {open && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-bg-surface border border-border rounded-xl w-[420px] shadow-2xl">
+          <div className="bg-bg-surface border border-border rounded-xl w-[calc(100vw-2rem)] max-w-[420px] mx-4 shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-border">
               <h3 className="text-sm font-semibold text-text-primary">Report to Alfred 🎩</h3>
               <button onClick={() => setOpen(false)} className="text-text-tertiary hover:text-text-secondary">

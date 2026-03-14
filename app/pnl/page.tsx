@@ -65,7 +65,7 @@ export default function PnLPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         <KPICard label="Net Revenue" value={formatCurrency(pnlData.netRevenue.value)} change={9.5} sparkline={pnlTrend.map(t => t.netRevenue / 1000)} />
         <KPICard label="CM1" value={formatCurrency(pnlData.cm1.value)} change={8.2} sparkline={pnlTrend.map(t => t.cm1 / 1000)} />
         <KPICard label="CM2" value={formatCurrency(pnlData.cm2.value)} change={6.1} sparkline={pnlTrend.map(t => t.cm2 / 1000)} />

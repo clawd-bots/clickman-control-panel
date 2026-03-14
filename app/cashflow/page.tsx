@@ -34,7 +34,7 @@ export default function CashFlowPage() {
       {/* Input Panel */}
       <div className="bg-bg-surface border border-border rounded-lg p-5">
         <h3 className="text-sm font-medium text-text-secondary mb-4">Model Inputs</h3>
-        <div className="grid grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
             { label: 'AOV', key: 'aov' as const, prefix: '₱' },
             { label: 'CPA', key: 'cpa' as const, prefix: '₱' },
@@ -62,7 +62,7 @@ export default function CashFlowPage() {
         {/* Subscription Model Section */}
         <div className="mt-5 pt-4 border-t border-border">
           <h4 className="text-xs font-semibold text-text-primary mb-3 uppercase tracking-wide">Subscription Model (Hybrid)</h4>
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <div>
               <label className="block text-xs text-text-secondary mb-1.5">Attach Rate <InfoTooltip metric="Subscription Attach Rate" /></label>
               <div className="flex items-center bg-bg-elevated border border-border rounded-md">
@@ -115,7 +115,7 @@ export default function CashFlowPage() {
       </div>
 
       {/* 12-Month Outlook */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {[
           { label: 'Peak Deficit', value: '₱0', desc: 'No deficit projected', metric: 'Peak Deficit' },
           { label: 'Ending Position', value: '₱13.4M', desc: 'Cumulative cash at M12', metric: 'Peak Deficit' },
@@ -138,7 +138,7 @@ export default function CashFlowPage() {
           <ExportButton />
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs min-w-[800px]">
             <thead>
               <tr className="border-b border-border text-text-secondary uppercase">
                 <th className="text-left py-2 px-2 font-medium">Cohort</th>
@@ -172,7 +172,7 @@ export default function CashFlowPage() {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Revenue Composition — now with 3 streams */}
         <div className="bg-bg-surface border border-border rounded-lg p-5">
           <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue Composition</h3>
@@ -210,7 +210,7 @@ export default function CashFlowPage() {
       </div>
 
       {/* Sensitivity Analysis */}
-      <div className="grid grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {allSensitivityCards.map((card) => (
           <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4 min-w-0">
             <div className="text-xs font-medium text-warm-gold mb-2 truncate">{card.label}</div>
@@ -231,7 +231,7 @@ export default function CashFlowPage() {
           <ExportButton />
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-xs">
+          <table className="w-full text-xs min-w-[700px]">
             <thead>
               <tr className="border-b border-border text-text-secondary uppercase">
                 <th className="text-left py-2 px-2 font-medium">Month</th>

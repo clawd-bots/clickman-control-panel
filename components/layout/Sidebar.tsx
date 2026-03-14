@@ -12,9 +12,10 @@ import {
   Target,
   ChevronLeft,
   ChevronRight,
+  X,
 } from 'lucide-react';
-import { useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
+import { useSidebar } from '@/components/layout/SidebarContext';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -29,13 +30,18 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { theme } = useTheme();
-  const [collapsed, setCollapsed] = useState(false);
+  const { mobileOpen, setMobileOpen, collapsed, setCollapsed } = useSidebar();
 
-  return (
-    <aside className={`${collapsed ? 'w-16' : 'w-56'} shrink-0 h-screen sticky top-0 bg-bg-surface border-r border-border flex flex-col transition-all duration-200 transition-colors`}>
+  const handleNavClick = () => {
+    // Close mobile sidebar on nav click
+    setMobileOpen(false);
+  };
+
+  const sidebarContent = (
+    <>
       {/* Logo */}
       <div className="h-14 flex items-center px-4 border-b border-border">
-        <Link href="/dashboard" className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
+        <Link href="/dashboard" className={`flex items-center ${collapsed ? 'lg:justify-center lg:w-full' : ''}`} onClick={handleNavClick}>
           <Image
             src="/andyou-logo.png"
             alt="&you"
@@ -45,6 +51,13 @@ export default function Sidebar() {
             priority
           />
         </Link>
+        {/* Mobile close button */}
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="lg:hidden ml-auto p-1 text-text-tertiary hover:text-text-primary"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* Nav */}
@@ -55,6 +68,7 @@ export default function Sidebar() {
             <Link
               key={href}
               href={href}
+              onClick={handleNavClick}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                 active
                   ? 'bg-brand-blue/15 text-brand-blue-light'
@@ -63,19 +77,45 @@ export default function Sidebar() {
               title={collapsed ? label : undefined}
             >
               <Icon size={18} className="shrink-0" />
-              {!collapsed && <span>{label}</span>}
+              {/* On mobile overlay: always show label. On desktop: respect collapsed state */}
+              <span className={collapsed ? 'lg:hidden' : ''}>{label}</span>
             </Link>
           );
         })}
       </nav>
 
-      {/* Collapse toggle */}
+      {/* Collapse toggle — desktop only */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="h-10 flex items-center justify-center border-t border-border text-text-tertiary hover:text-text-secondary transition-colors"
+        className="hidden lg:flex h-10 items-center justify-center border-t border-border text-text-tertiary hover:text-text-secondary transition-colors"
       >
         {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
       </button>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile overlay sidebar */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setMobileOpen(false)}
+          />
+          {/* Slide-over panel */}
+          <aside className="absolute left-0 top-0 h-full w-64 bg-bg-surface border-r border-border flex flex-col transition-colors z-10">
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+
+      {/* Tablet: collapsed (icons only). Desktop: full or collapsed based on state */}
+      {/* Hidden on mobile (<1024px), shown on lg+ */}
+      <aside className={`hidden lg:flex ${collapsed ? 'w-16' : 'w-56'} shrink-0 h-screen sticky top-0 bg-bg-surface border-r border-border flex-col transition-all duration-200 transition-colors`}>
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

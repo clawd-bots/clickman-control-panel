@@ -121,7 +121,7 @@ export default function TargetsPage() {
           {/* Set Monthly Targets Section */}
           <div className="bg-bg-surface border border-border rounded-lg p-5">
             <h3 className="text-sm font-semibold text-text-primary mb-4">Monthly Targets — Click any target value to edit</h3>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {targets.map((t, idx) => {
                 const status = getStatus(t.actual, t.target, t.inverse);
                 const progress = t.inverse
@@ -191,7 +191,7 @@ export default function TargetsPage() {
           </div>
 
           {/* Trend Charts */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-bg-surface border border-border rounded-lg p-5">
               <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue: Actual vs Target</h3>
               <ResponsiveContainer width="100%" height={280}>
@@ -284,7 +284,7 @@ export default function TargetsPage() {
       {activeTab === 'final' && (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-bg-surface border border-danger/30 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-1">
                 <AlertTriangle size={14} className="text-danger" />

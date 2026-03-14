@@ -1,8 +1,9 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Calendar, ChevronDown, RefreshCw, User, Sun, Moon } from 'lucide-react';
+import { Calendar, ChevronDown, RefreshCw, User, Sun, Moon, Menu } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
+import { useSidebar } from '@/components/layout/SidebarContext';
 
 const datePresets = [
   { label: 'Today', value: 'today' },
@@ -34,12 +35,26 @@ function getDisplayDate(preset: string): string {
   }
 }
 
+function getShortDisplayDate(preset: string): string {
+  switch (preset) {
+    case 'today': return 'Mar 14';
+    case 'yesterday': return 'Mar 13';
+    case '7d': return '7 Days';
+    case '30d': return '30 Days';
+    case 'this-month': return 'This Mo.';
+    case 'last-month': return 'Last Mo.';
+    case 'this-quarter': return 'This Qtr';
+    default: return 'Custom';
+  }
+}
+
 // Pages where date picker should NOT show
 const hideDatePickerPages = ['/cashflow', '/cohorts'];
 
 export default function TopBar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
+  const { toggleMobile } = useSidebar();
   const [datePreset, setDatePreset] = useState('7d');
   const [comparison, setComparison] = useState('prev-period');
   const [showDateDropdown, setShowDateDropdown] = useState(false);
@@ -59,30 +74,38 @@ export default function TopBar() {
   }, []);
 
   return (
-    <header className="h-14 bg-bg-surface border-b border-border flex items-center px-6 sticky top-0 z-40 transition-colors">
-      {/* Left spacer */}
-      <div className="flex-1" />
+    <header className="h-14 bg-bg-surface border-b border-border flex items-center px-3 md:px-6 sticky top-0 z-40 transition-colors">
+      {/* Left — Hamburger (mobile) + spacer (desktop) */}
+      <div className="flex-1 flex items-center">
+        <button
+          onClick={toggleMobile}
+          className="lg:hidden p-2 -ml-1 rounded-md hover:bg-bg-elevated text-text-secondary hover:text-text-primary transition-colors"
+        >
+          <Menu size={20} />
+        </button>
+      </div>
 
       {/* Center — Title */}
       <div className="flex items-center justify-center">
-        <h1 className="text-base font-bold tracking-wide text-text-primary">
+        <h1 className="text-sm md:text-base font-bold tracking-wide text-text-primary truncate">
           <span className="text-warm-gold">Click-Man</span>{' '}
-          <span className="text-text-primary">Control Panel</span>
+          <span className="text-text-primary hidden sm:inline">Control Panel</span>
         </h1>
       </div>
 
       {/* Right — Date picker & controls */}
-      <div className="flex-1 flex items-center justify-end gap-2">
+      <div className="flex-1 flex items-center justify-end gap-1 md:gap-2">
         {showDatePicker && (
           <>
             {/* Date Range Picker */}
             <div ref={dateRef} className="relative">
               <button
                 onClick={() => { setShowDateDropdown(!showDateDropdown); setShowCompDropdown(false); }}
-                className="flex items-center gap-2 bg-bg-elevated border border-border rounded-md px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-text-tertiary transition-colors"
+                className="flex items-center gap-1 md:gap-2 bg-bg-elevated border border-border rounded-md px-2 md:px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-text-tertiary transition-colors"
               >
                 <Calendar size={13} />
-                <span>{getDisplayDate(datePreset)}</span>
+                <span className="hidden md:inline">{getDisplayDate(datePreset)}</span>
+                <span className="md:hidden">{getShortDisplayDate(datePreset)}</span>
                 <ChevronDown size={12} />
               </button>
               {showDateDropdown && (
@@ -104,8 +127,8 @@ export default function TopBar() {
               )}
             </div>
 
-            {/* Comparison Period */}
-            <div ref={compRef} className="relative">
+            {/* Comparison Period — hidden on small screens */}
+            <div ref={compRef} className="relative hidden sm:block">
               <button
                 onClick={() => { setShowCompDropdown(!showCompDropdown); setShowDateDropdown(false); }}
                 className="flex items-center gap-1.5 bg-bg-elevated border border-border rounded-md px-2.5 py-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors"
@@ -144,10 +167,10 @@ export default function TopBar() {
           {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
         </button>
 
-        <button className="p-2 rounded-md hover:bg-bg-elevated text-text-tertiary hover:text-text-secondary transition-colors">
+        <button className="hidden sm:block p-2 rounded-md hover:bg-bg-elevated text-text-tertiary hover:text-text-secondary transition-colors">
           <RefreshCw size={14} />
         </button>
-        <div className="w-8 h-8 rounded-full bg-brand-blue/20 flex items-center justify-center">
+        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-brand-blue/20 flex items-center justify-center">
           <User size={14} className="text-brand-blue-light" />
         </div>
       </div>

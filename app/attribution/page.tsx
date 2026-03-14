@@ -123,7 +123,7 @@ export default function AttributionPage() {
           <Sparkles size={16} className="text-warm-gold" />
           {activeInfo.label} — AI Insights
         </h3>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <div className="text-xs font-semibold text-success flex items-center gap-1.5">✅ What&apos;s Working</div>
             {insights.working.map((item, i) => (
@@ -157,7 +157,7 @@ export default function AttributionPage() {
           <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
             <Star size={16} className="text-warm-gold" /> MER / nCAC Overview
           </h3>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-bg-elevated rounded-md p-4">
               <div className="text-xs text-text-secondary flex items-center">MER <InfoTooltip metric="MER" /></div>
               <div className="text-2xl font-bold text-text-primary mt-1">3.67x</div>
@@ -187,7 +187,7 @@ export default function AttributionPage() {
           <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
             <GitBranch size={16} className="text-brand-blue-light" /> Channel Allocation — Survey Results
           </h3>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
@@ -277,7 +277,7 @@ export default function AttributionPage() {
           <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
             <Layers size={16} className="text-purple-400" /> Cohort-based LTV by Channel
           </h3>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { channel: 'Meta', ltvCac: 2.1, ltv: '₱6,580', cac: '₱3,133', payback: '4.2 months' },
               { channel: 'Google (Brand)', ltvCac: 3.8, ltv: '₱7,220', cac: '₱1,900', payback: '2.1 months' },

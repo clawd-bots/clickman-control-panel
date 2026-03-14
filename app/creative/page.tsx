@@ -206,7 +206,7 @@ export default function CreativePage() {
       )}
 
       {/* Summary KPIs */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Spend', value: formatCurrency(filtered.reduce((s, c) => s + c.spend, 0)) },
           { label: 'Total Conversions', value: filtered.reduce((s, c) => s + c.conversions, 0).toLocaleString() },

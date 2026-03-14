@@ -125,7 +125,7 @@ export default function CohortsPage() {
               <h3 className="text-sm font-semibold text-text-primary">Cohort Intelligence — AI Analysis</h3>
             </div>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Spending Recommendations */}
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold text-success uppercase tracking-wide">💰 Spending Recommendations</h4>
