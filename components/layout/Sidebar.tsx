@@ -35,10 +35,10 @@ export default function Sidebar() {
       <div className="h-14 flex items-center px-4 border-b border-border">
         <Link href="/dashboard" className={`flex items-center ${collapsed ? 'justify-center w-full' : ''}`}>
           <Image
-            src="/andyou-logo.jpg"
+            src="/andyou-logo.png"
             alt="&you"
-            width={collapsed ? 32 : 80}
-            height={collapsed ? 14 : 28}
+            width={collapsed ? 28 : 44}
+            height={collapsed ? 28 : 44}
             className="brightness-0 invert"
             priority
           />
