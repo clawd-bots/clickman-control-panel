@@ -65,8 +65,11 @@ export const tooltips: Record<string, string> = {
   'Server-side GTM': 'Server-side Google Tag Manager — processes tracking events on your server instead of the user\'s browser for better reliability.',
 
   // Creative
-  'Ad Churn': 'Rate at which ad creatives lose effectiveness over time. High churn means you need more frequent creative refreshes.',
-  'Account Control Chart': 'Scatter plot of CPA vs. Spend per ad. Identifies which ads are efficient at scale vs. small-budget flukes.',
+  'Ad Churn': 'Shows how your ad spend is distributed across creative age brackets. Dark = newest ads (last 7 days), lighter = older ads. A healthy account has a steady flow of new creative taking over spend. If 100% reliant on 180+ day old ads, you\'re fragile. If you never retest old winners, you\'re leaving money on the table.',
+  'Account Control Chart': 'Scatter plot of CPA vs. Spend per ad. Bottom-right = winners scaling efficiently. Top-right = "zombies" burning budget at high CPA. Bottom-left = promising tests. Top-left = underperformers still in learning. The horizontal line is your CPA target (₱787). The vertical line separates testing (<₱20K) from scaled ads.',
+  'Creative Churn Cohorts': 'Each color represents a cohort of creatives launched in the same month. Newer cohorts (darker) should be taking over spend from older ones. If old cohorts still dominate, creative fatigue is building and performance will decline. This is the most critical chart for forecasting.',
+  'Production Rate': 'Total bars = how many new ads you launched that month. Dark section = how many actually "hit" (scaled to >₱10K spend at profitable CPA). Your slugging rate is the % that hit. If you launch 50 ads and zero scale, you don\'t have a media buying problem — you have a creative strategy problem.',
+  'Demographics Analysis': 'Are you producing for the audience that is actually buying? If women 25-34 drive the bulk of conversions at the lowest CPA, but you keep producing content for other demographics, you\'re misallocating creative resources. Align your production queue with your paying demographic.',
   'Pareto': 'The 80/20 distribution of ad performance. Usually 20% of creatives drive 80% of results.',
   'Time to Purchase': 'Days between first ad click and purchase. Longer windows may indicate higher consideration products.',
 

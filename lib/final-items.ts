@@ -49,7 +49,7 @@ export const finalItems: FinalItem[] = [
     title: 'Triple Whale API Key',
     why: 'Feeds attribution data, MER, nCAC, channel metrics, and post-purchase survey responses into the Attribution Tree and Dashboard.',
     owner: 'jordan',
-    status: 'pending',
+    status: 'done',
     category: 'integration',
     pages: ['Dashboard', 'Attribution Tree'],
     actions: [
@@ -122,7 +122,7 @@ export const finalItems: FinalItem[] = [
     title: 'Google Ads API Access',
     why: 'Needed for spend, CPC, CTR, and conversion data in Creative & MTA and Attribution Tree.',
     owner: 'jordan',
-    status: 'pending',
+    status: 'done',
     category: 'integration',
     pages: ['Creative & MTA', 'Attribution Tree'],
     actions: [
@@ -173,11 +173,17 @@ export const finalItems: FinalItem[] = [
     pages: ['Creative & MTA'],
     actions: [
       {
-        label: 'Generate API credentials',
+        label: 'Create a Reddit "script" app',
         steps: [
-          'Go to reddit.com/prefs/apps → create a "script" app',
-          'Note the client ID and client secret',
-          'Send both + your Reddit Ads account ID to Alfred',
+          'Go to reddit.com/prefs/apps',
+          'Click "create another app" at the bottom',
+          'Select "script" as the app type',
+          'Name: alfred_clickman_control (or similar)',
+          'Description: clickman control panel for Alfred',
+          'Redirect URI: http://localhost:8080 (required field, but not used for script apps)',
+          'Click "create app"',
+          'Copy the client ID (shown under the app name) and the client secret',
+          'Send both + your Reddit Ads account ID to Alfred via WhatsApp',
         ],
       },
     ],
@@ -187,7 +193,7 @@ export const finalItems: FinalItem[] = [
     title: 'GA4 Access',
     why: 'Session data, traffic sources, and supporting attribution infrastructure.',
     owner: 'jordan',
-    status: 'pending',
+    status: 'done',
     category: 'integration',
     pages: ['Dashboard', 'Attribution Tree'],
     actions: [
@@ -211,19 +217,27 @@ export const finalItems: FinalItem[] = [
   },
   {
     id: 'fi-9',
-    title: 'Email & SMS Platform Access',
-    why: 'Attribution tree needs email and SMS channel performance for the ad-level optimization layer.',
+    title: 'Customer.io API Access',
+    why: 'Customer.io powers your email & SMS. Attribution tree needs this channel data for the full picture.',
     owner: 'jordan',
     status: 'pending',
     category: 'integration',
     pages: ['Attribution Tree'],
     actions: [
       {
-        label: 'Tell Alfred which platforms you use',
+        label: 'Option A: Generate an API key',
         steps: [
-          'Which email platform? (Klaviyo, Customer.io, Mailchimp, etc.)',
-          'Which SMS platform? (Postscript, Attentive, etc.)',
-          'Alfred will tell you exactly what access to grant based on your answer',
+          'Log in to Customer.io → Settings → API Credentials',
+          'Create a new Tracking API key or App API key with read-only scope',
+          'Send the Site ID + API key to Alfred via WhatsApp',
+        ],
+      },
+      {
+        label: 'Option B: Invite Alfred as a team member',
+        steps: [
+          'Go to Customer.io → Settings → Workspace → People',
+          'Invite alfred@mail.andyou.ph with Viewer/Read-only role',
+          'Alfred will pull the data from there',
         ],
       },
     ],

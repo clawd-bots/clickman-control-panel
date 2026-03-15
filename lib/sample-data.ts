@@ -198,6 +198,110 @@ export const creativePerformance = [
   { name: 'Semaglutide Explainer', platform: 'Meta', spend: 41500, impressions: 820000, clicks: 10660, ctr: 1.30, cpc: 3.89, conversions: 62, cpa: 669, roas: 2.99, status: 'Active' },
 ];
 
+// ─── Account Control Scatter Data ───
+export const accountControlData = [
+  // Scaling zone (high spend, low CPA) — green
+  { name: 'Hair Before/After Carousel', spend: 38100, cpa: 577, platform: 'Meta', zone: 'scaling' },
+  { name: 'Brand Search Exact', spend: 52100, cpa: 420, platform: 'Google', zone: 'scaling' },
+  { name: 'GLP-1 Testimonial V3', spend: 45200, cpa: 655, platform: 'Meta', zone: 'scaling' },
+  { name: 'Semaglutide Explainer', spend: 41500, cpa: 669, platform: 'Meta', zone: 'scaling' },
+  { name: 'Hair Regrowth Demo', spend: 22100, cpa: 614, platform: 'TikTok', zone: 'scaling' /* just above threshold but good CPA */ },
+  { name: 'Weight Loss Journey', spend: 28300, cpa: 690, platform: 'TikTok', zone: 'scaling' },
+  // Zombies (high spend, high CPA) — red
+  { name: 'Competitor Keywords', spend: 35200, cpa: 880, platform: 'Google', zone: 'zombie' },
+  { name: 'Generic Awareness V2', spend: 31500, cpa: 1120, platform: 'Meta', zone: 'zombie' },
+  { name: 'Broad Match Hair', spend: 28800, cpa: 950, platform: 'Google', zone: 'zombie' },
+  // Testing zone (low spend, mixed CPA) — blue
+  { name: 'New Hook Test A', spend: 5200, cpa: 520, platform: 'Meta', zone: 'testing' },
+  { name: 'New Hook Test B', spend: 4800, cpa: 780, platform: 'Meta', zone: 'testing' },
+  { name: 'Skincare UGC Draft', spend: 3100, cpa: 650, platform: 'TikTok', zone: 'testing' },
+  { name: 'Doc Authority V2', spend: 7500, cpa: 710, platform: 'Meta', zone: 'testing' },
+  { name: 'Reddit Test 1', spend: 2200, cpa: 920, platform: 'Reddit', zone: 'testing' },
+  { name: 'GLP-1 New Angle', spend: 6800, cpa: 590, platform: 'Meta', zone: 'testing' },
+  { name: 'TikTok Trend Hook', spend: 4500, cpa: 480, platform: 'TikTok', zone: 'testing' },
+  // Untapped winners (low spend, low CPA) — gold
+  { name: 'Sleep Aid Testimonial', spend: 3800, cpa: 410, platform: 'Meta', zone: 'untapped' },
+  { name: 'Quick Results Static', spend: 2900, cpa: 390, platform: 'Meta', zone: 'untapped' },
+  { name: 'Before/After Static', spend: 5100, cpa: 450, platform: 'Meta', zone: 'untapped' },
+  // High CPA testing — still learning
+  { name: 'Reddit Awareness', spend: 1800, cpa: 1350, platform: 'Reddit', zone: 'testing' },
+  { name: 'YouTube Pre-roll', spend: 8200, cpa: 1050, platform: 'Google', zone: 'testing' },
+  { name: 'Podcast Style Ad', spend: 2500, cpa: 1100, platform: 'Meta', zone: 'testing' },
+];
+
+// ─── Ad Churn / Retesting Control (Stacked by creative age) ───
+export const adChurnData = [
+  { month: 'Oct', d7: 18500, d14: 12200, d30: 22800, d90: 28500, d180: 15200, dOld: 8800 },
+  { month: 'Nov', d7: 22100, d14: 14800, d30: 19500, d90: 31200, d180: 12800, dOld: 11600 },
+  { month: 'Dec', d7: 19800, d14: 16200, d30: 24100, d90: 26800, d180: 18500, dOld: 9600 },
+  { month: 'Jan', d7: 25200, d14: 18500, d30: 21200, d90: 24500, d180: 14200, dOld: 12400 },
+  { month: 'Feb', d7: 28800, d14: 15800, d30: 26500, d90: 22100, d180: 16800, dOld: 8000 },
+  { month: 'Mar', d7: 31200, d14: 19200, d30: 23800, d90: 25500, d180: 11200, dOld: 7100 },
+];
+
+// ─── Creative Churn by Cohort (Stacked Area) ───
+export const creativeChurnCohorts = [
+  { week: 'W1 Oct', oct: 42000, nov: 0, dec: 0, jan: 0, feb: 0, mar: 0 },
+  { week: 'W2 Oct', oct: 48000, nov: 0, dec: 0, jan: 0, feb: 0, mar: 0 },
+  { week: 'W3 Oct', oct: 52000, nov: 0, dec: 0, jan: 0, feb: 0, mar: 0 },
+  { week: 'W4 Oct', oct: 55000, nov: 0, dec: 0, jan: 0, feb: 0, mar: 0 },
+  { week: 'W1 Nov', oct: 48000, nov: 18000, dec: 0, jan: 0, feb: 0, mar: 0 },
+  { week: 'W2 Nov', oct: 42000, nov: 28000, dec: 0, jan: 0, feb: 0, mar: 0 },
+  { week: 'W3 Nov', oct: 38000, nov: 35000, dec: 0, jan: 0, feb: 0, mar: 0 },
+  { week: 'W4 Nov', oct: 32000, nov: 41000, dec: 0, jan: 0, feb: 0, mar: 0 },
+  { week: 'W1 Dec', oct: 25000, nov: 38000, dec: 15000, jan: 0, feb: 0, mar: 0 },
+  { week: 'W2 Dec', oct: 20000, nov: 32000, dec: 28000, jan: 0, feb: 0, mar: 0 },
+  { week: 'W3 Dec', oct: 15000, nov: 25000, dec: 38000, jan: 0, feb: 0, mar: 0 },
+  { week: 'W4 Dec', oct: 10000, nov: 18000, dec: 45000, jan: 0, feb: 0, mar: 0 },
+  { week: 'W1 Jan', oct: 6000, nov: 12000, dec: 40000, jan: 16000, feb: 0, mar: 0 },
+  { week: 'W2 Jan', oct: 3000, nov: 8000, dec: 35000, jan: 28000, feb: 0, mar: 0 },
+  { week: 'W3 Jan', oct: 1000, nov: 5000, dec: 28000, jan: 38000, feb: 0, mar: 0 },
+  { week: 'W4 Jan', oct: 0, nov: 3000, dec: 22000, jan: 45000, feb: 0, mar: 0 },
+  { week: 'W1 Feb', oct: 0, nov: 1000, dec: 15000, jan: 40000, feb: 18000, mar: 0 },
+  { week: 'W2 Feb', oct: 0, nov: 0, dec: 10000, jan: 35000, feb: 30000, mar: 0 },
+  { week: 'W3 Feb', oct: 0, nov: 0, dec: 6000, jan: 28000, feb: 42000, mar: 0 },
+  { week: 'W4 Feb', oct: 0, nov: 0, dec: 3000, jan: 22000, feb: 48000, mar: 0 },
+  { week: 'W1 Mar', oct: 0, nov: 0, dec: 1000, jan: 15000, feb: 42000, mar: 20000 },
+  { week: 'W2 Mar', oct: 0, nov: 0, dec: 0, jan: 10000, feb: 38000, mar: 32000 },
+  { week: 'W3 Mar', oct: 0, nov: 0, dec: 0, jan: 6000, feb: 30000, mar: 45000 },
+  { week: 'W4 Mar', oct: 0, nov: 0, dec: 0, jan: 3000, feb: 25000, mar: 52000 },
+];
+
+// ─── Production & Slugging Rate ───
+export const productionSlugging = [
+  { month: 'Oct', launched: 12, hits: 3, hitRate: 25.0 },
+  { month: 'Nov', launched: 18, hits: 5, hitRate: 27.8 },
+  { month: 'Dec', launched: 15, hits: 4, hitRate: 26.7 },
+  { month: 'Jan', launched: 22, hits: 7, hitRate: 31.8 },
+  { month: 'Feb', launched: 25, hits: 6, hitRate: 24.0 },
+  { month: 'Mar', launched: 20, hits: 8, hitRate: 40.0 },
+];
+
+// ─── Demographics / Gender+Age Analysis ───
+export const demographicsAge = [
+  { group: '18-24', spend: 42000, conversions: 58, cpa: 724, roas: 2.45, pctSpend: 9.1 },
+  { group: '25-34', spend: 152000, conversions: 248, cpa: 613, roas: 3.52, pctSpend: 33.0 },
+  { group: '35-44', spend: 128000, conversions: 195, cpa: 656, roas: 3.28, pctSpend: 27.8 },
+  { group: '45-54', spend: 85000, conversions: 110, cpa: 773, roas: 2.89, pctSpend: 18.5 },
+  { group: '55-64', spend: 38000, conversions: 42, cpa: 905, roas: 2.12, pctSpend: 8.3 },
+  { group: '65+', spend: 15000, conversions: 12, cpa: 1250, roas: 1.45, pctSpend: 3.3 },
+];
+
+export const demographicsGender = [
+  { gender: 'Female', spend: 275000, conversions: 412, cpa: 668, roas: 3.35, pctConversions: 61.9 },
+  { gender: 'Male', spend: 168000, conversions: 235, cpa: 715, roas: 2.98, pctConversions: 35.3 },
+  { gender: 'Other', spend: 17000, conversions: 18, cpa: 944, roas: 2.15, pctConversions: 2.7 },
+];
+
+export const demographicsGenderAge = [
+  { week: 'W1 Feb', 'F 18-24': 3200, 'F 25-34': 12500, 'F 35-44': 10800, 'F 45-54': 7200, 'F 55+': 3800, 'M 18-24': 2100, 'M 25-34': 8500, 'M 35-44': 6200, 'M 45-54': 4100, 'M 55+': 2600 },
+  { week: 'W2 Feb', 'F 18-24': 3400, 'F 25-34': 13200, 'F 35-44': 11200, 'F 45-54': 7500, 'F 55+': 3600, 'M 18-24': 2300, 'M 25-34': 8800, 'M 35-44': 6500, 'M 45-54': 4300, 'M 55+': 2500 },
+  { week: 'W3 Feb', 'F 18-24': 3100, 'F 25-34': 13800, 'F 35-44': 11500, 'F 45-54': 7800, 'F 55+': 3400, 'M 18-24': 2000, 'M 25-34': 9200, 'M 35-44': 6800, 'M 45-54': 4500, 'M 55+': 2400 },
+  { week: 'W4 Feb', 'F 18-24': 3500, 'F 25-34': 14200, 'F 35-44': 12000, 'F 45-54': 8000, 'F 55+': 3500, 'M 18-24': 2400, 'M 25-34': 9500, 'M 35-44': 7000, 'M 45-54': 4600, 'M 55+': 2300 },
+  { week: 'W1 Mar', 'F 18-24': 3300, 'F 25-34': 14800, 'F 35-44': 12500, 'F 45-54': 8200, 'F 55+': 3200, 'M 18-24': 2200, 'M 25-34': 9800, 'M 35-44': 7200, 'M 45-54': 4800, 'M 55+': 2200 },
+  { week: 'W2 Mar', 'F 18-24': 3600, 'F 25-34': 15200, 'F 35-44': 12800, 'F 45-54': 8500, 'F 55+': 3100, 'M 18-24': 2500, 'M 25-34': 10200, 'M 35-44': 7500, 'M 45-54': 5000, 'M 55+': 2100 },
+];
+
 export const creativeAISuggestions = [
   'Hair Before/After Carousel has the best ROAS at 3.47x with a low CPA of ₱577. Scale spend by 30% this week.',
   'Competitor Keywords campaign has ₱880 CPA — well above the ₱787 target. Pause low-performing ad groups and reallocate to Brand Search.',
