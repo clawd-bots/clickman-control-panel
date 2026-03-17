@@ -178,14 +178,6 @@ export const adScatterData = [
   { name: 'Promo Code Push', spend: 15000, cpa: 520, platform: 'Meta' },
 ];
 
-export const attributionAISuggestions = [
-  'Meta CPA trending up 12% MoM. Consider refreshing top-of-funnel creative — the "GLP-1 Testimonial V3" is showing fatigue after 6 weeks.',
-  'Survey data shows TikTok driving 22% of first touches but only getting 15% of budget. Consider reallocating ₱50K from Google non-brand to TikTok.',
-  'Cohort LTV for Meta customers is 2.1x vs TikTok at 1.4x. Adjust CPA targets: Meta can sustain ₱850, TikTok should cap at ₱600.',
-  'Server-side GTM is down — you are losing ~15% of conversion data. Fix this before making any budget decisions.',
-  'Post-purchase survey "Friend/Family" is at 12%. Consider launching a formal referral program to amplify this organic channel.',
-];
-
 // ─── Creative & MTA ───
 export const creativePerformance = [
   { name: 'GLP-1 Testimonial V3', platform: 'Meta', spend: 45200, impressions: 892000, clicks: 12480, ctr: 1.40, cpc: 3.62, conversions: 69, cpa: 655, roas: 3.05, status: 'Active' },
