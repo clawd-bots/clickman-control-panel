@@ -49,14 +49,14 @@ export default function PnLPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Profit & Loss</h2>
-        <div className="flex items-center gap-2">
+    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
+        <h2 className="text-lg sm:text-xl font-semibold">Profit & Loss</h2>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <span className="text-xs text-text-secondary font-medium">View by:</span>
-          <div className="flex gap-1">
+          <div className="flex gap-1 flex-wrap">
             {['Total', 'Quarter', 'Month', 'Week', 'Day'].map(p => (
-              <button key={p} onClick={() => setTimePeriod(p)} className={`px-3 py-1.5 rounded-md text-xs font-medium ${timePeriod === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>
+              <button key={p} onClick={() => setTimePeriod(p)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${timePeriod === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
                 {p}
               </button>
             ))}
@@ -65,7 +65,7 @@ export default function PnLPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mx-1">
         <KPICard label="Net Revenue" value={formatCurrency(pnlData.netRevenue.value)} change={9.5} sparkline={pnlTrend.map(t => t.netRevenue / 1000)} />
         <KPICard label="CM1" value={formatCurrency(pnlData.cm1.value)} change={8.2} sparkline={pnlTrend.map(t => t.cm1 / 1000)} />
         <KPICard label="CM2" value={formatCurrency(pnlData.cm2.value)} change={6.1} sparkline={pnlTrend.map(t => t.cm2 / 1000)} />
@@ -74,9 +74,10 @@ export default function PnLPage() {
       </div>
 
       {/* Trend Chart */}
-      <div className="bg-bg-surface border border-border rounded-lg p-5">
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
         <h3 className="text-sm font-medium text-text-secondary mb-4">Margin Levels Over Time</h3>
-        <ResponsiveContainer width="100%" height={300}>
+        <div className="min-h-[300px]">
+          <ResponsiveContainer width="100%" height={300}>
           <LineChart data={pnlTrend}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
@@ -89,10 +90,11 @@ export default function PnLPage() {
             <Line type="monotone" dataKey="cm3" name="CM3" stroke="#A855F7" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       {/* P&L Table */}
-      <div className="bg-bg-surface border border-border rounded-lg p-5">
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-primary">P&L Breakdown</h3>
           <div className="flex items-center gap-2">
@@ -105,8 +107,9 @@ export default function PnLPage() {
             </button>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto -mx-1 sm:mx-0">
+          <div className="min-w-[600px]">
+            <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border text-xs text-text-secondary uppercase">
                 <th className="text-left py-3 px-3 font-medium w-1/3">Line Item</th>
@@ -164,6 +167,7 @@ export default function PnLPage() {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

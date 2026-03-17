@@ -77,18 +77,14 @@ export default function TopBar() {
 
   return (
     <header className="h-14 bg-bg-surface border-b border-border flex items-center px-3 md:px-6 sticky top-0 z-40 transition-colors">
-      {/* Left — Hamburger (mobile) + spacer (desktop) */}
-      <div className="flex-1 flex items-center">
+      {/* Left — Hamburger (mobile) + Title */}
+      <div className="flex items-center gap-2 min-w-0">
         <button
           onClick={toggleMobile}
-          className="lg:hidden p-2 -ml-1 rounded-md hover:bg-bg-elevated text-text-secondary hover:text-text-primary transition-colors"
+          className="lg:hidden p-2 -ml-1 rounded-md hover:bg-bg-elevated text-text-secondary hover:text-text-primary transition-colors shrink-0"
         >
           <Menu size={20} />
         </button>
-      </div>
-
-      {/* Center — Title */}
-      <div className="flex items-center justify-center">
         <h1 className="text-sm md:text-base font-bold tracking-wide text-text-primary truncate">
           <span className="text-warm-gold">Click-Man</span>{' '}
           <span className="text-text-primary hidden sm:inline">Control Panel</span>
@@ -96,7 +92,7 @@ export default function TopBar() {
       </div>
 
       {/* Right — Date picker & controls */}
-      <div className="flex-1 flex items-center justify-end gap-1 md:gap-2">
+      <div className="flex items-center justify-end gap-1 md:gap-2 ml-4 shrink-0">
         {showDatePicker && (
           <>
             {/* Date Range Picker */}

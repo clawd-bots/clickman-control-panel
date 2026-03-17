@@ -30,13 +30,13 @@ export default function FinalItemsPage() {
   const pendingCount = getPendingCount(allItems);
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Final Items</h2>
+    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+      <div className="flex items-center justify-between px-1">
+        <h2 className="text-lg sm:text-xl font-semibold">Final Items</h2>
       </div>
 
       {/* Intro */}
-      <div className="bg-danger/5 border border-danger/20 rounded-lg p-4">
+      <div className="bg-danger/5 border border-danger/20 rounded-lg p-4 mx-1">
         <p className="text-sm text-text-primary">
           <strong className="text-danger">Everything below needs to happen before go-live.</strong>{' '}
           Click any item to see exactly what to do. Most items just need you to send Alfred an API key or share access. Once everything is done, this tab disappears.
@@ -44,7 +44,7 @@ export default function FinalItemsPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mx-1">
         <div className="bg-bg-surface border border-danger/30 rounded-lg p-4">
           <div className="flex items-center gap-2 mb-1">
             <AlertTriangle size={14} className="text-danger" />
