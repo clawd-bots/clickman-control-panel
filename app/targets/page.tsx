@@ -56,9 +56,9 @@ export default function TargetsPage() {
   const cancelEdit = () => setEditingIdx(null);
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <div>
-        <h2 className="text-lg font-semibold">Targets & Goals</h2>
+    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+      <div className="px-1">
+        <h2 className="text-lg sm:text-xl font-semibold">Targets & Goals</h2>
         <p className="text-sm text-text-secondary mt-1">
           Set what <strong className="text-text-primary">should</strong> happen — goals, gaps, and recommendations.
           The Dashboard shows what <em>is</em> happening. This page tracks where you want to be.
@@ -67,9 +67,9 @@ export default function TargetsPage() {
 
 
           {/* Set Monthly Targets Section */}
-          <div className="bg-bg-surface border border-border rounded-lg p-5">
+          <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
             <h3 className="text-sm font-semibold text-text-primary mb-4">Monthly Targets — Click any target value to edit</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               {targets.map((t, idx) => {
                 const status = getStatus(t.actual, t.target, t.inverse);
                 const progress = t.inverse
@@ -78,21 +78,22 @@ export default function TargetsPage() {
                 const isEditing = editingIdx === idx;
 
                 return (
-                  <div key={t.metric} className="bg-bg-elevated rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center text-xs text-text-secondary font-medium">
-                        {t.metric} <InfoTooltip metric={t.metric} />
+                  <div key={t.metric} className="bg-bg-elevated rounded-lg p-4 min-h-[120px] flex flex-col justify-between">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center text-xs text-text-secondary font-medium gap-1">
+                        <span className="truncate">{t.metric}</span>
+                        <InfoTooltip metric={t.metric} />
                       </div>
-                      <span className={`w-2 h-2 rounded-full ${
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${
                         status === 'green' ? 'bg-success' : status === 'yellow' ? 'bg-warm-gold' : 'bg-danger'
                       }`} />
                     </div>
 
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-lg font-bold text-text-primary">{formatValue(t.actual, t.unit)}</span>
-                      <span className="text-xs text-text-secondary">/</span>
+                    <div className="flex items-baseline gap-2 mb-3 min-w-0">
+                      <span className="text-lg font-bold text-text-primary truncate">{formatValue(t.actual, t.unit)}</span>
+                      <span className="text-xs text-text-secondary shrink-0">/</span>
                       {isEditing ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 min-w-0">
                           <input
                             type="number"
                             value={editValue}
@@ -101,35 +102,37 @@ export default function TargetsPage() {
                             className="w-20 bg-bg-primary border border-warm-gold rounded px-2 py-0.5 text-xs text-text-primary outline-none"
                             autoFocus
                           />
-                          <button onClick={saveEdit} className="text-success"><Check size={12} /></button>
-                          <button onClick={cancelEdit} className="text-danger"><X size={12} /></button>
+                          <button onClick={saveEdit} className="text-success shrink-0"><Check size={12} /></button>
+                          <button onClick={cancelEdit} className="text-danger shrink-0"><X size={12} /></button>
                         </div>
                       ) : (
                         <button
                           onClick={() => startEdit(idx)}
-                          className="flex items-center gap-1 text-xs text-text-secondary hover:text-warm-gold transition-colors group"
+                          className="flex items-center gap-1 text-xs text-text-secondary hover:text-warm-gold transition-colors group min-w-0"
                         >
-                          {formatValue(t.target, t.unit)}
-                          <Pencil size={10} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <span className="truncate">{formatValue(t.target, t.unit)}</span>
+                          <Pencil size={10} className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                         </button>
                       )}
                     </div>
 
-                    <div className="w-full h-1.5 bg-bg-primary rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          status === 'green' ? 'bg-success' : status === 'yellow' ? 'bg-warm-gold' : 'bg-danger'
-                        }`}
-                        style={{ width: `${progress}%` }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between mt-1">
-                      <span className="text-[10px] text-text-secondary">{progress.toFixed(0)}%</span>
-                      <span className={`text-[10px] font-medium ${
-                        status === 'green' ? 'text-success' : status === 'yellow' ? 'text-warm-gold' : 'text-danger'
-                      }`}>
-                        {status === 'green' ? 'On Track' : status === 'yellow' ? 'At Risk' : 'Behind'}
-                      </span>
+                    <div>
+                      <div className="w-full h-1.5 bg-bg-primary rounded-full overflow-hidden mb-2">
+                        <div
+                          className={`h-full rounded-full transition-all ${
+                            status === 'green' ? 'bg-success' : status === 'yellow' ? 'bg-warm-gold' : 'bg-danger'
+                          }`}
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] text-text-secondary">{progress.toFixed(0)}%</span>
+                        <span className={`text-[10px] font-medium ${
+                          status === 'green' ? 'text-success' : status === 'yellow' ? 'text-warm-gold' : 'text-danger'
+                        }`}>
+                          {status === 'green' ? 'On Track' : status === 'yellow' ? 'At Risk' : 'Behind'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 );
@@ -138,94 +141,105 @@ export default function TargetsPage() {
           </div>
 
           {/* Trend Charts */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-bg-surface border border-border rounded-lg p-5">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mx-1">
+            <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
               <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue: Actual vs Target</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={targetTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-                  <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
-                  <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="revenue" name="Actual Revenue" stroke="#34D399" strokeWidth={2} dot={{ fill: '#34D399', r: 3 }} />
-                  <Line type="monotone" dataKey="target" name="Target" stroke="#64748B" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="min-h-[280px]">
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={targetTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                    <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                    <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+                    <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Line type="monotone" dataKey="revenue" name="Actual Revenue" stroke="#34D399" strokeWidth={2} dot={{ fill: '#34D399', r: 3 }} />
+                    <Line type="monotone" dataKey="target" name="Target" stroke="#64748B" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
 
-            <div className="bg-bg-surface border border-border rounded-lg p-5">
+            <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
               <h3 className="text-sm font-medium text-text-secondary mb-4">CM3: Actual vs Target</h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={targetTrend}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-                  <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
-                  <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="cm3" name="Actual CM3" stroke="#A855F7" strokeWidth={2} dot={{ fill: '#A855F7', r: 3 }} />
-                  <Line type="monotone" dataKey="cm3Target" name="Target" stroke="#64748B" strokeWidth={2} strokeDasharray="5 5" dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+              <div className="min-h-[280px]">
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={targetTrend}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                    <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                    <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
+                    <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
+                    <Line type="monotone" dataKey="cm3" name="Actual CM3" stroke="#A855F7" strokeWidth={2} dot={{ fill: '#A855F7', r: 3 }} />
+                    <Line type="monotone" dataKey="cm3Target" name="Target" stroke="#64748B" strokeWidth={2} strokeDasharray="5 5" dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
 
           {/* Gap Analysis Table */}
-          <div className="bg-bg-surface border border-border rounded-lg p-5">
-            <h3 className="text-sm font-medium text-text-primary mb-4">Gap Analysis <InfoTooltip metric="Target Pace" /></h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-border text-text-secondary uppercase">
-                    <th className="text-left py-2 px-3 font-medium">Metric</th>
-                    <th className="text-right py-2 px-3 font-medium">Target</th>
-                    <th className="text-right py-2 px-3 font-medium">Actual</th>
-                    <th className="text-right py-2 px-3 font-medium">Gap</th>
-                    <th className="text-right py-2 px-3 font-medium">Progress</th>
-                    <th className="text-center py-2 px-3 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {targets.map((t) => {
-                    const isInverse = !!t.inverse;
-                    const gap = t.target - t.actual;
-                    const status = getStatus(t.actual, t.target, isInverse);
-                    const progress = isInverse
-                      ? Math.min((t.target / t.actual) * 100, 100)
-                      : Math.min((t.actual / t.target) * 100, 100);
+          <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+            <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
+              <span>Gap Analysis</span>
+              <InfoTooltip metric="Target Pace" />
+            </h3>
+            <div className="overflow-x-auto -mx-1 sm:mx-0">
+              <div className="min-w-[700px]">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border text-text-secondary uppercase">
+                      <th className="text-left py-2 px-2 sm:px-3 font-medium min-w-[100px]">Metric</th>
+                      <th className="text-right py-2 px-2 sm:px-3 font-medium min-w-[80px]">Target</th>
+                      <th className="text-right py-2 px-2 sm:px-3 font-medium min-w-[80px]">Actual</th>
+                      <th className="text-right py-2 px-2 sm:px-3 font-medium min-w-[80px]">Gap</th>
+                      <th className="text-right py-2 px-2 sm:px-3 font-medium min-w-[70px]">Progress</th>
+                      <th className="text-center py-2 px-2 sm:px-3 font-medium min-w-[70px]">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {targets.map((t) => {
+                      const isInverse = !!t.inverse;
+                      const gap = t.target - t.actual;
+                      const status = getStatus(t.actual, t.target, isInverse);
+                      const progress = isInverse
+                        ? Math.min((t.target / t.actual) * 100, 100)
+                        : Math.min((t.actual / t.target) * 100, 100);
 
-                    return (
-                      <tr key={t.metric} className="border-b border-border/30 hover:bg-bg-elevated/50">
-                        <td className="py-2.5 px-3 font-medium text-text-primary">{t.metric}</td>
-                        <td className="py-2.5 px-3 text-right text-text-secondary">{formatValue(t.target, t.unit)}</td>
-                        <td className="py-2.5 px-3 text-right text-text-primary">{formatValue(t.actual, t.unit)}</td>
-                        <td className={`py-2.5 px-3 text-right ${
-                          (isInverse ? gap > 0 : gap < 0) ? 'text-danger' : 'text-success'
-                        }`}>
-                          {t.unit === '₱' ? formatCurrency(Math.abs(gap)) : t.unit === '#' ? Math.abs(gap) : Math.abs(gap).toFixed(1) + (t.unit === '%' ? '%' : t.unit === 'x' ? 'x' : '')}
-                        </td>
-                        <td className="py-2.5 px-3 text-right text-text-secondary">{progress.toFixed(0)}%</td>
-                        <td className="py-2.5 px-3 text-center">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                            status === 'green' ? 'bg-success/15 text-success' :
-                            status === 'yellow' ? 'bg-warm-gold/15 text-warm-gold' :
-                            'bg-danger/15 text-danger'
+                      return (
+                        <tr key={t.metric} className="border-b border-border/30 hover:bg-bg-elevated/50">
+                          <td className="py-2.5 px-2 sm:px-3 font-medium text-text-primary">{t.metric}</td>
+                          <td className="py-2.5 px-2 sm:px-3 text-right text-text-secondary">{formatValue(t.target, t.unit)}</td>
+                          <td className="py-2.5 px-2 sm:px-3 text-right text-text-primary">{formatValue(t.actual, t.unit)}</td>
+                          <td className={`py-2.5 px-2 sm:px-3 text-right ${
+                            (isInverse ? gap > 0 : gap < 0) ? 'text-danger' : 'text-success'
                           }`}>
-                            {status === 'green' ? 'On Track' : status === 'yellow' ? 'At Risk' : 'Behind'}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                            {t.unit === '₱' ? formatCurrency(Math.abs(gap)) : t.unit === '#' ? Math.abs(gap) : Math.abs(gap).toFixed(1) + (t.unit === '%' ? '%' : t.unit === 'x' ? 'x' : '')}
+                          </td>
+                          <td className="py-2.5 px-2 sm:px-3 text-right text-text-secondary">{progress.toFixed(0)}%</td>
+                          <td className="py-2.5 px-2 sm:px-3 text-center">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                              status === 'green' ? 'bg-success/15 text-success' :
+                              status === 'yellow' ? 'bg-warm-gold/15 text-warm-gold' :
+                              'bg-danger/15 text-danger'
+                            }`}>
+                              {status === 'green' ? 'On Track' : status === 'yellow' ? 'At Risk' : 'Behind'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
-          <AISuggestionsPanel 
-            suggestions={targetAISuggestions} 
-            title="Target Intelligence"
-          />
+          <div className="px-1">
+            <AISuggestionsPanel 
+              suggestions={targetAISuggestions} 
+              title="Target Intelligence"
+            />
+          </div>
 
     </div>
   );
