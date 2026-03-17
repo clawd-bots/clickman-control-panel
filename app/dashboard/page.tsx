@@ -26,18 +26,74 @@ export default function DashboardPage() {
 
       {/* KPI Cards Row 1 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Net Revenue" value={formatCurrency(kpiCards.netRevenue.value)} change={pctChange(kpiCards.netRevenue.value, kpiCards.netRevenue.prev)} sparkline={kpiCards.netRevenue.sparkline} />
-        <KPICard label="Net Orders" value={formatNumber(kpiCards.netOrders.value)} change={pctChange(kpiCards.netOrders.value, kpiCards.netOrders.prev)} sparkline={kpiCards.netOrders.sparkline} />
-        <KPICard label="Marketing Costs" value={formatCurrency(kpiCards.marketingCosts.value)} change={pctChange(kpiCards.marketingCosts.value, kpiCards.marketingCosts.prev)} sparkline={kpiCards.marketingCosts.sparkline} />
-        <KPICard label="MER" value={`${kpiCards.mer.value}x`} change={pctChange(kpiCards.mer.value, kpiCards.mer.prev)} sparkline={kpiCards.mer.sparkline} />
+        <KPICard 
+          label="Net Revenue" 
+          value={formatCurrency(kpiCards.netRevenue.value)} 
+          change={pctChange(kpiCards.netRevenue.value, kpiCards.netRevenue.prev)} 
+          sparkline={kpiCards.netRevenue.sparkline}
+          target={formatCurrency(kpiCards.netRevenue.target)}
+          targetAchievement={(kpiCards.netRevenue.value / kpiCards.netRevenue.target) * 100}
+        />
+        <KPICard 
+          label="Net Orders" 
+          value={formatNumber(kpiCards.netOrders.value)} 
+          change={pctChange(kpiCards.netOrders.value, kpiCards.netOrders.prev)} 
+          sparkline={kpiCards.netOrders.sparkline}
+          target={formatNumber(kpiCards.netOrders.target)}
+          targetAchievement={(kpiCards.netOrders.value / kpiCards.netOrders.target) * 100}
+        />
+        <KPICard 
+          label="Marketing Costs" 
+          value={formatCurrency(kpiCards.marketingCosts.value)} 
+          change={pctChange(kpiCards.marketingCosts.value, kpiCards.marketingCosts.prev)} 
+          sparkline={kpiCards.marketingCosts.sparkline}
+          target={formatCurrency(kpiCards.marketingCosts.target)}
+          targetAchievement={(kpiCards.marketingCosts.value / kpiCards.marketingCosts.target) * 100}
+        />
+        <KPICard 
+          label="MER" 
+          value={`${kpiCards.mer.value}x`} 
+          change={pctChange(kpiCards.mer.value, kpiCards.mer.prev)} 
+          sparkline={kpiCards.mer.sparkline}
+          target={`${kpiCards.mer.target}x`}
+          targetAchievement={(kpiCards.mer.value / kpiCards.mer.target) * 100}
+        />
       </div>
 
       {/* KPI Cards Row 2 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="New Customers" value={formatNumber(kpiCards.newCustomers.value)} change={pctChange(kpiCards.newCustomers.value, kpiCards.newCustomers.prev)} sparkline={kpiCards.newCustomers.sparkline} />
-        <KPICard label="nCAC" value={formatCurrency(kpiCards.ncac.value)} change={pctChange(kpiCards.ncac.value, kpiCards.ncac.prev)} sparkline={kpiCards.ncac.sparkline} />
-        <KPICard label="nMER" value={`${kpiCards.nmer.value}x`} change={pctChange(kpiCards.nmer.value, kpiCards.nmer.prev)} sparkline={kpiCards.nmer.sparkline} />
-        <KPICard label="CAC" value={formatCurrency(kpiCards.cac.value)} change={pctChange(kpiCards.cac.value, kpiCards.cac.prev)} sparkline={kpiCards.cac.sparkline} />
+        <KPICard 
+          label="New Customers" 
+          value={formatNumber(kpiCards.newCustomers.value)} 
+          change={pctChange(kpiCards.newCustomers.value, kpiCards.newCustomers.prev)} 
+          sparkline={kpiCards.newCustomers.sparkline}
+          target={formatNumber(kpiCards.newCustomers.target)}
+          targetAchievement={(kpiCards.newCustomers.value / kpiCards.newCustomers.target) * 100}
+        />
+        <KPICard 
+          label="nCAC" 
+          value={formatCurrency(kpiCards.ncac.value)} 
+          change={pctChange(kpiCards.ncac.value, kpiCards.ncac.prev)} 
+          sparkline={kpiCards.ncac.sparkline}
+          target={formatCurrency(kpiCards.ncac.target)}
+          targetAchievement={(kpiCards.ncac.target / kpiCards.ncac.value) * 100}
+        />
+        <KPICard 
+          label="nMER" 
+          value={`${kpiCards.nmer.value}x`} 
+          change={pctChange(kpiCards.nmer.value, kpiCards.nmer.prev)} 
+          sparkline={kpiCards.nmer.sparkline}
+          target={`${kpiCards.nmer.target}x`}
+          targetAchievement={(kpiCards.nmer.value / kpiCards.nmer.target) * 100}
+        />
+        <KPICard 
+          label="CAC" 
+          value={formatCurrency(kpiCards.cac.value)} 
+          change={pctChange(kpiCards.cac.value, kpiCards.cac.prev)} 
+          sparkline={kpiCards.cac.sparkline}
+          target={formatCurrency(kpiCards.cac.target)}
+          targetAchievement={(kpiCards.cac.target / kpiCards.cac.value) * 100}
+        />
       </div>
 
       {/* Revenue & Marketing Chart */}
@@ -50,8 +106,16 @@ export default function DashboardPage() {
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={dailyMetrics}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                label={{ value: 'Date', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
+              <YAxis 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} 
+                label={{ value: 'Revenue (₱K)', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
               <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="revenue" name="Net Revenue" stroke="#34D399" strokeWidth={2} dot={false} />
@@ -68,8 +132,15 @@ export default function DashboardPage() {
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={dailyMetrics}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                label={{ value: 'Date', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
+              <YAxis 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                label={{ value: 'Count', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
               <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="orders" name="Orders" stroke="#4A6BD6" strokeWidth={2} dot={false} />
@@ -113,8 +184,15 @@ export default function DashboardPage() {
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={dailyMetrics}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="date" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+              <XAxis 
+                dataKey="date" 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                label={{ value: 'Date', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
+              <YAxis 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                label={{ value: 'Sessions', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
               <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Bar dataKey="sessions" name="Sessions" fill="#334FB4" radius={[2, 2, 0, 0]} />
             </BarChart>
@@ -182,8 +260,16 @@ export default function DashboardPage() {
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={revenueInsights.monthly}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+              <XAxis 
+                dataKey="month" 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                label={{ value: 'Month', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
+              <YAxis 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} 
+                label={{ value: 'Revenue (₱M)', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
               <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Bar dataKey="nc" name="New Customer Rev" stackId="a" fill="#4A6BD6" radius={[0, 0, 0, 0]} />

@@ -2,13 +2,17 @@
 import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { attributionSurvey, trackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
-import { Star, GitBranch, Activity, Database, Layers, Sparkles } from 'lucide-react';
+import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
+import { Star, GitBranch, Activity, Database, Layers, Sparkles, ChevronDown } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ScatterChart, Scatter,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis,
 } from 'recharts';
 
 const COLORS = ['#334FB4', '#4A6BD6', '#EDBF63', '#34D399', '#EF4444', '#94A3B8'];
+
+const cohortAttributionModels = ['First Click', 'Last Click', 'Linear All', 'Linear Paid'];
+const cohortAttributionWindows = ['1-day click', '7-day click / 1-day view', '28-day click / 1-day view', '28-day click / 28-day view'];
 
 const treeLayers = [
   { id: 'star', label: 'MER / nCAC', icon: Star, description: 'Top-level efficiency metrics — your north star for marketing health', color: '#EDBF63' },
@@ -70,6 +74,8 @@ const globalInsights = [
 
 export default function AttributionPage() {
   const [activeLayer, setActiveLayer] = useState<string>('star');
+  const [cohortAttrModel, setCohortAttrModel] = useState('First Click');
+  const [cohortAttrWindow, setCohortAttrWindow] = useState('7-day click / 1-day view');
 
   const activeInfo = treeLayers.find(l => l.id === activeLayer)!;
   const insights = layerInsights[activeLayer];
@@ -78,18 +84,11 @@ export default function AttributionPage() {
     <div className="space-y-6 max-w-[1400px]">
       <h2 className="text-lg font-semibold">Attribution Framework</h2>
 
-      {/* Global AI Insights */}
-      <div className="bg-bg-surface border border-border rounded-lg p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <Sparkles size={18} className="text-warm-gold" />
-          <h3 className="text-sm font-semibold text-text-primary">Cross-Layer AI Analysis</h3>
-        </div>
-        <div className="space-y-3">
-          {globalInsights.map((insight, i) => (
-            <div key={i} className="text-sm text-text-secondary leading-relaxed">{insight}</div>
-          ))}
-        </div>
-      </div>
+      {/* AI Suggestions */}
+      <AISuggestionsPanel 
+        suggestions={attributionAISuggestions} 
+        title="Cross-Layer AI Analysis"
+      />
 
       {/* Horizontal Tab Buttons */}
       <div className="flex gap-2 flex-wrap">
@@ -274,9 +273,39 @@ export default function AttributionPage() {
 
       {activeLayer === 'roots' && (
         <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
-            <Layers size={16} className="text-purple-400" /> Cohort-based LTV by Channel
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <Layers size={16} className="text-purple-400" /> Cohort-based LTV by Channel
+            </h3>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-secondary font-medium">Model:</span>
+                <div className="relative">
+                  <select 
+                    value={cohortAttrModel} 
+                    onChange={(e) => setCohortAttrModel(e.target.value)} 
+                    className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors"
+                  >
+                    {cohortAttributionModels.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-secondary font-medium">Window:</span>
+                <div className="relative">
+                  <select 
+                    value={cohortAttrWindow} 
+                    onChange={(e) => setCohortAttrWindow(e.target.value)} 
+                    className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors"
+                  >
+                    {cohortAttributionWindows.map(w => <option key={w} value={w}>{w}</option>)}
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { channel: 'Meta', ltvCac: 2.1, ltv: '₱6,580', cac: '₱3,133', payback: '4.2 months' },

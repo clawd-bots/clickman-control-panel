@@ -62,7 +62,7 @@ export const tooltips: Record<string, string> = {
   'Meta Pixel': 'Client-side tracking pixel that fires events in the browser when users interact with your site after seeing Meta ads.',
   'Meta CAPI': 'Server-side Conversions API for Meta — sends events directly from your server, bypassing ad blockers for better match rates.',
   'Google Ads Tag': 'Google\'s conversion tracking tag that measures actions users take after clicking or viewing your Google ads.',
-  'TikTok Pixel': 'TikTok\'s tracking pixel for measuring conversions from TikTok ad campaigns.',
+  'TikTok Pixel': 'TikTok\'s tracking pixel and Conversions API for measuring conversions from TikTok ad campaigns. Like Meta, supports both browser-side pixel and server-side cAPI.',
   'GA4': 'Google Analytics 4 — Google\'s current analytics platform for measuring website and app activity.',
   'Server-side GTM': 'Server-side Google Tag Manager — processes tracking events on your server instead of the user\'s browser for better reliability.',
 

@@ -1,6 +1,6 @@
 'use client';
-import { useState } from 'react';
-import { Sparkles, RefreshCw, Settings } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Sparkles, RefreshCw, Settings, History } from 'lucide-react';
 
 interface AISuggestionsPanelProps {
   suggestions: string[];
@@ -8,6 +8,13 @@ interface AISuggestionsPanelProps {
   attributionModel?: string;
   attributionWindow?: string;
 }
+
+const DEFAULT_PROMPTS: Record<string, string> = {
+  'Creative Intelligence': 'Analyze the creative performance data and provide actionable insights about ad fatigue, scaling opportunities, and creative strategy recommendations based on CPA trends and spend distribution.',
+  'Target Intelligence': 'Review target vs actual performance metrics and provide strategic recommendations for improving KPI achievement, budget allocation, and goal setting.',
+  'Cohort Intelligence': 'Analyze cohort retention patterns, lifetime value trends, and provide recommendations for improving customer retention and maximizing CLV by acquisition channel.',
+  'Cross-Layer AI Analysis': 'Provide integrated analysis across attribution layers (MER/nCAC, surveys/MMM, MTA/platform data) and recommend strategic decisions for budget allocation and measurement improvements.',
+};
 
 export default function AISuggestionsPanel({ 
   suggestions, 
@@ -18,6 +25,49 @@ export default function AISuggestionsPanel({
   const [visible, setVisible] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showPromptEdit, setShowPromptEdit] = useState(false);
+  const [showPromptHistory, setShowPromptHistory] = useState(false);
+  const [currentPrompt, setCurrentPrompt] = useState('');
+  const [promptHistory, setPromptHistory] = useState<string[]>([]);
+
+  // Load prompt and history from localStorage on mount
+  useEffect(() => {
+    const storageKey = `ai-prompt-${title.toLowerCase().replace(/\s+/g, '-')}`;
+    const historyKey = `ai-prompt-history-${title.toLowerCase().replace(/\s+/g, '-')}`;
+    
+    const savedPrompt = localStorage.getItem(storageKey);
+    const savedHistory = localStorage.getItem(historyKey);
+    
+    if (savedPrompt) {
+      setCurrentPrompt(savedPrompt);
+    } else {
+      setCurrentPrompt(DEFAULT_PROMPTS[title] || 'Analyze the data and provide actionable insights.');
+    }
+    
+    if (savedHistory) {
+      setPromptHistory(JSON.parse(savedHistory));
+    }
+  }, [title]);
+
+  const savePrompt = (prompt: string) => {
+    const storageKey = `ai-prompt-${title.toLowerCase().replace(/\s+/g, '-')}`;
+    const historyKey = `ai-prompt-history-${title.toLowerCase().replace(/\s+/g, '-')}`;
+    
+    // Update current prompt
+    setCurrentPrompt(prompt);
+    localStorage.setItem(storageKey, prompt);
+    
+    // Add to history if it's different from current
+    if (prompt !== currentPrompt && !promptHistory.includes(prompt)) {
+      const newHistory = [prompt, ...promptHistory].slice(0, 10); // Keep last 10
+      setPromptHistory(newHistory);
+      localStorage.setItem(historyKey, JSON.stringify(newHistory));
+    }
+  };
+
+  const restoreFromHistory = (prompt: string) => {
+    setCurrentPrompt(prompt);
+    setShowPromptHistory(false);
+  };
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -38,6 +88,13 @@ export default function AISuggestionsPanel({
           >
             <Settings size={12} />
             Prompt
+          </button>
+          <button
+            onClick={() => setShowPromptHistory(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-bg-elevated border border-border text-xs font-medium hover:bg-bg-surface transition-colors"
+          >
+            <History size={12} />
+            History
           </button>
           <button
             onClick={handleRefresh}
@@ -80,9 +137,10 @@ export default function AISuggestionsPanel({
           <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-2xl mx-4">
             <h3 className="text-lg font-semibold text-text-primary mb-4">Edit Analysis Prompt</h3>
             <textarea
+              value={currentPrompt}
+              onChange={(e) => setCurrentPrompt(e.target.value)}
               className="w-full h-40 bg-bg-elevated border border-border rounded-md p-3 text-sm text-text-primary resize-none outline-none focus:border-brand-blue"
               placeholder="Enter your custom analysis prompt here..."
-              defaultValue="Analyze the creative performance data and provide actionable insights about ad fatigue, scaling opportunities, and creative strategy recommendations based on CPA trends and spend distribution."
             />
             <div className="flex items-center justify-end gap-3 mt-4">
               <button
@@ -92,10 +150,48 @@ export default function AISuggestionsPanel({
                 Cancel
               </button>
               <button
-                onClick={() => setShowPromptEdit(false)}
+                onClick={() => {
+                  savePrompt(currentPrompt);
+                  setShowPromptEdit(false);
+                  handleRefresh();
+                }}
                 className="px-4 py-2 bg-brand-blue text-white text-sm rounded-md hover:bg-brand-blue/90 transition-colors"
               >
                 Save & Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Prompt History Modal */}
+      {showPromptHistory && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-2xl mx-4">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Prompt History</h3>
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {promptHistory.length === 0 ? (
+                <p className="text-sm text-text-secondary text-center py-8">No prompt history available</p>
+              ) : (
+                promptHistory.map((prompt, index) => (
+                  <div key={index} className="bg-bg-elevated border border-border rounded-md p-3">
+                    <div className="text-sm text-text-primary mb-2 line-clamp-3">{prompt}</div>
+                    <button
+                      onClick={() => restoreFromHistory(prompt)}
+                      className="text-xs text-brand-blue-light hover:text-brand-blue transition-colors"
+                    >
+                      Restore this prompt
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-3 mt-4">
+              <button
+                onClick={() => setShowPromptHistory(false)}
+                className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+              >
+                Close
               </button>
             </div>
           </div>

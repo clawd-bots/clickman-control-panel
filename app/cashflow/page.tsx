@@ -159,7 +159,7 @@ export default function CashFlowPage() {
                   {months.map((m) => {
                     const originalVal = row[m];
                     const val = convertValue(originalVal);
-                    const displayVal = Math.round(val);
+                    const displayVal = currency === '$' ? val.toFixed(1) : Math.round(val);
                     return (
                       <td key={m} className={`py-2 px-2 text-right ${originalVal < 0 ? 'text-danger' : originalVal > 0 ? 'text-success' : 'text-text-tertiary'}`}>
                         {originalVal !== 0 ? displayVal : '—'}
@@ -193,8 +193,16 @@ export default function CashFlowPage() {
               subscription: m.newCust * inputs.aov * (inputs.subAttachRate / 100) * (inputs.subRetentionM6 / 100),
             }))}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+              <XAxis 
+                dataKey="month" 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                label={{ value: 'Month', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
+              <YAxis 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} 
+                label={{ value: 'Revenue (₱M)', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
               <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Area type="monotone" dataKey="new" name="New (One-time)" stackId="1" fill="#4A6BD6" stroke="#4A6BD6" fillOpacity={0.6} />
               <Area type="monotone" dataKey="repeat" name="Repeat (One-time)" stackId="1" fill="#34D399" stroke="#34D399" fillOpacity={0.6} />
@@ -212,8 +220,16 @@ export default function CashFlowPage() {
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={monthlySummary}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-              <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+              <XAxis 
+                dataKey="month" 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                label={{ value: 'Month', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
+              <YAxis 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} 
+                label={{ value: 'Cash Flow (₱M)', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
               <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Bar dataKey="cumulative" name="Cumulative Cash" fill="#34D399" radius={[3, 3, 0, 0]} />
             </BarChart>

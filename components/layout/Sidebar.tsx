@@ -25,6 +25,7 @@ const navItems = [
   { href: '/creative', label: 'Creative & MTA', icon: Palette },
   { href: '/cohorts', label: 'Cohort Analysis', icon: Users },
   { href: '/targets', label: 'Targets & Goals', icon: Target },
+  { href: '/final-items', label: 'Final Items', icon: ChevronRight },
 ];
 
 export default function Sidebar() {

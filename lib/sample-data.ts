@@ -10,14 +10,14 @@ export const dailyMetrics = [
 ];
 
 export const kpiCards = {
-  netRevenue: { value: 2253000, prev: 2058000, sparkline: [285, 312, 298, 335, 320, 345, 358] },
-  netOrders: { value: 1126, prev: 1042, sparkline: [142, 156, 149, 168, 160, 172, 179] },
-  marketingCosts: { value: 613000, prev: 578000, sparkline: [82, 85, 79, 91, 88, 93, 95] },
-  mer: { value: 3.67, prev: 3.56, sparkline: [3.48, 3.67, 3.77, 3.68, 3.64, 3.71, 3.77] },
-  newCustomers: { value: 779, prev: 715, sparkline: [98, 108, 103, 115, 110, 120, 125] },
-  ncac: { value: 787, prev: 808, sparkline: [837, 787, 767, 791, 800, 775, 760] },
-  nmer: { value: 1.92, prev: 1.78, sparkline: [1.72, 1.88, 1.95, 1.90, 1.87, 1.94, 1.99] },
-  cac: { value: 544, prev: 555, sparkline: [577, 545, 530, 542, 550, 541, 531] },
+  netRevenue: { value: 2253000, prev: 2058000, sparkline: [285, 312, 298, 335, 320, 345, 358], target: 2500000 },
+  netOrders: { value: 1126, prev: 1042, sparkline: [142, 156, 149, 168, 160, 172, 179], target: 1200 },
+  marketingCosts: { value: 613000, prev: 578000, sparkline: [82, 85, 79, 91, 88, 93, 95], target: 650000 },
+  mer: { value: 3.67, prev: 3.56, sparkline: [3.48, 3.67, 3.77, 3.68, 3.64, 3.71, 3.77], target: 4.0 },
+  newCustomers: { value: 779, prev: 715, sparkline: [98, 108, 103, 115, 110, 120, 125], target: 850 },
+  ncac: { value: 787, prev: 808, sparkline: [837, 787, 767, 791, 800, 775, 760], target: 750 },
+  nmer: { value: 1.92, prev: 1.78, sparkline: [1.72, 1.88, 1.95, 1.90, 1.87, 1.94, 1.99], target: 2.0 },
+  cac: { value: 544, prev: 555, sparkline: [577, 545, 530, 542, 550, 541, 531], target: 500 },
 };
 
 export const channelAttribution = [
@@ -300,6 +300,26 @@ export const demographicsGenderAge = [
   { week: 'W4 Feb', 'F 18-24': 3500, 'F 25-34': 14200, 'F 35-44': 12000, 'F 45-54': 8000, 'F 55+': 3500, 'M 18-24': 2400, 'M 25-34': 9500, 'M 35-44': 7000, 'M 45-54': 4600, 'M 55+': 2300 },
   { week: 'W1 Mar', 'F 18-24': 3300, 'F 25-34': 14800, 'F 35-44': 12500, 'F 45-54': 8200, 'F 55+': 3200, 'M 18-24': 2200, 'M 25-34': 9800, 'M 35-44': 7200, 'M 45-54': 4800, 'M 55+': 2200 },
   { week: 'W2 Mar', 'F 18-24': 3600, 'F 25-34': 15200, 'F 35-44': 12800, 'F 45-54': 8500, 'F 55+': 3100, 'M 18-24': 2500, 'M 25-34': 10200, 'M 35-44': 7500, 'M 45-54': 5000, 'M 55+': 2100 },
+];
+
+export const cohortAISuggestions = [
+  'Scale Meta spend +15%: Oct–Dec cohorts show consistently improving M1 retention (28.5% → 32.8%), suggesting recent targeting improvements are working.',
+  'Maintain Google Brand: Lowest CAC channel with best LTV. Max out impression share before expanding elsewhere.',
+  'Cap TikTok at current levels: March cohort has lowest first-order AOV (₱1,850 isn't bad but TikTok LTV:CAC needs monitoring before scaling).',
+  'Jan 2026 cohort dipped: M1 retention dropped to 29.8% from Dec's 32.8%. Could be post-holiday buyer quality or seasonal effects — monitor closely.',
+  'GLP-1 is the retention engine: 51.8% 90-day repeat rate and 3.1 avg orders. Its recurring nature makes it the ideal subscription candidate.',
+  'First-order AOV trending up: ₱1,580 (Sep) → ₱1,850 (Mar) = +17% improvement. Better targeting or product mix shift toward GLP-1.',
+  'Launch subscription for GLP-1 (highest repeat rate product) and send targeted re-engagement to Nov cohort (highest 30d repeat potential).',
+];
+
+export const attributionAISuggestions = [
+  'Overall attribution stack is functioning but incomplete. MER is healthy (3.67x), but flying partially blind with server-side GTM down and no MMM model.',
+  'Meta drives lion's share of tracked conversions but survey data suggests TikTok is under-credited by platform reporting. Run geo-lift test to validate.',
+  'nMER of 1.92x means heavy reliance on repeat purchases. Fine if retention holds, but risky if cohort quality drops.',
+  'Brand Search is most efficient channel at ₱420 CPA. Ensure maxing out impression share before increasing spend elsewhere.',
+  'Fix server-side GTM before major budget reallocation. Missing ~15% of conversion data, which skews all analysis.',
+  'Consider building simple MMM model using past 6 months of spend + revenue data for second opinion on channel allocation beyond surveys.',
+  'Set channel-specific CPA ceilings: Meta ₱850, Google ₱500, TikTok ₱600. Review weekly and pause anything consistently above ceiling.',
 ];
 
 export const creativeAISuggestions = [

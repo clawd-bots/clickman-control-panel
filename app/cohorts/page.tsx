@@ -1,10 +1,9 @@
 'use client';
 import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
-
-import { cohortRetention, clvExtension, productComparison } from '@/lib/sample-data';
+import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
+import { cohortRetention, clvExtension, productComparison, cohortAISuggestions } from '@/lib/sample-data';
 import { getHeatmapClass } from '@/lib/utils';
-import { Sparkles } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
@@ -112,75 +111,11 @@ export default function CohortsPage() {
             </div>
           </div>
 
-          {/* Comprehensive AI Analysis */}
-          <div className="bg-bg-surface border border-border rounded-lg p-5">
-            <div className="flex items-center gap-2 mb-5">
-              <Sparkles size={18} className="text-warm-gold" />
-              <h3 className="text-sm font-semibold text-text-primary">Cohort Intelligence — AI Analysis</h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Spending Recommendations */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-success uppercase tracking-wide">💰 Spending Recommendations</h4>
-                <div className="space-y-2 text-sm text-text-secondary leading-relaxed">
-                  <p>• <strong className="text-text-primary">Scale Meta spend +15%:</strong> Oct–Dec cohorts show consistently improving M1 retention (28.5% → 32.8%), suggesting recent targeting improvements are working.</p>
-                  <p>• <strong className="text-text-primary">Maintain Google Brand:</strong> Lowest CAC channel with best LTV. Max out impression share before expanding elsewhere.</p>
-                  <p>• <strong className="text-text-primary">Cap TikTok at current levels:</strong> March cohort has lowest first-order AOV (₱1,850 isn&apos;t bad but TikTok LTV:CAC needs monitoring before scaling).</p>
-                </div>
-              </div>
-
-              {/* Caution Areas */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-danger uppercase tracking-wide">⚠️ Caution Areas</h4>
-                <div className="space-y-2 text-sm text-text-secondary leading-relaxed">
-                  <p>• <strong className="text-text-primary">Jan 2026 cohort dipped:</strong> M1 retention dropped to 29.8% from Dec&apos;s 32.8%. Could be post-holiday buyer quality or seasonal effects — monitor closely.</p>
-                  <p>• <strong className="text-text-primary">CAC volatility:</strong> Range of ₱770–₱820 across cohorts. Jan spike to ₱800 coincides with competitive Q1 ad costs.</p>
-                  <p>• <strong className="text-text-primary">Late-cohort retention unknown:</strong> Feb and Mar cohorts don&apos;t have enough maturity data yet. Don&apos;t extrapolate from M0–M1 alone.</p>
-                </div>
-              </div>
-
-              {/* Channel Breakdown */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-brand-blue-light uppercase tracking-wide">📊 Channel Breakdown</h4>
-                <div className="space-y-2 text-sm text-text-secondary leading-relaxed">
-                  <p>• <strong className="text-text-primary">Meta customers:</strong> 30-day repeat rate of 26.2%, 90-day of 48.5%. Strong mid-funnel but acquisition CPAs trending up 12% MoM.</p>
-                  <p>• <strong className="text-text-primary">Google customers:</strong> Highest 30-day repeat at 32.1%. Brand search buyers are highest quality — they already know you.</p>
-                  <p>• <strong className="text-text-primary">TikTok customers:</strong> Lowest 30-day repeat (19.8%) but youngest cohorts. TikTok attracts first-time wellness buyers who need more nurturing.</p>
-                </div>
-              </div>
-
-              {/* Product Impact */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-warm-gold uppercase tracking-wide">🛒 Product Impact</h4>
-                <div className="space-y-2 text-sm text-text-secondary leading-relaxed">
-                  <p>• <strong className="text-text-primary">GLP-1 is the retention engine:</strong> 51.8% 90-day repeat rate and 3.1 avg orders. Its recurring nature (monthly refills) makes it the ideal subscription candidate.</p>
-                  <p>• <strong className="text-text-primary">Hair Regrowth cross-sell opportunity:</strong> 45.2% 90-day repeat but only 2.8 avg orders. Product education + refill reminders could push this higher.</p>
-                  <p>• <strong className="text-text-primary">Sleep &amp; Stress underperforms:</strong> Only 31.5% 90-day retention with 1.9 avg orders. Consider repositioning as an add-on rather than a lead product.</p>
-                </div>
-              </div>
-
-              {/* AOV Analysis */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-purple-400 uppercase tracking-wide">💵 AOV Analysis</h4>
-                <div className="space-y-2 text-sm text-text-secondary leading-relaxed">
-                  <p>• <strong className="text-text-primary">First-order AOV trending up:</strong> ₱1,580 (Sep) → ₱1,850 (Mar) = +17% improvement. Better targeting or product mix shift toward GLP-1.</p>
-                  <p>• <strong className="text-text-primary">Repeat AOV 59% higher:</strong> RC AOV of ₱2,688 vs NC AOV of ₱1,694. Repeat customers trade up to larger sizes and bundles.</p>
-                  <p>• <strong className="text-text-primary">Bundle opportunity:</strong> Products with highest lag-to-second-order (Skin Care: 52d, Sleep: 58d) may benefit from first-order bundle incentives.</p>
-                </div>
-              </div>
-
-              {/* Key Outcome */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-warm-gold uppercase tracking-wide">🎯 Key Outcome</h4>
-                <div className="bg-bg-elevated rounded-lg p-4">
-                  <p className="text-sm text-text-primary leading-relaxed font-medium">
-                    Cohort quality is improving: newer cohorts have higher first-order AOV, better M1 retention, and lower CAC. The business is becoming more efficient at acquiring better customers. Priority action: launch a subscription option for GLP-1 (highest repeat rate product) and send targeted re-engagement to the Nov cohort (highest 30d repeat potential at 31.5%).
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* AI Suggestions */}
+          <AISuggestionsPanel 
+            suggestions={cohortAISuggestions} 
+            title="Cohort Intelligence"
+          />
         </>
       )}
 

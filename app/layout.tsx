@@ -2,10 +2,11 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Sidebar from '@/components/layout/Sidebar';
 import TopBar from '@/components/layout/TopBar';
-import ReportToAlfred from '@/components/ui/ReportToAlfred';
+
 import ThemeProvider from '@/components/ThemeProvider';
 import { SidebarProvider } from '@/components/layout/SidebarContext';
 import { CurrencyProvider } from '@/components/CurrencyProvider';
+import ActivityLogger from '@/components/ActivityLogger';
 
 export const metadata: Metadata = {
   title: 'Click-Man Control Panel | &you',
@@ -28,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </main>
                 </div>
               </div>
-              <ReportToAlfred />
+              <ActivityLogger />
             </SidebarProvider>
           </CurrencyProvider>
         </ThemeProvider>

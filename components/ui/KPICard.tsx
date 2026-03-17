@@ -9,9 +9,11 @@ interface KPICardProps {
   sparkline: number[];
   prefix?: string;
   suffix?: string;
+  target?: string;
+  targetAchievement?: number; // percentage of target achieved
 }
 
-export default function KPICard({ label, value, change, sparkline }: KPICardProps) {
+export default function KPICard({ label, value, change, sparkline, target, targetAchievement }: KPICardProps) {
   const isPositive = change >= 0;
   const data = sparkline.map((v, i) => ({ v, i }));
 
@@ -37,13 +39,25 @@ export default function KPICard({ label, value, change, sparkline }: KPICardProp
         </div>
       </div>
       <div className="text-2xl font-bold text-text-primary">{value}</div>
-      <div className="flex items-center gap-2">
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-          isPositive ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'
-        }`}>
-          {isPositive ? '↑' : '↓'} {Math.abs(change).toFixed(1)}%
-        </span>
-        <span className="text-xs text-text-secondary">vs prior period</span>
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+            isPositive ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'
+          }`}>
+            {isPositive ? '↑' : '↓'} {Math.abs(change).toFixed(1)}%
+          </span>
+          <span className="text-xs text-text-secondary">vs prior period</span>
+        </div>
+        {target && targetAchievement !== undefined && (
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+              targetAchievement >= 100 ? 'bg-success/15 text-success' : targetAchievement >= 80 ? 'bg-warm-gold/15 text-warm-gold' : 'bg-danger/15 text-danger'
+            }`}>
+              {targetAchievement.toFixed(0)}% of target
+            </span>
+            <span className="text-xs text-text-secondary">Target: {target}</span>
+          </div>
+        )}
       </div>
     </div>
   );
