@@ -75,32 +75,34 @@ export default function CreativePage() {
   const totalSlugging = productionSlugging.reduce((a, b) => ({ launched: a.launched + b.launched, hits: a.hits + b.hits }), { launched: 0, hits: 0 });
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <h2 className="text-lg font-semibold">Creative & MTA Control Panel</h2>
+    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+      <div className="px-1">
+        <h2 className="text-lg sm:text-xl font-semibold">Creative & MTA Control Panel</h2>
+      </div>
 
       {/* Tab Navigation */}
-      <div className="flex gap-1 flex-wrap">
+      <div className="flex gap-1 sm:gap-1.5 flex-wrap px-1">
         {tabs.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${activeTab === tab ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>
-            {tab}
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-colors min-w-0 ${activeTab === tab ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+            <span className="truncate">{tab}</span>
           </button>
         ))}
       </div>
 
       {/* Tab Description */}
-      <div className="bg-bg-surface border border-border rounded-lg px-4 py-3">
+      <div className="bg-bg-surface border border-border rounded-lg px-4 py-3 mx-1">
         <p className="text-sm text-text-secondary leading-relaxed">{tabDescriptions[activeTab]}</p>
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mx-1">
         {/* Platform controls - hide for Production & Slugging and Ad Churn */}
         {!['Top Creatives', 'Ad Churn'].includes(activeTab) && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-text-secondary font-medium">Platform:</span>
-            <div className="flex gap-1">
+            <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
+            <div className="flex gap-1 flex-wrap">
               {platforms.map(p => (
-                <button key={p} onClick={() => setPlatform(p)} className={`px-2.5 py-1 rounded-md text-xs ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>
+                <button key={p} onClick={() => setPlatform(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
                   {p}
                 </button>
               ))}
@@ -109,9 +111,9 @@ export default function CreativePage() {
         )}
         {/* Attribution controls - hide for Production & Slugging and Ad Churn */}
         {!['Top Creatives', 'Ad Churn'].includes(activeTab) && (
-          <>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-secondary font-medium">Model:</span>
+              <span className="text-xs text-text-secondary font-medium shrink-0">Model:</span>
               <div className="relative">
                 <select value={attrModel} onChange={(e) => setAttrModel(e.target.value)} className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors">
                   {attributionModels.map(m => <option key={m} value={m}>{m}</option>)}
@@ -120,7 +122,7 @@ export default function CreativePage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-secondary font-medium">Window:</span>
+              <span className="text-xs text-text-secondary font-medium shrink-0">Window:</span>
               <div className="relative">
                 <select value={attrWindow} onChange={(e) => setAttrWindow(e.target.value)} className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors">
                   {attributionWindows.map(w => <option key={w} value={w}>{w}</option>)}
@@ -128,70 +130,85 @@ export default function CreativePage() {
                 <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
 
       {/* ═══════════════════════ PERFORMANCE TAB ═══════════════════════ */}
       {activeTab === 'Performance' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary">Creative Performance</h3>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="border-b border-border text-text-secondary uppercase">
-                  <th className="text-left py-2 px-2 font-medium">Creative</th>
-                  <th className="text-left py-2 px-2 font-medium">Platform</th>
-                  <th className="text-right py-2 px-2 font-medium">Spend</th>
-                  <th className="text-right py-2 px-2 font-medium">Impr.</th>
-                  <th className="text-right py-2 px-2 font-medium">CTR</th>
-                  <th className="text-right py-2 px-2 font-medium">CPC</th>
-                  <th className="text-right py-2 px-2 font-medium">Conv.</th>
-                  <th className="text-right py-2 px-2 font-medium">CPA <InfoTooltip metric="nCAC" /></th>
-                  <th className="text-right py-2 px-2 font-medium">ROAS <InfoTooltip metric="ROAS" /></th>
-                  <th className="text-center py-2 px-2 font-medium">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((row) => (
-                  <tr key={row.name} className="border-b border-border/30 hover:bg-bg-elevated/50 transition-colors">
-                    <td className="py-2.5 px-2 font-medium text-text-primary max-w-[200px] truncate">{row.name}</td>
-                    <td className="py-2.5 px-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.platform === 'Meta' ? 'bg-brand-blue/15 text-brand-blue-light' : row.platform === 'Google' ? 'bg-warm-gold/15 text-warm-gold' : 'bg-success/15 text-success'}`}>{row.platform}</span>
-                    </td>
-                    <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrency(row.spend)}</td>
-                    <td className="py-2.5 px-2 text-right text-text-secondary">{(row.impressions / 1000).toFixed(0)}K</td>
-                    <td className="py-2.5 px-2 text-right text-text-secondary">{row.ctr.toFixed(2)}%</td>
-                    <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrency(row.cpc)}</td>
-                    <td className="py-2.5 px-2 text-right text-text-primary font-medium">{row.conversions}</td>
-                    <td className="py-2.5 px-2 text-right"><span className={row.cpa <= 700 ? 'text-success' : row.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>{formatCurrency(row.cpa)}</span></td>
-                    <td className="py-2.5 px-2 text-right"><span className={row.roas >= 3.0 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>{row.roas.toFixed(2)}x</span></td>
-                    <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.status === 'Active' ? 'bg-success/15 text-success' : 'bg-warm-gold/15 text-warm-gold'}`}>{row.status}</span></td>
+          <div className="overflow-x-auto -mx-1 sm:mx-0">
+            <div className="min-w-[900px]">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border text-text-secondary uppercase">
+                    <th className="text-left py-2 px-2 font-medium min-w-[150px]">Creative</th>
+                    <th className="text-left py-2 px-2 font-medium min-w-[70px]">Platform</th>
+                    <th className="text-right py-2 px-2 font-medium min-w-[70px]">Spend</th>
+                    <th className="text-right py-2 px-2 font-medium min-w-[60px]">Impr.</th>
+                    <th className="text-right py-2 px-2 font-medium min-w-[50px]">CTR</th>
+                    <th className="text-right py-2 px-2 font-medium min-w-[60px]">CPC</th>
+                    <th className="text-right py-2 px-2 font-medium min-w-[50px]">Conv.</th>
+                    <th className="text-right py-2 px-2 font-medium min-w-[70px]">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>CPA</span>
+                        <InfoTooltip metric="nCAC" />
+                      </div>
+                    </th>
+                    <th className="text-right py-2 px-2 font-medium min-w-[70px]">
+                      <div className="flex items-center justify-end gap-1">
+                        <span>ROAS</span>
+                        <InfoTooltip metric="ROAS" />
+                      </div>
+                    </th>
+                    <th className="text-center py-2 px-2 font-medium min-w-[60px]">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map((row) => (
+                    <tr key={row.name} className="border-b border-border/30 hover:bg-bg-elevated/50 transition-colors">
+                      <td className="py-2.5 px-2 font-medium text-text-primary max-w-[200px] truncate">{row.name}</td>
+                      <td className="py-2.5 px-2">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.platform === 'Meta' ? 'bg-brand-blue/15 text-brand-blue-light' : row.platform === 'Google' ? 'bg-warm-gold/15 text-warm-gold' : 'bg-success/15 text-success'}`}>{row.platform}</span>
+                      </td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrency(row.spend)}</td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{(row.impressions / 1000).toFixed(0)}K</td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{row.ctr.toFixed(2)}%</td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrency(row.cpc)}</td>
+                      <td className="py-2.5 px-2 text-right text-text-primary font-medium">{row.conversions}</td>
+                      <td className="py-2.5 px-2 text-right"><span className={row.cpa <= 700 ? 'text-success' : row.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>{formatCurrency(row.cpa)}</span></td>
+                      <td className="py-2.5 px-2 text-right"><span className={row.roas >= 3.0 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>{row.roas.toFixed(2)}x</span></td>
+                      <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.status === 'Active' ? 'bg-success/15 text-success' : 'bg-warm-gold/15 text-warm-gold'}`}>{row.status}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
       {/* ═══════════════════════ ACCOUNT CONTROL (Scatter Plot) ═══════════════════════ */}
       {activeTab === 'Account Control' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-text-primary">Account Control — CPA vs Spend <InfoTooltip metric="Account Control Chart" /></h3>
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <span className="truncate">Account Control — CPA vs Spend</span>
+              <InfoTooltip metric="Account Control Chart" />
+            </h3>
           </div>
-          <div className="flex gap-4 mb-4 flex-wrap">
+          <div className="flex gap-2 sm:gap-4 mb-4 flex-wrap">
             {Object.entries(zoneLabels).map(([zone, label]) => (
               <div key={zone} className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: zoneColors[zone] }} />
-                <span className="text-xs text-text-secondary">{label}</span>
+                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: zoneColors[zone] }} />
+                <span className="text-xs text-text-secondary truncate">{label}</span>
               </div>
             ))}
           </div>
-          <div style={{ width: '100%', height: 420 }}>
+          <div className="min-h-[320px] sm:min-h-[420px]" style={{ width: '100%', height: '420px' }}>
             <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -252,7 +269,7 @@ export default function CreativePage() {
             </ResponsiveContainer>
           </div>
           {/* Quadrant labels */}
-          <div className="grid grid-cols-2 gap-3 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             <div className="bg-success/5 border border-success/20 rounded-lg p-3">
               <div className="text-xs font-medium text-success mb-1">↘ Bottom-Right: Scaling</div>
               <div className="text-xs text-text-secondary">High spend, low CPA. Your proven winners. Scale these harder.</div>
@@ -275,19 +292,22 @@ export default function CreativePage() {
 
       {/* ═══════════════════════ AD CHURN (Stacked Bar by Age) ═══════════════════════ */}
       {activeTab === 'Ad Churn' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-text-primary">Churn & Retesting Control — Spend by Creative Age <InfoTooltip metric="Ad Churn" /></h3>
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <span className="truncate">Churn & Retesting Control — Spend by Creative Age</span>
+              <InfoTooltip metric="Ad Churn" />
+            </h3>
           </div>
-          <div className="flex gap-3 mb-4 flex-wrap">
+          <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
             {churnAgeKeys.map((key, i) => (
               <div key={key} className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: churnAgeColors[i] }} />
-                <span className="text-xs text-text-secondary">{key}</span>
+                <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: churnAgeColors[i] }} />
+                <span className="text-xs text-text-secondary truncate">{key}</span>
               </div>
             ))}
           </div>
-          <div style={{ width: '100%', height: 380 }}>
+          <div className="min-h-[320px] sm:min-h-[380px]" style={{ width: '100%', height: '380px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={adChurnData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -310,7 +330,7 @@ export default function CreativePage() {
             <p className="text-xs text-text-secondary leading-relaxed">
               <span className="font-medium text-text-primary">Reading this chart:</span> Dark bars = newest ads (last 7 days). Lighter bars = older ads.
               A healthy account shows new creative steadily taking over spend from older creative.
-              If the lightest bars (180+ days) dominate, you&apos;re running on legacy creative and vulnerable to fatigue.
+              If the lightest bars (180+ days) dominate, you're running on legacy creative and vulnerable to fatigue.
               March shows a positive trend — new creative (dark) is gaining share.
             </p>
           </div>
@@ -319,19 +339,22 @@ export default function CreativePage() {
 
       {/* ═══════════════════════ CREATIVE LAUNCHES (Creative Churn Cohorts) ═══════════════════════ */}
       {activeTab === 'Creative Launches' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-text-primary">Creative Churn — Spend by Launch Cohort <InfoTooltip metric="Creative Churn Cohorts" /></h3>
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <span className="truncate">Creative Churn — Spend by Launch Cohort</span>
+              <InfoTooltip metric="Creative Churn Cohorts" />
+            </h3>
           </div>
-          <div className="flex gap-3 mb-4 flex-wrap">
+          <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
             {cohortKeys.map((key) => (
               <div key={key} className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: cohortColors[key] }} />
-                <span className="text-xs text-text-secondary">{cohortLabels[key]}</span>
+                <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: cohortColors[key] }} />
+                <span className="text-xs text-text-secondary truncate">{cohortLabels[key]}</span>
               </div>
             ))}
           </div>
-          <div style={{ width: '100%', height: 380 }}>
+          <div className="min-h-[320px] sm:min-h-[380px]" style={{ width: '100%', height: '380px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={creativeChurnCohorts} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -362,25 +385,28 @@ export default function CreativePage() {
 
       {/* ═══════════════════════ TOP CREATIVES (Production & Slugging Rate) ═══════════════════════ */}
       {activeTab === 'Top Creatives' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-text-primary">Production & Slugging Rate <InfoTooltip metric="Production Rate" /></h3>
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <span className="truncate">Production & Slugging Rate</span>
+              <InfoTooltip metric="Production Rate" />
+            </h3>
           </div>
-          <div className="flex gap-4 mb-4">
+          <div className="flex gap-2 sm:gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm bg-brand-blue/30" />
-              <span className="text-xs text-text-secondary">Launched (didn&apos;t scale)</span>
+              <div className="w-3 h-3 rounded-sm bg-brand-blue/30 shrink-0" />
+              <span className="text-xs text-text-secondary">Launched (didn't scale)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: '#1e3a5f' }} />
+              <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: '#1e3a5f' }} />
               <span className="text-xs text-text-secondary">Hits (scaled profitably)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-warm-gold" />
+              <div className="w-2 h-2 rounded-full bg-warm-gold shrink-0" />
               <span className="text-xs text-text-secondary">Hit Rate %</span>
             </div>
           </div>
-          <div style={{ width: '100%', height: 380 }}>
+          <div className="min-h-[320px] sm:min-h-[380px]" style={{ width: '100%', height: '380px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={productionSlugging} margin={{ top: 20, right: 40, bottom: 10, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -401,7 +427,7 @@ export default function CreativePage() {
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <div className="grid grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
             <div className="bg-bg-elevated border border-border rounded-lg p-3 text-center">
               <div className="text-xs text-text-secondary mb-1">Total Launched</div>
               <div className="text-xl font-bold text-text-primary">{totalSlugging.launched}</div>
@@ -420,46 +446,52 @@ export default function CreativePage() {
 
       {/* ═══════════════════════ PARETO ═══════════════════════ */}
       {activeTab === 'Pareto' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <h3 className="text-sm font-medium text-text-secondary mb-4">
-            Pareto Distribution <InfoTooltip metric="Pareto" />
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <h3 className="text-sm font-medium text-text-secondary mb-4 flex items-center gap-2">
+            <span>Pareto Distribution</span>
+            <InfoTooltip metric="Pareto" />
           </h3>
-          <ResponsiveContainer width="100%" height={320}>
-            <BarChart data={paretoData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="name" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-30} textAnchor="end" height={80} />
-              <YAxis 
-                yAxisId="left" 
-                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                label={{ value: 'Conversions', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
-              />
-              <YAxis 
-                yAxisId="right" 
-                orientation="right" 
-                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                domain={[0, 100]} 
-                tickFormatter={v => `${v}%`} 
-                label={{ value: 'Cumulative %', angle: 90, position: 'insideRight', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
-              />
-              <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
-              <Bar yAxisId="left" dataKey="conversions" name="Conversions" fill="#4A6BD6" radius={[3, 3, 0, 0]} />
-              <Bar yAxisId="right" dataKey="cumPct" name="Cumulative %" fill="#EDBF63" radius={[3, 3, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <div className="min-h-[320px]">
+            <ResponsiveContainer width="100%" height={320}>
+              <BarChart data={paretoData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="name" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-30} textAnchor="end" height={80} />
+                <YAxis 
+                  yAxisId="left" 
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                  label={{ value: 'Conversions', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                />
+                <YAxis 
+                  yAxisId="right" 
+                  orientation="right" 
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                  domain={[0, 100]} 
+                  tickFormatter={v => `${v}%`} 
+                  label={{ value: 'Cumulative %', angle: 90, position: 'insideRight', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                />
+                <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
+                <Bar yAxisId="left" dataKey="conversions" name="Conversions" fill="#4A6BD6" radius={[3, 3, 0, 0]} />
+                <Bar yAxisId="right" dataKey="cumPct" name="Cumulative %" fill="#EDBF63" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 
       {/* ═══════════════════════ DEMOGRAPHICS ═══════════════════════ */}
       {activeTab === 'Demographics' && (
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6 mx-1">
           {/* Age Group Performance */}
-          <div className="bg-bg-surface border border-border rounded-lg p-5">
-            <h3 className="text-sm font-medium text-text-primary mb-4">Performance by Age Group <InfoTooltip metric="Demographics Analysis" /></h3>
-            <div className="space-y-2">
+          <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+            <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
+              <span>Performance by Age Group</span>
+              <InfoTooltip metric="Demographics Analysis" />
+            </h3>
+            <div className="space-y-3">
               {demographicsAge.map((row) => (
-                <div key={row.group} className="flex items-center gap-3">
-                  <div className="w-12 text-xs text-text-secondary font-medium">{row.group}</div>
-                  <div className="flex-1 h-8 bg-bg-elevated rounded-md overflow-hidden relative">
+                <div key={row.group} className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-12 text-xs text-text-secondary font-medium shrink-0">{row.group}</div>
+                  <div className="flex-1 h-8 bg-bg-elevated rounded-md overflow-hidden relative min-w-0">
                     <div
                       className="h-full rounded-md transition-all"
                       style={{
@@ -468,21 +500,21 @@ export default function CreativePage() {
                         opacity: 0.8,
                       }}
                     />
-                    <div className="absolute inset-0 flex items-center px-3 justify-between">
-                      <span className="text-xs font-medium text-text-primary">{row.conversions} conv.</span>
-                      <span className={`text-xs font-medium ${row.cpa <= 700 ? 'text-success' : row.cpa <= 800 ? 'text-warm-gold' : 'text-danger'}`}>₱{row.cpa} CPA</span>
+                    <div className="absolute inset-0 flex items-center px-2 sm:px-3 justify-between">
+                      <span className="text-xs font-medium text-text-primary truncate">{row.conversions} conv.</span>
+                      <span className={`text-xs font-medium shrink-0 ${row.cpa <= 700 ? 'text-success' : row.cpa <= 800 ? 'text-warm-gold' : 'text-danger'}`}>₱{row.cpa} CPA</span>
                     </div>
                   </div>
-                  <div className="w-16 text-right text-xs text-text-secondary">{row.roas.toFixed(2)}x</div>
+                  <div className="w-12 sm:w-16 text-right text-xs text-text-secondary shrink-0">{row.roas.toFixed(2)}x</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Gender Breakdown */}
-          <div className="bg-bg-surface border border-border rounded-lg p-5">
+          <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
             <h3 className="text-sm font-medium text-text-primary mb-4">Performance by Gender</h3>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {demographicsGender.map((row) => (
                 <div key={row.gender} className="bg-bg-elevated border border-border rounded-lg p-4">
                   <div className="text-sm font-medium text-text-primary mb-3">{row.gender}</div>
@@ -498,17 +530,17 @@ export default function CreativePage() {
           </div>
 
           {/* Gender+Age Stacked Area over time */}
-          <div className="bg-bg-surface border border-border rounded-lg p-5">
+          <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
             <h3 className="text-sm font-medium text-text-primary mb-2">Spend by Gender & Age Over Time</h3>
-            <div className="flex gap-2 mb-4 flex-wrap">
+            <div className="flex gap-1 sm:gap-2 mb-4 flex-wrap">
               {demoKeys.map((key, i) => (
                 <div key={key} className="flex items-center gap-1">
-                  <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: demoColors[i] }} />
+                  <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: demoColors[i] }} />
                   <span className="text-[10px] text-text-secondary">{key}</span>
                 </div>
               ))}
             </div>
-            <div style={{ width: '100%', height: 320 }}>
+            <div className="min-h-[320px]" style={{ width: '100%', height: '320px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={demographicsGenderAge} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -538,8 +570,8 @@ export default function CreativePage() {
             <div className="text-xs font-medium text-success mb-1">💡 Key Insight</div>
             <p className="text-xs text-text-secondary leading-relaxed">
               Women 25-44 drive 62% of conversions at the lowest CPA (₱613-656 vs ₱724-1250 for other segments).
-              This is your core buying demographic. Align creative production to this audience — if you&apos;re producing TikTok-style Gen Z content
-              but your buyers are 25-44 women, you&apos;re misallocating resources.
+              This is your core buying demographic. Align creative production to this audience — if you're producing TikTok-style Gen Z content
+              but your buyers are 25-44 women, you're misallocating resources.
             </p>
           </div>
         </div>
@@ -547,34 +579,36 @@ export default function CreativePage() {
 
       {/* ═══════════════════════ OTHER TABS (Placeholder) ═══════════════════════ */}
       {!['Performance', 'Pareto', 'Account Control', 'Ad Churn', 'Creative Launches', 'Top Creatives', 'Demographics'].includes(activeTab) && (
-        <div className="bg-bg-surface border border-border rounded-lg p-12 text-center">
+        <div className="bg-bg-surface border border-border rounded-lg p-8 sm:p-12 text-center mx-1">
           <div className="text-text-secondary text-sm">{activeTab} view</div>
           <div className="text-text-secondary text-xs mt-1">Data will populate when connected to live sources</div>
         </div>
       )}
 
       {/* Summary KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mx-1">
         {[
           { label: 'Total Spend', value: formatCurrency(filtered.reduce((s, c) => s + c.spend, 0)) },
           { label: 'Total Conversions', value: filtered.reduce((s, c) => s + c.conversions, 0).toLocaleString() },
           { label: 'Blended CPA', value: formatCurrency(filtered.reduce((s, c) => s + c.spend, 0) / filtered.reduce((s, c) => s + c.conversions, 0)) },
           { label: 'Blended ROAS', value: `${(filtered.reduce((s, c) => s + c.roas * c.spend, 0) / filtered.reduce((s, c) => s + c.spend, 0)).toFixed(2)}x` },
         ].map((card) => (
-          <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4">
+          <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4 min-h-[80px] flex flex-col justify-between">
             <div className="text-xs text-text-secondary mb-1">{card.label}</div>
-            <div className="text-xl font-bold text-text-primary">{card.value}</div>
+            <div className="text-lg sm:text-xl font-bold text-text-primary truncate">{card.value}</div>
           </div>
         ))}
       </div>
 
       {/* AI Suggestions */}
-      <AISuggestionsPanel 
-        suggestions={creativeAISuggestions} 
-        title="Creative Intelligence"
-        attributionModel={attrModel}
-        attributionWindow={attrWindow}
-      />
+      <div className="px-1">
+        <AISuggestionsPanel 
+          suggestions={creativeAISuggestions} 
+          title="Creative Intelligence"
+          attributionModel={attrModel}
+          attributionWindow={attrWindow}
+        />
+      </div>
     </div>
   );
 }
