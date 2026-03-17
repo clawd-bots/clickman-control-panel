@@ -18,14 +18,14 @@ export default function CohortsPage() {
   const maxRetention = Math.max(...cohortRetention.flatMap(c => c.periods.filter(p => p > 0 && p < 100)));
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Cohort Analysis & Retention</h2>
+    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
+        <h2 className="text-lg sm:text-xl font-semibold">Cohort Analysis & Retention</h2>
         <div className="flex gap-1">
-          <button onClick={() => setActiveTab('analysis')} className={`px-3 py-1.5 rounded-md text-xs font-medium ${activeTab === 'analysis' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>
+          <button onClick={() => setActiveTab('analysis')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${activeTab === 'analysis' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
             Cohort Analysis
           </button>
-          <button onClick={() => setActiveTab('comparison')} className={`px-3 py-1.5 rounded-md text-xs font-medium ${activeTab === 'comparison' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>
+          <button onClick={() => setActiveTab('comparison')} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${activeTab === 'comparison' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
             Cohort Comparison
           </button>
         </div>
@@ -34,33 +34,42 @@ export default function CohortsPage() {
       {activeTab === 'analysis' && (
         <>
           {/* Controls */}
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mx-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-secondary font-medium">Metric:</span>
-              {['Net Revenue', 'Orders'].map(m => (
-                <button key={m} onClick={() => setMetric(m)} className={`px-2.5 py-1 rounded-md text-xs ${metric === m ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>{m}</button>
-              ))}
+              <span className="text-xs text-text-secondary font-medium shrink-0">Metric:</span>
+              <div className="flex gap-1">
+                {['Net Revenue', 'Orders'].map(m => (
+                  <button key={m} onClick={() => setMetric(m)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${metric === m ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>{m}</button>
+                ))}
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-secondary font-medium">Mode:</span>
-              <button onClick={() => setMode('incremental')} className={`px-2.5 py-1 rounded-md text-xs ${mode === 'incremental' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary'}`}>Incremental</button>
-              <button onClick={() => setMode('accumulative')} className={`px-2.5 py-1 rounded-md text-xs ${mode === 'accumulative' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary'}`}>Accumulative</button>
+              <span className="text-xs text-text-secondary font-medium shrink-0">Mode:</span>
+              <div className="flex gap-1">
+                <button onClick={() => setMode('incremental')} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${mode === 'incremental' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>Incremental</button>
+                <button onClick={() => setMode('accumulative')} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${mode === 'accumulative' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>Accumulative</button>
+              </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-secondary font-medium">Format:</span>
-              <button onClick={() => setFormat('%')} className={`px-2.5 py-1 rounded-md text-xs ${format === '%' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary'}`}>%</button>
-              <button onClick={() => setFormat('#')} className={`px-2.5 py-1 rounded-md text-xs ${format === '#' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary'}`}>#</button>
+              <span className="text-xs text-text-secondary font-medium shrink-0">Format:</span>
+              <div className="flex gap-1">
+                <button onClick={() => setFormat('%')} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${format === '%' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>%</button>
+                <button onClick={() => setFormat('#')} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${format === '#' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>#</button>
+              </div>
             </div>
-
           </div>
 
           {/* Cohort Table */}
-          <div className="bg-bg-surface border border-border rounded-lg p-5">
+          <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-text-primary">Retention by Cohort <InfoTooltip metric="Cohort" /></h3>
+              <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+                <span>Retention by Cohort</span>
+                <InfoTooltip metric="Cohort" />
+              </h3>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+            <div className="overflow-x-auto -mx-1 sm:mx-0">
+              <div className="min-w-[900px]">
+                <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border text-text-secondary uppercase">
                     <th className="text-left py-2 px-2 font-medium">Cohort</th>
@@ -108,23 +117,30 @@ export default function CohortsPage() {
                   </tr>
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
 
           {/* AI Suggestions */}
-          <AISuggestionsPanel 
-            suggestions={cohortAISuggestions} 
-            title="Cohort Intelligence"
-          />
+          <div className="px-1">
+            <AISuggestionsPanel 
+              suggestions={cohortAISuggestions} 
+              title="Cohort Intelligence"
+            />
+          </div>
         </>
       )}
 
       {activeTab === 'comparison' && (
         <>
           {/* CLV Extension Chart */}
-          <div className="bg-bg-surface border border-border rounded-lg p-5">
-            <h3 className="text-sm font-medium text-text-secondary mb-4">Customer Lifetime Value Extension <InfoTooltip metric="CLV" /></h3>
-            <ResponsiveContainer width="100%" height={300}>
+          <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+            <h3 className="text-sm font-medium text-text-secondary mb-4 flex items-center gap-2">
+              <span>Customer Lifetime Value Extension</span>
+              <InfoTooltip metric="CLV" />
+            </h3>
+            <div className="min-h-[300px]">
+              <ResponsiveContainer width="100%" height={300}>
               <BarChart data={clvExtension} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis type="number" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
@@ -139,15 +155,20 @@ export default function CohortsPage() {
                 <Bar dataKey="beyond365" name=">365d" stackId="a" fill="#34D399" radius={[0, 3, 3, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            </div>
           </div>
 
           {/* Product Comparison Table */}
-          <div className="bg-bg-surface border border-border rounded-lg p-5">
+          <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-text-primary">Product Comparison <InfoTooltip metric="Repeat Rate" /></h3>
+              <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+                <span>Product Comparison</span>
+                <InfoTooltip metric="Repeat Rate" />
+              </h3>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+            <div className="overflow-x-auto -mx-1 sm:mx-0">
+              <div className="min-w-[1000px]">
+                <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border text-text-secondary uppercase">
                     <th className="text-left py-2 px-2 font-medium">Product</th>
@@ -188,6 +209,7 @@ export default function CohortsPage() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         </>
