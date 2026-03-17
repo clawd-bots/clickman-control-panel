@@ -10,6 +10,7 @@ import {
   Palette,
   Users,
   Target,
+  FileText,
   ChevronLeft,
   ChevronRight,
   X,
@@ -25,6 +26,7 @@ const navItems = [
   { href: '/creative', label: 'Creative & MTA', icon: Palette },
   { href: '/cohorts', label: 'Cohort Analysis', icon: Users },
   { href: '/targets', label: 'Targets & Goals', icon: Target },
+  { href: '/prompt-templates', label: 'Prompt Templates', icon: FileText },
   { href: '/final-items', label: 'Final Items', icon: ChevronRight },
 ];
 
@@ -48,7 +50,7 @@ export default function Sidebar() {
             alt="&you"
             width={collapsed ? 28 : 44}
             height={collapsed ? 28 : 44}
-            className={theme === 'dark' ? 'brightness-0 invert' : ''}
+            className={theme === 'dark' ? 'brightness-0 invert' : 'brightness-0'}
             priority
           />
         </Link>

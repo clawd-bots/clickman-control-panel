@@ -16,8 +16,8 @@ import {
   AreaChart, Area, LineChart, Line, ComposedChart,
 } from 'recharts';
 
-const tabs = ['Performance', 'Ad Churn', 'Account Control', 'Top Creatives', 'Creative Launches', 'Pareto', 'Campaign Spend', 'Y/Y Comp', 'Demographics'];
-const platforms = ['All', 'Meta', 'Google', 'TikTok', 'Reddit'];
+const tabs = ['Performance', 'Ad Churn', 'Account Control', 'Top Creatives', 'Creative Launches', 'Pareto', 'Demographics'];
+const platforms = ['Meta', 'TikTok', 'Reddit'];
 
 const tabDescriptions: Record<string, string> = {
   'Performance': 'Overview of all active ad creatives with spend, engagement, and conversion metrics. Use this to monitor your live ads and spot issues quickly.',
@@ -26,8 +26,6 @@ const tabDescriptions: Record<string, string> = {
   'Top Creatives': 'Production & Slugging Rate , tracks your "at bats" vs "hits." Bars show ads launched per month. Dark sections show how many actually scaled. If you launch many ads and none scale, you have a creative strategy problem, not a media buying problem.',
   'Creative Launches': 'Creative Churn by Cohort. Each color = a cohort of ads launched in the same month. Newer cohorts (darker) should take over spend from older ones. If old cohorts still dominate, creative fatigue is building and performance will decline.',
   'Pareto': 'The 80/20 principle applied to ad creatives. Usually 20% of creatives drive 80% of results. Use this to identify your winners and stop spreading budget too thin.',
-  'Campaign Spend': 'Budget allocation and spend pacing across campaigns. Spot under/over-spending vs. daily budget to optimize delivery.',
-  'Y/Y Comp': 'Year-over-year comparison of creative performance. Identifies seasonal trends and long-term creative health.',
   'Demographics': 'Are you producing for the audience that is actually buying? If women 25-34 drive your profit but you keep producing TikTok-style ads for Gen Z, you\'re burning cash. Align your production queue with your paying demographic.',
 };
 
@@ -51,15 +49,27 @@ const cohortLabels: Record<string, string> = { oct: 'Oct Creatives', nov: 'Nov C
 const demoKeys = ['F 18-24', 'F 25-34', 'F 35-44', 'F 45-54', 'F 55+', 'M 18-24', 'M 25-34', 'M 35-44', 'M 45-54', 'M 55+'];
 const demoColors = ['#fca5a5', '#ef4444', '#dc2626', '#b91c1c', '#7f1d1d', '#93c5fd', '#3b82f6', '#2563eb', '#1d4ed8', '#1e3a8a'];
 
+// Function to get tab-specific AI analysis title
+function getAITitle(tab: string): string {
+  const aiTitles: Record<string, string> = {
+    'Performance': 'Performance Intelligence',
+    'Ad Churn': 'Ad Churn Analysis',
+    'Account Control': 'Account Control Analysis', 
+    'Top Creatives': 'Production Analysis',
+    'Creative Launches': 'Creative Launch Analysis',
+    'Pareto': 'Pareto Analysis',
+    'Demographics': 'Demographics Intelligence',
+  };
+  return aiTitles[tab] || 'Creative Intelligence';
+}
+
 export default function CreativePage() {
   const [activeTab, setActiveTab] = useState('Performance');
-  const [platform, setPlatform] = useState('All');
-  const [attrModel, setAttrModel] = useState('Data-Driven');
+  const [platform, setPlatform] = useState('Meta');
+  const [attrModel, setAttrModel] = useState('Linear All');
   const [attrWindow, setAttrWindow] = useState('7-day click / 1-day view');
 
-  const filtered = platform === 'All'
-    ? creativePerformance
-    : creativePerformance.filter(c => c.platform === platform);
+  const filtered = creativePerformance.filter(c => c.platform === platform);
 
   const paretoData = [...creativePerformance]
     .sort((a, b) => b.conversions - a.conversions)
@@ -139,6 +149,7 @@ export default function CreativePage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary">Creative Performance</h3>
+            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
           </div>
           <div className="overflow-x-auto -mx-1 sm:mx-0">
             <div className="min-w-[900px]">
@@ -199,6 +210,7 @@ export default function CreativePage() {
               <span className="truncate">Account Control , CPA vs Spend</span>
               <InfoTooltip metric="Account Control Chart" />
             </h3>
+            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
           </div>
           <div className="flex gap-2 sm:gap-4 mb-4 flex-wrap">
             {Object.entries(zoneLabels).map(([zone, label]) => (
@@ -298,6 +310,7 @@ export default function CreativePage() {
               <span className="truncate">Churn & Retesting Control , Spend by Creative Age</span>
               <InfoTooltip metric="Ad Churn" />
             </h3>
+            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
           </div>
           <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
             {churnAgeKeys.map((key, i) => (
@@ -345,6 +358,7 @@ export default function CreativePage() {
               <span className="truncate">Creative Churn , Spend by Launch Cohort</span>
               <InfoTooltip metric="Creative Churn Cohorts" />
             </h3>
+            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
           </div>
           <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
             {cohortKeys.map((key) => (
@@ -391,6 +405,7 @@ export default function CreativePage() {
               <span className="truncate">Production & Slugging Rate</span>
               <InfoTooltip metric="Production Rate" />
             </h3>
+            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
           </div>
           <div className="flex gap-2 sm:gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-1.5">
@@ -447,10 +462,13 @@ export default function CreativePage() {
       {/* ═══════════════════════ PARETO ═══════════════════════ */}
       {activeTab === 'Pareto' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <h3 className="text-sm font-medium text-text-secondary mb-4 flex items-center gap-2">
-            <span>Pareto Distribution</span>
-            <InfoTooltip metric="Pareto" />
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-secondary flex items-center gap-2">
+              <span>Pareto Distribution</span>
+              <InfoTooltip metric="Pareto" />
+            </h3>
+            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+          </div>
           <div className="min-h-[320px]">
             <ResponsiveContainer width="100%" height={320}>
               <BarChart data={paretoData}>
@@ -483,10 +501,13 @@ export default function CreativePage() {
         <div className="space-y-4 sm:space-y-6 mx-1">
           {/* Age Group Performance */}
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
-            <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
-              <span>Performance by Age Group</span>
-              <InfoTooltip metric="Demographics Analysis" />
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+                <span>Performance by Age Group</span>
+                <InfoTooltip metric="Demographics Analysis" />
+              </h3>
+              <span className="text-xs text-text-tertiary shrink-0">Meta Ads</span>
+            </div>
             <div className="space-y-3">
               {demographicsAge.map((row) => (
                 <div key={row.group} className="flex items-center gap-2 sm:gap-3">
@@ -513,7 +534,10 @@ export default function CreativePage() {
 
           {/* Gender Breakdown */}
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
-            <h3 className="text-sm font-medium text-text-primary mb-4">Performance by Gender</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-text-primary">Performance by Gender</h3>
+              <span className="text-xs text-text-tertiary shrink-0">Meta Ads</span>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {demographicsGender.map((row) => (
                 <div key={row.gender} className="bg-bg-elevated border border-border rounded-lg p-4">
@@ -531,7 +555,10 @@ export default function CreativePage() {
 
           {/* Gender+Age Stacked Area over time */}
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
-            <h3 className="text-sm font-medium text-text-primary mb-2">Spend by Gender & Age Over Time</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-text-primary">Spend by Gender & Age Over Time</h3>
+              <span className="text-xs text-text-tertiary shrink-0">Meta Ads</span>
+            </div>
             <div className="flex gap-1 sm:gap-2 mb-4 flex-wrap">
               {demoKeys.map((key, i) => (
                 <div key={key} className="flex items-center gap-1">
@@ -585,26 +612,13 @@ export default function CreativePage() {
         </div>
       )}
 
-      {/* Summary KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mx-1">
-        {[
-          { label: 'Total Spend', value: formatCurrency(filtered.reduce((s, c) => s + c.spend, 0)) },
-          { label: 'Total Conversions', value: filtered.reduce((s, c) => s + c.conversions, 0).toLocaleString() },
-          { label: 'Blended CPA', value: formatCurrency(filtered.reduce((s, c) => s + c.spend, 0) / filtered.reduce((s, c) => s + c.conversions, 0)) },
-          { label: 'Blended ROAS', value: `${(filtered.reduce((s, c) => s + c.roas * c.spend, 0) / filtered.reduce((s, c) => s + c.spend, 0)).toFixed(2)}x` },
-        ].map((card) => (
-          <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4 min-h-[80px] flex flex-col justify-between">
-            <div className="text-xs text-text-secondary mb-1">{card.label}</div>
-            <div className="text-lg sm:text-xl font-bold text-text-primary truncate">{card.value}</div>
-          </div>
-        ))}
-      </div>
+
 
       {/* AI Suggestions */}
       <div className="px-1">
         <AISuggestionsPanel 
           suggestions={creativeAISuggestions} 
-          title="Creative Intelligence"
+          title={getAITitle(activeTab)}
           attributionModel={attrModel}
           attributionWindow={attrWindow}
         />

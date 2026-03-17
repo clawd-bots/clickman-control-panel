@@ -165,7 +165,7 @@ export default function CashFlowPage() {
                   {months.map((m) => {
                     const originalVal = row[m];
                     const val = convertValue(originalVal);
-                    const displayVal = currency === '$' ? val.toFixed(1) : Math.round(val);
+                    const displayVal = currency === '$' ? (val / 1000).toFixed(1) : Math.round(val / 1000);
                     return (
                       <td key={m} className={`py-2 px-2 text-right ${originalVal < 0 ? 'text-danger' : originalVal > 0 ? 'text-success' : 'text-text-tertiary'}`}>
                         {originalVal !== 0 ? displayVal : ','}

@@ -84,14 +84,6 @@ export default function AttributionPage() {
     <div className="space-y-4 sm:space-y-6">
       <h2 className="text-lg sm:text-xl font-semibold">Attribution Framework</h2>
 
-      {/* AI Suggestions */}
-      <div>
-        <AISuggestionsPanel 
-          suggestions={attributionAISuggestions} 
-          title="Cross-Layer AI Analysis"
-        />
-      </div>
-
       {/* Horizontal Tab Buttons */}
       <div className="flex gap-1.5 sm:gap-2 flex-wrap px-1">
         {treeLayers.map((layer) => {
@@ -155,10 +147,13 @@ export default function AttributionPage() {
       {/* Layer Detail Section */}
       {activeLayer === 'star' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
-            <Star size={16} className="text-warm-gold shrink-0" />
-            <span>MER / nCAC Overview</span>
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <Star size={16} className="text-warm-gold shrink-0" />
+              <span>MER / nCAC Overview</span>
+            </h3>
+            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary flex items-center gap-1">
@@ -192,10 +187,13 @@ export default function AttributionPage() {
 
       {activeLayer === 'upper' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
-            <GitBranch size={16} className="text-brand-blue-light shrink-0" />
-            <span className="truncate">Channel Allocation , Survey Results</span>
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <GitBranch size={16} className="text-brand-blue-light shrink-0" />
+              <span className="truncate">Channel Allocation , Survey Results</span>
+            </h3>
+            <span className="text-xs text-text-tertiary shrink-0">Post-Purchase Survey</span>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="min-h-[280px]">
               <ResponsiveContainer width="100%" height={280}>
@@ -228,10 +226,13 @@ export default function AttributionPage() {
 
       {activeLayer === 'lower' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
-            <Activity size={16} className="text-brand-blue shrink-0" />
-            <span className="truncate">Account Control Chart , CPA vs Spend</span>
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <Activity size={16} className="text-brand-blue shrink-0" />
+              <span className="truncate">Account Control Chart , CPA vs Spend</span>
+            </h3>
+            <span className="text-xs text-text-tertiary shrink-0">Platform Data</span>
+          </div>
           <div className="min-h-[320px]">
             <ResponsiveContainer width="100%" height={320}>
               <ScatterChart>
@@ -256,10 +257,13 @@ export default function AttributionPage() {
 
       {activeLayer === 'trunk' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
-            <Database size={16} className="text-success shrink-0" />
-            <span className="truncate">Tracking Infrastructure Health</span>
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <Database size={16} className="text-success shrink-0" />
+              <span className="truncate">Tracking Infrastructure Health</span>
+            </h3>
+            <span className="text-xs text-text-tertiary shrink-0">System Status</span>
+          </div>
           <div className="space-y-3">
             {trackingHealth.map((item) => (
               <div key={item.system} className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-bg-elevated rounded-md p-3 gap-3">
@@ -292,6 +296,7 @@ export default function AttributionPage() {
               <Layers size={16} className="text-purple-400 shrink-0" />
               <span className="truncate">Cohort-based LTV by Channel</span>
             </h3>
+            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-secondary font-medium">Model:</span>
@@ -342,6 +347,14 @@ export default function AttributionPage() {
           </div>
         </div>
       )}
+
+      {/* Cross-Layer AI Analysis - Moved to bottom as requested */}
+      <div>
+        <AISuggestionsPanel 
+          suggestions={attributionAISuggestions} 
+          title="Cross-Layer AI Analysis"
+        />
+      </div>
     </div>
   );
 }

@@ -66,6 +66,7 @@ export default function CohortsPage() {
                 <span>Retention by Cohort</span>
                 <InfoTooltip metric="Cohort" />
               </h3>
+              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
             </div>
             <div className="overflow-x-auto -mx-1 sm:mx-0">
               <div className="min-w-[900px]">
@@ -125,7 +126,7 @@ export default function CohortsPage() {
           <div className="px-1">
             <AISuggestionsPanel 
               suggestions={cohortAISuggestions} 
-              title="Cohort Intelligence"
+              title="Retention Intelligence"
             />
           </div>
         </>
@@ -135,10 +136,13 @@ export default function CohortsPage() {
         <>
           {/* CLV Extension Chart */}
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-            <h3 className="text-sm font-medium text-text-secondary mb-4 flex items-center gap-2">
-              <span>Customer Lifetime Value Extension</span>
-              <InfoTooltip metric="CLV" />
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-medium text-text-secondary flex items-center gap-2">
+                <span>Customer Lifetime Value Extension</span>
+                <InfoTooltip metric="CLV" />
+              </h3>
+              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+            </div>
             <div className="min-h-[300px]">
               <ResponsiveContainer width="100%" height={300}>
               <BarChart data={clvExtension} layout="vertical">
@@ -165,6 +169,7 @@ export default function CohortsPage() {
                 <span>Product Comparison</span>
                 <InfoTooltip metric="Repeat Rate" />
               </h3>
+              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
             </div>
             <div className="overflow-x-auto -mx-1 sm:mx-0">
               <div className="min-w-[1000px]">
