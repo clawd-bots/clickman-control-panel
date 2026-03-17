@@ -32,17 +32,7 @@ function formatValue(value: number, unit: string): string {
   return value.toString();
 }
 
-const ownerConfig: Record<FinalItem['owner'], { label: string; icon: typeof User; color: string }> = {
-  jordan: { label: 'Jordan', icon: User, color: 'text-warm-gold' },
-  alfred: { label: 'Alfred', icon: Bot, color: 'text-brand-blue-light' },
-  both: { label: 'Both', icon: UsersIcon, color: 'text-text-secondary' },
-};
 
-const categoryColor: Record<FinalItem['category'], string> = {
-  data: 'bg-brand-blue/20 text-brand-blue-light',
-  integration: 'bg-purple-500/20 text-purple-400',
-  config: 'bg-warm-gold/20 text-warm-gold',
-};
 
 export default function TargetsPage() {
   const [targets, setTargets] = useState<TargetItem[]>(initialTargets.map(t => ({ ...t })));
@@ -75,24 +65,7 @@ export default function TargetsPage() {
         </p>
       </div>
 
-      {/* Tab Bar */}
-      <div className="flex items-center gap-1 border-b border-border">
-        <button
-          onClick={() => setActiveTab('targets')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'targets'
-              ? 'border-brand-blue-light text-brand-blue-light'
-              : 'border-transparent text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          Monthly Targets
-        </button>
 
-      </div>
-
-      {/* ─── TARGETS TAB ─── */}
-      {activeTab === 'targets' && (
-        <>
           {/* Set Monthly Targets Section */}
           <div className="bg-bg-surface border border-border rounded-lg p-5">
             <h3 className="text-sm font-semibold text-text-primary mb-4">Monthly Targets — Click any target value to edit</h3>
@@ -253,8 +226,6 @@ export default function TargetsPage() {
             suggestions={targetAISuggestions} 
             title="Target Intelligence"
           />
-        </>
-      )}
 
     </div>
   );
