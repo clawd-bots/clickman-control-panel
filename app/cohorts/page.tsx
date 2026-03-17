@@ -93,7 +93,7 @@ export default function CohortsPage() {
                         const hClass = heatmap && val > 0 && val < 100 ? getHeatmapClass(val, maxRetention) : '';
                         return (
                           <td key={i} className={`py-2.5 px-2 text-right ${val === 0 ? 'text-text-tertiary' : val === 100 ? 'text-text-primary font-medium' : 'text-text-secondary'} ${hClass}`}>
-                            {val > 0 ? displayVal : '—'}
+                            {val > 0 ? displayVal : ','}
                           </td>
                         );
                       })}
@@ -110,7 +110,7 @@ export default function CohortsPage() {
                       const avg = vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
                       return (
                         <td key={i} className="py-2.5 px-2 text-right text-text-primary">
-                          {avg > 0 ? `${avg.toFixed(1)}%` : '—'}
+                          {avg > 0 ? `${avg.toFixed(1)}%` : ','}
                         </td>
                       );
                     })}

@@ -60,7 +60,7 @@ export default function TargetsPage() {
       <div className="px-1">
         <h2 className="text-lg sm:text-xl font-semibold">Targets & Goals</h2>
         <p className="text-sm text-text-secondary mt-1">
-          Set what <strong className="text-text-primary">should</strong> happen — goals, gaps, and recommendations.
+          Set what <strong className="text-text-primary">should</strong> happen , goals, gaps, and recommendations.
           The Dashboard shows what <em>is</em> happening. This page tracks where you want to be.
         </p>
       </div>
@@ -68,7 +68,7 @@ export default function TargetsPage() {
 
           {/* Set Monthly Targets Section */}
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-            <h3 className="text-sm font-semibold text-text-primary mb-4">Monthly Targets — Click any target value to edit</h3>
+            <h3 className="text-sm font-semibold text-text-primary mb-4">Monthly Targets , Click any target value to edit</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               {targets.map((t, idx) => {
                 const status = getStatus(t.actual, t.target, t.inverse);

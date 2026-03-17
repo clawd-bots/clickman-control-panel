@@ -168,7 +168,7 @@ export default function CashFlowPage() {
                     const displayVal = currency === '$' ? val.toFixed(1) : Math.round(val);
                     return (
                       <td key={m} className={`py-2 px-2 text-right ${originalVal < 0 ? 'text-danger' : originalVal > 0 ? 'text-success' : 'text-text-tertiary'}`}>
-                        {originalVal !== 0 ? displayVal : '—'}
+                        {originalVal !== 0 ? displayVal : ','}
                       </td>
                     );
                   })}
@@ -186,7 +186,7 @@ export default function CashFlowPage() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mx-1">
-        {/* Revenue Composition — now with 3 streams */}
+        {/* Revenue Composition , now with 3 streams */}
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h3 className="text-sm font-medium text-text-secondary">Revenue Composition</h3>

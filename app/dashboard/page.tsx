@@ -21,7 +21,7 @@ export default function DashboardPage() {
     <div className="space-y-4 sm:space-y-6">
       <div>
         <h2 className="text-lg sm:text-xl font-semibold">Daily Overview</h2>
-        <p className="text-sm text-text-secondary mt-0.5">What's happening right now — actuals, trends, and channel performance.</p>
+        <p className="text-sm text-text-secondary mt-0.5">What's happening right now , actuals, trends, and channel performance.</p>
       </div>
 
       {/* KPI Cards Row 1 */}
@@ -258,11 +258,11 @@ export default function DashboardPage() {
                     <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{formatCurrency(row.revenue)}</td>
                     <td className="py-3 px-2 sm:px-3 text-right">
                       <span className={row.roas >= 3.5 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>
-                        {row.roas > 0 ? `${row.roas.toFixed(2)}x` : '—'}
+                        {row.roas > 0 ? `${row.roas.toFixed(2)}x` : ','}
                       </span>
                     </td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.orders}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cpo > 0 ? formatCurrency(row.cpo) : '—'}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cpo > 0 ? formatCurrency(row.cpo) : ','}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.newCustomers}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncPct.toFixed(1)}%</td>
                   </tr>
@@ -384,8 +384,8 @@ export default function DashboardPage() {
                     <td className="py-3 px-2 sm:px-3 font-medium text-text-primary">{row.product}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{formatCurrency(row.revenue)}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.units}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.priceReduction > 0 ? `${row.priceReduction}%` : '—'}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.discountCode > 0 ? `${row.discountCode}%` : '—'}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.priceReduction > 0 ? `${row.priceReduction}%` : ','}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.discountCode > 0 ? `${row.discountCode}%` : ','}</td>
                   </tr>
                 ))}
               </tbody>

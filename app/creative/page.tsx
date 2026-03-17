@@ -23,7 +23,7 @@ const tabDescriptions: Record<string, string> = {
   'Performance': 'Overview of all active ad creatives with spend, engagement, and conversion metrics. Use this to monitor your live ads and spot issues quickly.',
   'Ad Churn': 'Shows how ad spend is distributed across creative age brackets. Dark = newest ads, lighter = older. A healthy account has a steady flow of new creative taking over. If 100% reliant on old ads, you\'re fragile. If you never retest old winners, you\'re leaving money on the table.',
   'Account Control': 'Scatter plot of CPA vs Spend per ad. Bottom-right = winners scaling efficiently. Top-right = "zombies" burning budget. The horizontal line is your CPA target. The vertical line separates testing from scaled ads.',
-  'Top Creatives': 'Production & Slugging Rate — tracks your "at bats" vs "hits." Bars show ads launched per month. Dark sections show how many actually scaled. If you launch many ads and none scale, you have a creative strategy problem, not a media buying problem.',
+  'Top Creatives': 'Production & Slugging Rate , tracks your "at bats" vs "hits." Bars show ads launched per month. Dark sections show how many actually scaled. If you launch many ads and none scale, you have a creative strategy problem, not a media buying problem.',
   'Creative Launches': 'Creative Churn by Cohort. Each color = a cohort of ads launched in the same month. Newer cohorts (darker) should take over spend from older ones. If old cohorts still dominate, creative fatigue is building and performance will decline.',
   'Pareto': 'The 80/20 principle applied to ad creatives. Usually 20% of creatives drive 80% of results. Use this to identify your winners and stop spreading budget too thin.',
   'Campaign Spend': 'Budget allocation and spend pacing across campaigns. Spot under/over-spending vs. daily budget to optimize delivery.',
@@ -196,7 +196,7 @@ export default function CreativePage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
-              <span className="truncate">Account Control — CPA vs Spend</span>
+              <span className="truncate">Account Control , CPA vs Spend</span>
               <InfoTooltip metric="Account Control Chart" />
             </h3>
           </div>
@@ -295,7 +295,7 @@ export default function CreativePage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
-              <span className="truncate">Churn & Retesting Control — Spend by Creative Age</span>
+              <span className="truncate">Churn & Retesting Control , Spend by Creative Age</span>
               <InfoTooltip metric="Ad Churn" />
             </h3>
           </div>
@@ -331,7 +331,7 @@ export default function CreativePage() {
               <span className="font-medium text-text-primary">Reading this chart:</span> Dark bars = newest ads (last 7 days). Lighter bars = older ads.
               A healthy account shows new creative steadily taking over spend from older creative.
               If the lightest bars (180+ days) dominate, you're running on legacy creative and vulnerable to fatigue.
-              March shows a positive trend — new creative (dark) is gaining share.
+              March shows a positive trend , new creative (dark) is gaining share.
             </p>
           </div>
         </div>
@@ -342,7 +342,7 @@ export default function CreativePage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
-              <span className="truncate">Creative Churn — Spend by Launch Cohort</span>
+              <span className="truncate">Creative Churn , Spend by Launch Cohort</span>
               <InfoTooltip metric="Creative Churn Cohorts" />
             </h3>
           </div>
@@ -362,7 +362,7 @@ export default function CreativePage() {
                 <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}K`} />
                 <Tooltip
                   contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
-                  formatter={(value: any, name: any) => [value > 0 ? formatCurrency(value) : '—', cohortLabels[name] || name]}
+                  formatter={(value: any, name: any) => [value > 0 ? formatCurrency(value) : ',', cohortLabels[name] || name]}
                 />
                 <Area type="monotone" dataKey="oct" stackId="cohort" fill="#C5D8FB" stroke="#C5D8FB" fillOpacity={0.85} />
                 <Area type="monotone" dataKey="nov" stackId="cohort" fill="#93B4F5" stroke="#93B4F5" fillOpacity={0.85} />
@@ -570,7 +570,7 @@ export default function CreativePage() {
             <div className="text-xs font-medium text-success mb-1">💡 Key Insight</div>
             <p className="text-xs text-text-secondary leading-relaxed">
               Women 25-44 drive 62% of conversions at the lowest CPA (₱613-656 vs ₱724-1250 for other segments).
-              This is your core buying demographic. Align creative production to this audience — if you're producing TikTok-style Gen Z content
+              This is your core buying demographic. Align creative production to this audience , if you're producing TikTok-style Gen Z content
               but your buyers are 25-44 women, you're misallocating resources.
             </p>
           </div>

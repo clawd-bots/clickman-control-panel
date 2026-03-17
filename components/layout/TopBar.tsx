@@ -76,7 +76,7 @@ export default function TopBar() {
   }, []);
 
   return (
-    <header className="h-14 bg-bg-surface border-b border-border flex items-center px-3 md:px-6 sticky top-0 z-40 transition-colors">
+    <header className="h-14 bg-bg-surface border-b border-border flex items-center justify-between px-3 md:px-6 sticky top-0 z-40 transition-colors min-w-0">
       {/* Left — Hamburger (mobile) + Title */}
       <div className="flex items-center gap-2 min-w-0">
         <button
@@ -92,7 +92,7 @@ export default function TopBar() {
       </div>
 
       {/* Right — Date picker & controls */}
-      <div className="flex items-center justify-end gap-1 md:gap-2 ml-4 shrink-0">
+      <div className="flex items-center justify-end gap-1 md:gap-2 ml-auto shrink-0">
         {showDatePicker && (
           <>
             {/* Date Range Picker */}
@@ -175,7 +175,7 @@ export default function TopBar() {
           {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
         </button>
 
-        <button className="hidden sm:block p-2 rounded-md hover:bg-bg-elevated text-text-tertiary hover:text-text-secondary transition-colors">
+        <button className="hidden sm:block p-2 rounded-md hover:bg-bg-elevated text-text-tertiary hover:text-text-secondary transition-colors shrink-0">
           <RefreshCw size={14} />
         </button>
         <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-brand-blue/20 flex items-center justify-center">

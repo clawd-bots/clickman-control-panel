@@ -192,18 +192,18 @@ export const creativePerformance = [
 
 // ─── Account Control Scatter Data ───
 export const accountControlData = [
-  // Scaling zone (high spend, low CPA) — green
+  // Scaling zone (high spend, low CPA) - green
   { name: 'Hair Before/After Carousel', spend: 38100, cpa: 577, platform: 'Meta', zone: 'scaling', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=456' },
   { name: 'Brand Search Exact', spend: 52100, cpa: 420, platform: 'Google', zone: 'scaling', previewUrl: 'https://ads.google.com/nav/ads?subid=gb-en-ha-aw-bk-c-bau&adsid=123' },
   { name: 'GLP-1 Testimonial V3', spend: 45200, cpa: 655, platform: 'Meta', zone: 'scaling', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=457' },
   { name: 'Semaglutide Explainer', spend: 41500, cpa: 669, platform: 'Meta', zone: 'scaling', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=458' },
   { name: 'Hair Regrowth Demo', spend: 22100, cpa: 614, platform: 'TikTok', zone: 'scaling', previewUrl: 'https://ads.tiktok.com/i18n/ads_manager/ads_edit?auid=789' /* just above threshold but good CPA */ },
   { name: 'Weight Loss Journey', spend: 28300, cpa: 690, platform: 'TikTok', zone: 'scaling', previewUrl: 'https://ads.tiktok.com/i18n/ads_manager/ads_edit?auid=790' },
-  // Zombies (high spend, high CPA) — red
+  // Zombies (high spend, high CPA) - red
   { name: 'Competitor Keywords', spend: 35200, cpa: 880, platform: 'Google', zone: 'zombie', previewUrl: 'https://ads.google.com/nav/ads?subid=gb-en-ha-aw-bk-c-bau&adsid=124' },
   { name: 'Generic Awareness V2', spend: 31500, cpa: 1120, platform: 'Meta', zone: 'zombie', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=459' },
   { name: 'Broad Match Hair', spend: 28800, cpa: 950, platform: 'Google', zone: 'zombie', previewUrl: 'https://ads.google.com/nav/ads?subid=gb-en-ha-aw-bk-c-bau&adsid=125' },
-  // Testing zone (low spend, mixed CPA) — blue
+  // Testing zone (low spend, mixed CPA) - blue
   { name: 'New Hook Test A', spend: 5200, cpa: 520, platform: 'Meta', zone: 'testing', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=460' },
   { name: 'New Hook Test B', spend: 4800, cpa: 780, platform: 'Meta', zone: 'testing', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=461' },
   { name: 'Skincare UGC Draft', spend: 3100, cpa: 650, platform: 'TikTok', zone: 'testing', previewUrl: 'https://ads.tiktok.com/i18n/ads_manager/ads_edit?auid=791' },
@@ -211,11 +211,11 @@ export const accountControlData = [
   { name: 'Reddit Test 1', spend: 2200, cpa: 920, platform: 'Reddit', zone: 'testing', previewUrl: 'https://ads.reddit.com/ad/123456/preview' },
   { name: 'GLP-1 New Angle', spend: 6800, cpa: 590, platform: 'Meta', zone: 'testing', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=463' },
   { name: 'TikTok Trend Hook', spend: 4500, cpa: 480, platform: 'TikTok', zone: 'testing', previewUrl: 'https://ads.tiktok.com/i18n/ads_manager/ads_edit?auid=792' },
-  // Untapped winners (low spend, low CPA) — gold
+  // Untapped winners (low spend, low CPA) - gold
   { name: 'Sleep Aid Testimonial', spend: 3800, cpa: 410, platform: 'Meta', zone: 'untapped', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=464' },
   { name: 'Quick Results Static', spend: 2900, cpa: 390, platform: 'Meta', zone: 'untapped', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=465' },
   { name: 'Before/After Static', spend: 5100, cpa: 450, platform: 'Meta', zone: 'untapped', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=466' },
-  // High CPA testing — still learning
+  // High CPA testing - still learning
   { name: 'Reddit Awareness', spend: 1800, cpa: 1350, platform: 'Reddit', zone: 'testing', previewUrl: 'https://ads.reddit.com/ad/123457/preview' },
   { name: 'YouTube Pre-roll', spend: 8200, cpa: 1050, platform: 'Google', zone: 'testing', previewUrl: 'https://ads.google.com/nav/ads?subid=gb-en-ha-aw-bk-c-bau&adsid=126' },
   { name: 'Podcast Style Ad', spend: 2500, cpa: 1100, platform: 'Meta', zone: 'testing', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=467' },
@@ -295,12 +295,12 @@ export const demographicsGenderAge = [
 ];
 
 export const cohortAISuggestions = [
-  'Scale Meta spend +15%: Oct–Dec cohorts show consistently improving M1 retention (28.5% → 32.8%), suggesting recent targeting improvements are working.',
+  'Scale Meta spend +15%: Oct to Dec cohorts show consistently improving M1 retention (28.5% to 32.8%), suggesting recent targeting improvements are working.',
   'Maintain Google Brand: Lowest CAC channel with best LTV. Max out impression share before expanding elsewhere.',
   'Cap TikTok at current levels: March cohort has lowest first-order AOV (₱1,850 isn\'t bad but TikTok LTV:CAC needs monitoring before scaling).',
-  'Jan 2026 cohort dipped: M1 retention dropped to 29.8% from Dec\'s 32.8%. Could be post-holiday buyer quality or seasonal effects — monitor closely.',
+  'Jan 2026 cohort dipped: M1 retention dropped to 29.8% from Dec\'s 32.8%. Could be post-holiday buyer quality or seasonal effects. Monitor closely.',
   'GLP-1 is the retention engine: 51.8% 90-day repeat rate and 3.1 avg orders. Its recurring nature makes it the ideal subscription candidate.',
-  'First-order AOV trending up: ₱1,580 (Sep) → ₱1,850 (Mar) = +17% improvement. Better targeting or product mix shift toward GLP-1.',
+  'First-order AOV trending up: ₱1,580 (Sep) to ₱1,850 (Mar) = +17% improvement. Better targeting or product mix shift toward GLP-1.',
   'Launch subscription for GLP-1 (highest repeat rate product) and send targeted re-engagement to Nov cohort (highest 30d repeat potential).',
 ];
 
@@ -316,8 +316,8 @@ export const attributionAISuggestions = [
 
 export const creativeAISuggestions = [
   'Hair Before/After Carousel has the best ROAS at 3.47x with a low CPA of ₱577. Scale spend by 30% this week.',
-  'Competitor Keywords campaign has ₱880 CPA — well above the ₱787 target. Pause low-performing ad groups and reallocate to Brand Search.',
-  '"Doc Consultation UGC" CTR dropped from 1.8% to 1.3% over 2 weeks. Creative fatigue likely — queue replacement creative.',
+  'Competitor Keywords campaign has ₱880 CPA, well above the ₱787 target. Pause low-performing ad groups and reallocate to Brand Search.',
+  '"Doc Consultation UGC" CTR dropped from 1.8% to 1.3% over 2 weeks. Creative fatigue likely, queue replacement creative.',
   'TikTok CPCs are 60% lower than Meta (₱1.50 vs ₱3.75). Test moving top Meta concepts to TikTok format for cheaper reach.',
   'Top 3 creatives drive 48% of total conversions (Pareto effect). Diversify creative pipeline to reduce concentration risk.',
 ];
@@ -375,9 +375,9 @@ export const targetTrend = [
 ];
 
 export const targetAISuggestions = [
-  'Revenue is at 90.1% of target with 2 weeks remaining. Need ₱247K more — achievable if you maintain current daily run rate of ₱322K.',
+  'Revenue is at 90.1% of target with 2 weeks remaining. Need ₱247K more, achievable if you maintain current daily run rate of ₱322K.',
   'nCAC at ₱787 is 5% above the ₱750 target. TikTok CPA is dragging the average up. Tighten TikTok bid caps or shift budget to Meta.',
   'CM3% at 27.8% vs 30% target. The gap is primarily driven by high discount code usage (9%). Consider reducing promo frequency.',
   'New Customer acquisition pace suggests 850 target is reachable if you increase spend by 8% in the final 2 weeks.',
-  'Repeat Rate (28.5% vs 30%) is close. Send a targeted re-engagement email to November cohort — they have the highest 30d repeat potential.',
+  'Repeat Rate (28.5% vs 30%) is close. Send a targeted re-engagement email to November cohort since they have the highest 30d repeat potential.',
 ];

@@ -137,7 +137,7 @@ export default function PnLPage() {
                     </td>
                     <td className="py-3.5 px-3 text-right text-text-primary font-semibold">{formatCurrency(row.value)}</td>
                     <td className="py-3.5 px-3 text-right text-text-secondary">
-                      {row.pct !== undefined ? `${row.pct.toFixed(1)}%` : row.value > 0 ? `${((row.value / pnlData.netRevenue.value) * 100).toFixed(1)}%` : '—'}
+                      {row.pct !== undefined ? `${row.pct.toFixed(1)}%` : row.value > 0 ? `${((row.value / pnlData.netRevenue.value) * 100).toFixed(1)}%` : ','}
                     </td>
                   </tr>
                 ];
@@ -157,7 +157,7 @@ export default function PnLPage() {
                             : child.value.toLocaleString()}
                         </td>
                         <td className="py-2.5 px-3 text-right text-text-tertiary">
-                          {child.pct !== undefined ? `${child.pct.toFixed(1)}%` : '—'}
+                          {child.pct !== undefined ? `${child.pct.toFixed(1)}%` : ','}
                         </td>
                       </tr>
                     );
