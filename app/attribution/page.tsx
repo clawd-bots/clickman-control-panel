@@ -81,17 +81,19 @@ export default function AttributionPage() {
   const insights = layerInsights[activeLayer];
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <h2 className="text-lg font-semibold">Attribution Framework</h2>
+    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+      <h2 className="text-lg sm:text-xl font-semibold px-1">Attribution Framework</h2>
 
       {/* AI Suggestions */}
-      <AISuggestionsPanel 
-        suggestions={attributionAISuggestions} 
-        title="Cross-Layer AI Analysis"
-      />
+      <div className="px-1">
+        <AISuggestionsPanel 
+          suggestions={attributionAISuggestions} 
+          title="Cross-Layer AI Analysis"
+        />
+      </div>
 
       {/* Horizontal Tab Buttons */}
-      <div className="flex gap-2 flex-wrap">
+      <div className="flex gap-1.5 sm:gap-2 flex-wrap px-1">
         {treeLayers.map((layer) => {
           const isActive = activeLayer === layer.id;
           const Icon = layer.icon;
@@ -99,49 +101,49 @@ export default function AttributionPage() {
             <button
               key={layer.id}
               onClick={() => setActiveLayer(layer.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-xs font-medium transition-all border ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs font-medium transition-all border min-w-0 ${
                 isActive
                   ? 'border-transparent shadow-md'
                   : 'border-border bg-bg-surface text-text-secondary hover:text-text-primary hover:border-text-tertiary'
               }`}
               style={isActive ? { backgroundColor: `${layer.color}20`, color: layer.color, borderBottom: `2px solid ${layer.color}` } : undefined}
             >
-              <Icon size={15} style={{ color: isActive ? layer.color : undefined }} />
-              {layer.label}
+              <Icon size={14} className="shrink-0" style={{ color: isActive ? layer.color : undefined }} />
+              <span className="truncate">{layer.label}</span>
             </button>
           );
         })}
       </div>
 
       {/* Layer Description */}
-      <div className="text-sm text-text-secondary">{activeInfo.description}</div>
+      <div className="text-sm text-text-secondary px-1">{activeInfo.description}</div>
 
       {/* Per-Layer AI Insights */}
-      <div className="bg-bg-surface border border-border rounded-lg p-5">
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
         <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
-          <Sparkles size={16} className="text-warm-gold" />
-          {activeInfo.label} — AI Insights
+          <Sparkles size={16} className="text-warm-gold shrink-0" />
+          <span className="truncate">{activeInfo.label} — AI Insights</span>
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="text-xs font-semibold text-success flex items-center gap-1.5">✅ What&apos;s Working</div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <div className="space-y-3">
+            <div className="text-xs font-semibold text-success flex items-center gap-1.5">✅ What's Working</div>
             {insights.working.map((item, i) => (
               <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
             ))}
           </div>
-          <div className="space-y-2">
-            <div className="text-xs font-semibold text-danger flex items-center gap-1.5">⚠️ What&apos;s Not</div>
+          <div className="space-y-3">
+            <div className="text-xs font-semibold text-danger flex items-center gap-1.5">⚠️ What's Not</div>
             {insights.notWorking.map((item, i) => (
               <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
             ))}
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="text-xs font-semibold text-brand-blue-light flex items-center gap-1.5">🎯 Do Next</div>
             {insights.doNext.map((item, i) => (
               <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
             ))}
           </div>
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="text-xs font-semibold text-warm-gold flex items-center gap-1.5">🛑 Stop Doing</div>
             {insights.stopDoing.map((item, i) => (
               <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
@@ -152,42 +154,50 @@ export default function AttributionPage() {
 
       {/* Layer Detail Section */}
       {activeLayer === 'star' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
-            <Star size={16} className="text-warm-gold" /> MER / nCAC Overview
+            <Star size={16} className="text-warm-gold shrink-0" />
+            <span>MER / nCAC Overview</span>
           </h3>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-bg-elevated rounded-md p-4">
-              <div className="text-xs text-text-secondary flex items-center">MER <InfoTooltip metric="MER" /></div>
-              <div className="text-2xl font-bold text-text-primary mt-1">3.67x</div>
-              <div className="text-xs text-success mt-1">↑ 3.1% MoM</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
+              <div className="text-xs text-text-secondary flex items-center gap-1">
+                <span>MER</span>
+                <InfoTooltip metric="MER" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">3.67x</div>
+              <div className="text-xs text-success mt-2">↑ 3.1% MoM</div>
             </div>
-            <div className="bg-bg-elevated rounded-md p-4">
-              <div className="text-xs text-text-secondary flex items-center">nCAC <InfoTooltip metric="nCAC" /></div>
-              <div className="text-2xl font-bold text-text-primary mt-1">₱787</div>
-              <div className="text-xs text-success mt-1">↓ 2.6% MoM</div>
+            <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
+              <div className="text-xs text-text-secondary flex items-center gap-1">
+                <span>nCAC</span>
+                <InfoTooltip metric="nCAC" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">₱787</div>
+              <div className="text-xs text-success mt-2">↓ 2.6% MoM</div>
             </div>
-            <div className="bg-bg-elevated rounded-md p-4">
+            <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary">Max Mktg Spend</div>
-              <div className="text-2xl font-bold text-text-primary mt-1">₱680K</div>
-              <div className="text-xs text-text-secondary mt-1">At 25% CM3 target</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">₱680K</div>
+              <div className="text-xs text-text-secondary mt-2">At 25% CM3 target</div>
             </div>
-            <div className="bg-bg-elevated rounded-md p-4">
+            <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary">Target CPA</div>
-              <div className="text-2xl font-bold text-text-primary mt-1">₱750</div>
-              <div className="text-xs text-text-secondary mt-1">Based on 3.15x LTV:CAC</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">₱750</div>
+              <div className="text-xs text-text-secondary mt-2">Based on 3.15x LTV:CAC</div>
             </div>
           </div>
         </div>
       )}
 
       {activeLayer === 'upper' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
-            <GitBranch size={16} className="text-brand-blue-light" /> Channel Allocation — Survey Results
+            <GitBranch size={16} className="text-brand-blue-light shrink-0" />
+            <span className="truncate">Channel Allocation — Survey Results</span>
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="min-h-[280px]">
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie data={attributionSurvey} cx="50%" cy="50%" outerRadius={100} dataKey="pct" label={({ name, value }) => `${name}: ${value}%`}>
@@ -200,15 +210,15 @@ export default function AttributionPage() {
               </ResponsiveContainer>
             </div>
             <div className="space-y-3">
-              <p className="text-xs text-text-secondary">&quot;How did you first hear about AndYou?&quot; — Post-purchase survey results (last 30 days, n=1,240)</p>
+              <p className="text-xs text-text-secondary leading-relaxed">"How did you first hear about AndYou?" — Post-purchase survey results (last 30 days, n=1,240)</p>
               {attributionSurvey.map((s, i) => (
                 <div key={s.source} className="flex items-center gap-3">
                   <span className="w-3 h-3 rounded-sm shrink-0" style={{ background: COLORS[i] }} />
-                  <span className="text-sm text-text-primary flex-1">{s.source}</span>
-                  <div className="w-32 bg-bg-elevated rounded-full h-2">
+                  <span className="text-sm text-text-primary flex-1 min-w-0 truncate">{s.source}</span>
+                  <div className="w-20 sm:w-32 bg-bg-elevated rounded-full h-2 shrink-0">
                     <div className="h-2 rounded-full" style={{ width: `${s.pct}%`, background: COLORS[i] }} />
                   </div>
-                  <span className="text-sm text-text-secondary w-10 text-right">{s.pct}%</span>
+                  <span className="text-sm text-text-secondary w-8 sm:w-10 text-right shrink-0">{s.pct}%</span>
                 </div>
               ))}
             </div>
@@ -217,47 +227,51 @@ export default function AttributionPage() {
       )}
 
       {activeLayer === 'lower' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
-            <Activity size={16} className="text-brand-blue" /> Account Control Chart — CPA vs Spend
+            <Activity size={16} className="text-brand-blue shrink-0" />
+            <span className="truncate">Account Control Chart — CPA vs Spend</span>
           </h3>
-          <ResponsiveContainer width="100%" height={320}>
-            <ScatterChart>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-              <XAxis dataKey="spend" name="Spend" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
-              <YAxis dataKey="cpa" name="CPA" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${v}`} />
-              <ZAxis dataKey="spend" range={[60, 400]} />
-              <Tooltip
-                contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={(value: any, name: any) => [name === 'Spend' ? `₱${(Number(value)/1000).toFixed(1)}K` : `₱${value}`, name || '']}
-                labelFormatter={(_, payload) => payload?.[0]?.payload?.name || ''}
-              />
-              <Scatter data={adScatterData.filter(d => d.platform === 'Meta')} fill="#4A6BD6" name="Meta" />
-              <Scatter data={adScatterData.filter(d => d.platform === 'Google')} fill="#EDBF63" name="Google" />
-              <Scatter data={adScatterData.filter(d => d.platform === 'TikTok')} fill="#34D399" name="TikTok" />
-            </ScatterChart>
-          </ResponsiveContainer>
+          <div className="min-h-[320px]">
+            <ResponsiveContainer width="100%" height={320}>
+              <ScatterChart>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                <XAxis dataKey="spend" name="Spend" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
+                <YAxis dataKey="cpa" name="CPA" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${v}`} />
+                <ZAxis dataKey="spend" range={[60, 400]} />
+                <Tooltip
+                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  formatter={(value: any, name: any) => [name === 'Spend' ? `₱${(Number(value)/1000).toFixed(1)}K` : `₱${value}`, name || '']}
+                  labelFormatter={(_, payload) => payload?.[0]?.payload?.name || ''}
+                />
+                <Scatter data={adScatterData.filter(d => d.platform === 'Meta')} fill="#4A6BD6" name="Meta" />
+                <Scatter data={adScatterData.filter(d => d.platform === 'Google')} fill="#EDBF63" name="Google" />
+                <Scatter data={adScatterData.filter(d => d.platform === 'TikTok')} fill="#34D399" name="TikTok" />
+              </ScatterChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 
       {activeLayer === 'trunk' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <h3 className="text-sm font-medium text-text-primary mb-4 flex items-center gap-2">
-            <Database size={16} className="text-success" /> Tracking Infrastructure Health
+            <Database size={16} className="text-success shrink-0" />
+            <span className="truncate">Tracking Infrastructure Health</span>
           </h3>
           <div className="space-y-3">
             {trackingHealth.map((item) => (
-              <div key={item.system} className="flex items-center justify-between bg-bg-elevated rounded-md p-3">
-                <div className="flex items-center gap-3">
-                  <span className={`w-2.5 h-2.5 rounded-full ${item.status === 'healthy' ? 'bg-success' : item.status === 'warning' ? 'bg-warm-gold' : 'bg-danger'}`} />
-                  <span className="text-sm font-medium text-text-primary">{item.system}</span>
+              <div key={item.system} className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-bg-elevated rounded-md p-3 gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${item.status === 'healthy' ? 'bg-success' : item.status === 'warning' ? 'bg-warm-gold' : 'bg-danger'}`} />
+                  <span className="text-sm font-medium text-text-primary truncate">{item.system}</span>
                   <InfoTooltip metric={item.system} />
                 </div>
-                <div className="flex items-center gap-6 text-xs text-text-secondary">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-text-secondary">
                   <span>Events: {item.events}</span>
                   <span>Match Rate: {item.matchRate}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium self-start sm:self-auto ${
                     item.status === 'healthy' ? 'bg-success/15 text-success' :
                     item.status === 'warning' ? 'bg-warm-gold/15 text-warm-gold' :
                     'bg-danger/15 text-danger'
@@ -272,12 +286,13 @@ export default function AttributionPage() {
       )}
 
       {activeLayer === 'roots' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
             <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
-              <Layers size={16} className="text-purple-400" /> Cohort-based LTV by Channel
+              <Layers size={16} className="text-purple-400 shrink-0" />
+              <span className="truncate">Cohort-based LTV by Channel</span>
             </h3>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-secondary font-medium">Model:</span>
                 <div className="relative">
@@ -306,21 +321,21 @@ export default function AttributionPage() {
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {[
               { channel: 'Meta', ltvCac: 2.1, ltv: '₱6,580', cac: '₱3,133', payback: '4.2 months' },
               { channel: 'Google (Brand)', ltvCac: 3.8, ltv: '₱7,220', cac: '₱1,900', payback: '2.1 months' },
               { channel: 'TikTok', ltvCac: 1.4, ltv: '₱4,200', cac: '₱3,000', payback: '6.8 months' },
             ].map((ch) => (
-              <div key={ch.channel} className="bg-bg-elevated rounded-md p-4 space-y-2">
+              <div key={ch.channel} className="bg-bg-elevated rounded-md p-4 space-y-3">
                 <div className="text-sm font-medium text-text-primary">{ch.channel}</div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-text-secondary">LTV:CAC</span>
-                  <span className={`text-lg font-bold ${ch.ltvCac >= 3 ? 'text-success' : ch.ltvCac >= 2 ? 'text-warm-gold' : 'text-danger'}`}>
+                  <span className={`text-xl font-bold ${ch.ltvCac >= 3 ? 'text-success' : ch.ltvCac >= 2 ? 'text-warm-gold' : 'text-danger'}`}>
                     {ch.ltvCac}x
                   </span>
                 </div>
-                <div className="text-xs text-text-secondary">LTV: {ch.ltv} · CAC: {ch.cac}</div>
+                <div className="text-xs text-text-secondary">LTV: {ch.ltv} • CAC: {ch.cac}</div>
                 <div className="text-xs text-text-secondary">Payback: {ch.payback}</div>
               </div>
             ))}
