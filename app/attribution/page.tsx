@@ -81,11 +81,11 @@ export default function AttributionPage() {
   const insights = layerInsights[activeLayer];
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
-      <h2 className="text-lg sm:text-xl font-semibold px-1">Attribution Framework</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <h2 className="text-lg sm:text-xl font-semibold">Attribution Framework</h2>
 
       {/* AI Suggestions */}
-      <div className="px-1">
+      <div>
         <AISuggestionsPanel 
           suggestions={attributionAISuggestions} 
           title="Cross-Layer AI Analysis"

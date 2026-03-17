@@ -30,7 +30,7 @@ export default function FinalItemsPage() {
   const pendingCount = getPendingCount(allItems);
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex items-center justify-between px-1">
         <h2 className="text-lg sm:text-xl font-semibold">Final Items</h2>
       </div>

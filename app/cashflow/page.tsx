@@ -30,7 +30,7 @@ export default function CashFlowPage() {
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-4 sm:space-y-6">
       <div className="px-1">
         <h2 className="text-lg sm:text-xl font-semibold">Cash Flow Analysis</h2>
       </div>

@@ -56,7 +56,7 @@ export default function TargetsPage() {
   const cancelEdit = () => setEditingIdx(null);
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-4 sm:space-y-6">
       <div className="px-1">
         <h2 className="text-lg sm:text-xl font-semibold">Targets & Goals</h2>
         <p className="text-sm text-text-secondary mt-1">

@@ -49,7 +49,7 @@ export default function PnLPage() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
         <h2 className="text-lg sm:text-xl font-semibold">Profit & Loss</h2>
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">

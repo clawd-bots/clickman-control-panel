@@ -18,7 +18,7 @@ export default function CohortsPage() {
   const maxRetention = Math.max(...cohortRetention.flatMap(c => c.periods.filter(p => p > 0 && p < 100)));
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
         <h2 className="text-lg sm:text-xl font-semibold">Cohort Analysis & Retention</h2>
         <div className="flex gap-1">

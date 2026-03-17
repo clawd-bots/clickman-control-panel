@@ -75,7 +75,7 @@ export default function CreativePage() {
   const totalSlugging = productionSlugging.reduce((a, b) => ({ launched: a.launched + b.launched, hits: a.hits + b.hits }), { launched: 0, hits: 0 });
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-4 sm:space-y-6">
       <div className="px-1">
         <h2 className="text-lg sm:text-xl font-semibold">Creative & MTA Control Panel</h2>
       </div>
