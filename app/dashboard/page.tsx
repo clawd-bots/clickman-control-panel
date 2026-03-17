@@ -18,8 +18,8 @@ function pctChange(curr: number, prev: number) {
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
-      <div className="px-1">
+    <div className="space-y-4 sm:space-y-6">
+      <div>
         <h2 className="text-lg sm:text-xl font-semibold">Daily Overview</h2>
         <p className="text-sm text-text-secondary mt-0.5">What's happening right now — actuals, trends, and channel performance.</p>
       </div>
@@ -97,7 +97,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Revenue & Marketing Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mx-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue & Marketing Costs</h3>
@@ -155,7 +155,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Marketing Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mx-1">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary">Marketing Insights</h3>
@@ -208,7 +208,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Channel Attribution Table */}
-      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
           <div>
             <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
@@ -275,7 +275,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Revenue Insights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mx-1">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue Composition (NC vs RC)</h3>
@@ -355,7 +355,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Product KPIs */}
-      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-primary">Product KPIs</h3>
         </div>
