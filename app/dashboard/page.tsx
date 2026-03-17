@@ -109,8 +109,12 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
                   dataKey="date" 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  label={{ value: 'Date', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  interval="preserveStartEnd"
+                  label={{ value: 'Date', position: 'insideBottom', offset: -10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
@@ -137,8 +141,12 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
                   dataKey="date" 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  label={{ value: 'Date', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  interval="preserveStartEnd"
+                  label={{ value: 'Date', position: 'insideBottom', offset: -10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
@@ -192,8 +200,12 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
                   dataKey="date" 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  label={{ value: 'Date', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  interval="preserveStartEnd"
+                  label={{ value: 'Date', position: 'insideBottom', offset: -10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
@@ -285,8 +297,12 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
                   dataKey="month" 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  label={{ value: 'Month', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                  interval={0}
+                  label={{ value: 'Month', position: 'insideBottom', offset: -10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
