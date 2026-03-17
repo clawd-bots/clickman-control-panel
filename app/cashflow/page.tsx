@@ -30,13 +30,15 @@ export default function CashFlowPage() {
   ];
 
   return (
-    <div className="space-y-6 max-w-[1400px]">
-      <h2 className="text-lg font-semibold">Cash Flow Analysis</h2>
+    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
+      <div className="px-1">
+        <h2 className="text-lg sm:text-xl font-semibold">Cash Flow Analysis</h2>
+      </div>
 
       {/* Input Panel */}
-      <div className="bg-bg-surface border border-border rounded-lg p-5">
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
         <h3 className="text-sm font-medium text-text-secondary mb-4">Model Inputs</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {[
             { label: 'AOV', key: 'aov' as const, prefix: '₱' },
             { label: 'CPA', key: 'cpa' as const, prefix: '₱' },
@@ -64,7 +66,7 @@ export default function CashFlowPage() {
         {/* Subscription Model Section */}
         <div className="mt-5 pt-4 border-t border-border">
           <h4 className="text-xs font-semibold text-text-primary mb-3 uppercase tracking-wide">Subscription Model (Hybrid)</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             <div>
               <label className="block text-xs text-text-secondary mb-1.5">Attach Rate <InfoTooltip metric="Subscription Attach Rate" /></label>
               <div className="flex items-center bg-bg-elevated border border-border rounded-md">
@@ -117,7 +119,7 @@ export default function CashFlowPage() {
       </div>
 
       {/* 12-Month Outlook */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mx-1">
         {[
           { label: 'Peak Deficit', value: '₱0', desc: 'No deficit projected', metric: 'Peak Deficit' },
           { label: 'Ending Position', value: '₱13.4M', desc: 'Cumulative cash at M12', metric: 'Ending Position' },
@@ -125,8 +127,11 @@ export default function CashFlowPage() {
           { label: 'Total Spend', value: '₱5.93M', desc: '12-month acquisition spend', metric: 'Total Spend' },
           { label: 'LTV:CAC', value: '3.15x', desc: 'Healthy unit economics', metric: 'LTV:CAC' },
         ].map((card) => (
-          <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4 min-w-0">
-            <div className="text-xs text-text-secondary mb-1 flex items-center truncate">{card.label} <InfoTooltip metric={card.metric} /></div>
+          <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4 min-h-[100px] flex flex-col justify-between">
+            <div className="text-xs text-text-secondary mb-1 flex items-center gap-1 min-w-0">
+              <span className="truncate">{card.label}</span>
+              <InfoTooltip metric={card.metric} />
+            </div>
             <div className="text-xl font-bold text-text-primary truncate">{card.value}</div>
             <div className="text-xs text-text-secondary mt-1 truncate">{card.desc}</div>
           </div>
@@ -134,15 +139,16 @@ export default function CashFlowPage() {
       </div>
 
       {/* Cohort Waterfall Table */}
-      <div className="bg-bg-surface border border-border rounded-lg p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
             <h3 className="text-sm font-medium text-text-primary">Cohort Waterfall ({currency} thousands)</h3>
             <span className="text-xs text-text-tertiary">Forecast Model</span>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs min-w-[800px]">
+        <div className="overflow-x-auto -mx-1 sm:mx-0">
+          <div className="min-w-[800px]">
+            <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border text-text-secondary uppercase">
                 <th className="text-left py-2 px-2 font-medium">Cohort</th>
@@ -174,18 +180,20 @@ export default function CashFlowPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mx-1">
         {/* Revenue Composition — now with 3 streams */}
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h3 className="text-sm font-medium text-text-secondary">Revenue Composition</h3>
             <span className="text-xs text-text-tertiary">Forecast Model</span>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
+          <div className="min-h-[240px]">
+            <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={monthlySummary.map(m => ({
               month: m.month,
               new: m.newCust * inputs.aov * (1 - inputs.subAttachRate / 100),
@@ -209,15 +217,17 @@ export default function CashFlowPage() {
               <Area type="monotone" dataKey="subscription" name="Subscription" stackId="1" fill="#EDBF63" stroke="#EDBF63" fillOpacity={0.6} />
             </AreaChart>
           </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Cash Flow Waterfall */}
-        <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h3 className="text-sm font-medium text-text-secondary">Cumulative Cash Flow</h3>
             <span className="text-xs text-text-tertiary">Forecast Model</span>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
+          <div className="min-h-[240px]">
+            <ResponsiveContainer width="100%" height={240}>
             <BarChart data={monthlySummary}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis 
@@ -234,31 +244,35 @@ export default function CashFlowPage() {
               <Bar dataKey="cumulative" name="Cumulative Cash" fill="#34D399" radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
       {/* Sensitivity Analysis */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mx-1">
         {allSensitivityCards.map((card) => (
-          <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4 min-w-0">
+          <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4 min-h-[120px] flex flex-col justify-between">
             <div className="text-xs font-medium text-warm-gold mb-2 truncate">{card.label}</div>
-            <div className="text-xs text-text-secondary mb-1">{card.metric}</div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs text-text-secondary">Current: {card.current}</span>
-              <span className="text-xs text-success">→ {card.adjusted}</span>
+            <div>
+              <div className="text-xs text-text-secondary mb-1">{card.metric}</div>
+              <div className="flex items-center justify-between mb-2 gap-2">
+                <span className="text-xs text-text-secondary truncate">Current: {card.current}</span>
+                <span className="text-xs text-success shrink-0">→ {card.adjusted}</span>
+              </div>
+              <div className="text-xs text-brand-blue-light font-medium truncate">{card.impact}</div>
             </div>
-            <div className="text-xs text-brand-blue-light font-medium">{card.impact}</div>
           </div>
         ))}
       </div>
 
       {/* Monthly Summary Table */}
-      <div className="bg-bg-surface border border-border rounded-lg p-5">
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-primary">Monthly Summary</h3>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs min-w-[700px]">
+        <div className="overflow-x-auto -mx-1 sm:mx-0">
+          <div className="min-w-[700px]">
+            <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-border text-text-secondary uppercase">
                 <th className="text-left py-2 px-2 font-medium">Month</th>
@@ -292,6 +306,7 @@ export default function CashFlowPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>
