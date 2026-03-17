@@ -66,25 +66,19 @@ export const finalItems: FinalItem[] = [
   {
     id: 'fi-3',
     title: 'Company Actual P&L Spreadsheet',
-    why: 'The Profit & Loss and Cash Flow pages need your real P&L (not just the first-time customer sheet you already shared).',
+    why: 'The Profit & Loss and Cash Flow pages need your real P&L data. Temporary link provided but will change - need permanent read-only access.',
     owner: 'jordan',
     status: 'pending',
     category: 'data',
     pages: ['P&L', 'Cash Flow'],
     actions: [
       {
-        label: 'Option A: Share the Google Sheet',
+        label: 'Provide live read-only P&L link',
         steps: [
-          'Open the actual company P&L spreadsheet in Google Sheets',
-          'Click Share → add alfred@mail.andyou.ph as Viewer',
-          'Send Alfred the link',
-        ],
-      },
-      {
-        label: 'Option B: Export and send',
-        steps: [
-          'Download the P&L as .xlsx or .csv',
-          'Send the file to Alfred via WhatsApp or email',
+          'Create a permanent, live-updating P&L view in Google Sheets',
+          'Share with read-only access to alfred@mail.andyou.ph',
+          'Ensure link won\'t change so dashboard can auto-refresh data',
+          'Current temporary link will be replaced with live connection',
         ],
       },
     ],
@@ -92,27 +86,20 @@ export const finalItems: FinalItem[] = [
   {
     id: 'fi-4',
     title: 'Meta Ads API Access',
-    why: 'Creative analysis, MTA segmentation, and attribution all need Meta ad-level data.',
+    why: 'Creative analysis, MTA segmentation, and attribution all need Meta ad-level data. Jordan chose Option A but needs system user token for automated data flow (not manual pulls).',
     owner: 'jordan',
     status: 'pending',
     category: 'integration',
     pages: ['Creative & MTA', 'Attribution Tree'],
     actions: [
       {
-        label: 'Option A: Add Alfred to Business Manager',
+        label: 'Complete Option A setup - System User Token needed',
         steps: [
-          'Go to business.facebook.com → Settings → People',
-          'Invite alfred@mail.andyou.ph with Analyst access to the ad account',
-          'Alfred will generate a system user token from there',
-        ],
-      },
-      {
-        label: 'Option B: Generate a token yourself',
-        steps: [
-          'Go to developers.facebook.com → Tools → Graph API Explorer',
-          'Select your app and ad account',
-          'Generate a long-lived token with ads_read permission',
-          'Send the token + Ad Account ID to Alfred',
+          'Add alfred@mail.andyou.ph to Business Manager with Analyst access (if not done)',
+          'Create a System User in Business Manager → Business Settings → System Users',
+          'Generate system user access token with ads_read permissions',
+          'Provide token for automated data collection (no manual pulls)',
+          'FOLLOW UP: Jordan to complete system user token setup',
         ],
       },
     ],
@@ -120,45 +107,38 @@ export const finalItems: FinalItem[] = [
   {
     id: 'fi-5',
     title: 'Google Ads API Access',
-    why: 'Needed for spend, CPC, CTR, and conversion data in Creative & MTA and Attribution Tree.',
-    owner: 'jordan',
+    why: 'Needed for spend, CPC, CTR, and conversion data in Creative & MTA and Attribution Tree. Developer token and account ID provided.',
+    owner: 'alfred',
     status: 'done',
     category: 'integration',
     pages: ['Creative & MTA', 'Attribution Tree'],
     actions: [
       {
-        label: 'Option A: Share via existing OAuth',
+        label: 'Credentials provided - ready for integration',
         steps: [
-          'Alfred already has Google OAuth for Gmail',
-          'Just share your Google Ads Customer ID (the 10-digit number in the top bar of Google Ads)',
-          'Alfred will request the ads.readonly scope on the next OAuth refresh',
-        ],
-      },
-      {
-        label: 'Option B: Invite Alfred as read-only user',
-        steps: [
-          'Go to Google Ads → Admin → Access and Security',
-          'Invite alfred@mail.andyou.ph with Read Only access',
-          'Share the Customer ID with Alfred',
+          'Developer Token: _FZikLNlOp4DxGZvkKGbBQ (provided)',
+          'Account ID: 281-311-3792 (provided)',
+          'Read-only access confirmed',
+          'Ready for Google Ads API integration',
         ],
       },
     ],
   },
   {
     id: 'fi-6',
-    title: 'TikTok Ads API Access',
-    why: 'Feeds TikTok spend and performance data into Creative & MTA and Attribution Tree.',
-    owner: 'jordan',
-    status: 'pending',
+    title: 'TikTok Data Integration',
+    why: 'TikTok performance data is already available via TripleWhale (both TW data and platform data). TikTok Events API token provided for event quality match scores only.',
+    owner: 'alfred',
+    status: 'in-progress',
     category: 'integration',
     pages: ['Creative & MTA', 'Attribution Tree'],
     actions: [
       {
-        label: 'Generate an API token',
+        label: 'Use TripleWhale data + Events API token',
         steps: [
-          'Go to TikTok Ads Manager → Assets → Developer Center',
-          'Create an app and generate a long-lived access token',
-          'Send the token + Advertiser ID to Alfred',
+          'TikTok ads data: Use existing TripleWhale integration (all data available)',
+          'TikTok Events API token: 7232ce44844de36c79b812ed901ce7bf04c3fe03 (for event quality match scores)',
+          'No separate TikTok ad account access needed',
         ],
       },
     ],
@@ -217,85 +197,26 @@ export const finalItems: FinalItem[] = [
   },
   {
     id: 'fi-9',
-    title: 'Customer.io API Access',
-    why: 'Customer.io powers your email & SMS. Attribution tree needs this channel data for the full picture.',
-    owner: 'jordan',
-    status: 'pending',
+    title: 'Customer.io API Integration',
+    why: 'Customer.io powers your email & SMS. Attribution tree needs this channel data for the full picture. Credentials provided - data must flow via API automatically (not manual pulls).',
+    owner: 'alfred',
+    status: 'in-progress',
     category: 'integration',
     pages: ['Attribution Tree'],
     actions: [
       {
-        label: 'Option A: Generate an API key',
+        label: 'Implement API integration with provided credentials',
         steps: [
-          'Log in to Customer.io → Settings → API Credentials',
-          'Create a new Tracking API key or App API key with read-only scope',
-          'Send the Site ID + API key to Alfred via WhatsApp',
-        ],
-      },
-      {
-        label: 'Option B: Invite Alfred as a team member',
-        steps: [
-          'Go to Customer.io → Settings → Workspace → People',
-          'Invite alfred@mail.andyou.ph with Viewer/Read-only role',
-          'Alfred will pull the data from there',
+          'Site ID: deb7a9d23d995e204213 (provided)',
+          'API Key: f5f552bd60a11b6cc75a (provided)',
+          'Integrate Customer.io Tracking API for automated data flow',
+          'No manual data pulls - must be fully automated',
         ],
       },
     ],
   },
-  {
-    id: 'fi-10',
-    title: 'Set Real Monthly Targets',
-    why: 'The Targets & Goals page currently shows placeholder values. Your real targets make gap analysis meaningful.',
-    owner: 'jordan',
-    status: 'pending',
-    category: 'config',
-    pages: ['Targets & Goals'],
-    actions: [
-      {
-        label: 'Option A: Edit directly in the dashboard',
-        steps: [
-          'Go to Targets & Goals → Monthly Targets tab',
-          'Click any target value to edit it inline',
-          'Set your real MER, aMER, Revenue, CM3, nCAC, etc.',
-        ],
-      },
-      {
-        label: 'Option B: Send them to Alfred',
-        steps: [
-          'Send Alfred a list of your monthly targets via WhatsApp',
-          'Format: metric = value (e.g. "MER = 3.5x, Revenue = ₱5M")',
-          'Alfred will update them in the code',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'fi-11',
-    title: 'Deploy to Vercel',
-    why: 'Makes the dashboard accessible from any device, not just Alfred\'s Mac.',
-    owner: 'both',
-    status: 'pending',
-    category: 'config',
-    pages: ['All pages'],
-    actions: [
-      {
-        label: 'Option A: Alfred handles it (needs a Vercel account)',
-        steps: [
-          'Tell Alfred "deploy it" and he\'ll set up the Vercel project',
-          'You\'ll get a URL like clickman.vercel.app',
-          'Alfred will need any API keys/env vars by then',
-        ],
-      },
-      {
-        label: 'Option B: Use your own Vercel account',
-        steps: [
-          'Go to vercel.com and create a project',
-          'Connect the GitHub repo (or Alfred pushes to yours)',
-          'Alfred will configure the env vars',
-        ],
-      },
-    ],
-  },
+
+
 ];
 
 export function getAllDone(items: FinalItem[]): boolean {

@@ -201,32 +201,32 @@ export const creativePerformance = [
 // ─── Account Control Scatter Data ───
 export const accountControlData = [
   // Scaling zone (high spend, low CPA) — green
-  { name: 'Hair Before/After Carousel', spend: 38100, cpa: 577, platform: 'Meta', zone: 'scaling' },
-  { name: 'Brand Search Exact', spend: 52100, cpa: 420, platform: 'Google', zone: 'scaling' },
-  { name: 'GLP-1 Testimonial V3', spend: 45200, cpa: 655, platform: 'Meta', zone: 'scaling' },
-  { name: 'Semaglutide Explainer', spend: 41500, cpa: 669, platform: 'Meta', zone: 'scaling' },
-  { name: 'Hair Regrowth Demo', spend: 22100, cpa: 614, platform: 'TikTok', zone: 'scaling' /* just above threshold but good CPA */ },
-  { name: 'Weight Loss Journey', spend: 28300, cpa: 690, platform: 'TikTok', zone: 'scaling' },
+  { name: 'Hair Before/After Carousel', spend: 38100, cpa: 577, platform: 'Meta', zone: 'scaling', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=456' },
+  { name: 'Brand Search Exact', spend: 52100, cpa: 420, platform: 'Google', zone: 'scaling', previewUrl: 'https://ads.google.com/nav/ads?subid=gb-en-ha-aw-bk-c-bau&adsid=123' },
+  { name: 'GLP-1 Testimonial V3', spend: 45200, cpa: 655, platform: 'Meta', zone: 'scaling', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=457' },
+  { name: 'Semaglutide Explainer', spend: 41500, cpa: 669, platform: 'Meta', zone: 'scaling', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=458' },
+  { name: 'Hair Regrowth Demo', spend: 22100, cpa: 614, platform: 'TikTok', zone: 'scaling', previewUrl: 'https://ads.tiktok.com/i18n/ads_manager/ads_edit?auid=789' /* just above threshold but good CPA */ },
+  { name: 'Weight Loss Journey', spend: 28300, cpa: 690, platform: 'TikTok', zone: 'scaling', previewUrl: 'https://ads.tiktok.com/i18n/ads_manager/ads_edit?auid=790' },
   // Zombies (high spend, high CPA) — red
-  { name: 'Competitor Keywords', spend: 35200, cpa: 880, platform: 'Google', zone: 'zombie' },
-  { name: 'Generic Awareness V2', spend: 31500, cpa: 1120, platform: 'Meta', zone: 'zombie' },
-  { name: 'Broad Match Hair', spend: 28800, cpa: 950, platform: 'Google', zone: 'zombie' },
+  { name: 'Competitor Keywords', spend: 35200, cpa: 880, platform: 'Google', zone: 'zombie', previewUrl: 'https://ads.google.com/nav/ads?subid=gb-en-ha-aw-bk-c-bau&adsid=124' },
+  { name: 'Generic Awareness V2', spend: 31500, cpa: 1120, platform: 'Meta', zone: 'zombie', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=459' },
+  { name: 'Broad Match Hair', spend: 28800, cpa: 950, platform: 'Google', zone: 'zombie', previewUrl: 'https://ads.google.com/nav/ads?subid=gb-en-ha-aw-bk-c-bau&adsid=125' },
   // Testing zone (low spend, mixed CPA) — blue
-  { name: 'New Hook Test A', spend: 5200, cpa: 520, platform: 'Meta', zone: 'testing' },
-  { name: 'New Hook Test B', spend: 4800, cpa: 780, platform: 'Meta', zone: 'testing' },
-  { name: 'Skincare UGC Draft', spend: 3100, cpa: 650, platform: 'TikTok', zone: 'testing' },
-  { name: 'Doc Authority V2', spend: 7500, cpa: 710, platform: 'Meta', zone: 'testing' },
-  { name: 'Reddit Test 1', spend: 2200, cpa: 920, platform: 'Reddit', zone: 'testing' },
-  { name: 'GLP-1 New Angle', spend: 6800, cpa: 590, platform: 'Meta', zone: 'testing' },
-  { name: 'TikTok Trend Hook', spend: 4500, cpa: 480, platform: 'TikTok', zone: 'testing' },
+  { name: 'New Hook Test A', spend: 5200, cpa: 520, platform: 'Meta', zone: 'testing', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=460' },
+  { name: 'New Hook Test B', spend: 4800, cpa: 780, platform: 'Meta', zone: 'testing', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=461' },
+  { name: 'Skincare UGC Draft', spend: 3100, cpa: 650, platform: 'TikTok', zone: 'testing', previewUrl: 'https://ads.tiktok.com/i18n/ads_manager/ads_edit?auid=791' },
+  { name: 'Doc Authority V2', spend: 7500, cpa: 710, platform: 'Meta', zone: 'testing', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=462' },
+  { name: 'Reddit Test 1', spend: 2200, cpa: 920, platform: 'Reddit', zone: 'testing', previewUrl: 'https://ads.reddit.com/ad/123456/preview' },
+  { name: 'GLP-1 New Angle', spend: 6800, cpa: 590, platform: 'Meta', zone: 'testing', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=463' },
+  { name: 'TikTok Trend Hook', spend: 4500, cpa: 480, platform: 'TikTok', zone: 'testing', previewUrl: 'https://ads.tiktok.com/i18n/ads_manager/ads_edit?auid=792' },
   // Untapped winners (low spend, low CPA) — gold
-  { name: 'Sleep Aid Testimonial', spend: 3800, cpa: 410, platform: 'Meta', zone: 'untapped' },
-  { name: 'Quick Results Static', spend: 2900, cpa: 390, platform: 'Meta', zone: 'untapped' },
-  { name: 'Before/After Static', spend: 5100, cpa: 450, platform: 'Meta', zone: 'untapped' },
+  { name: 'Sleep Aid Testimonial', spend: 3800, cpa: 410, platform: 'Meta', zone: 'untapped', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=464' },
+  { name: 'Quick Results Static', spend: 2900, cpa: 390, platform: 'Meta', zone: 'untapped', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=465' },
+  { name: 'Before/After Static', spend: 5100, cpa: 450, platform: 'Meta', zone: 'untapped', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=466' },
   // High CPA testing — still learning
-  { name: 'Reddit Awareness', spend: 1800, cpa: 1350, platform: 'Reddit', zone: 'testing' },
-  { name: 'YouTube Pre-roll', spend: 8200, cpa: 1050, platform: 'Google', zone: 'testing' },
-  { name: 'Podcast Style Ad', spend: 2500, cpa: 1100, platform: 'Meta', zone: 'testing' },
+  { name: 'Reddit Awareness', spend: 1800, cpa: 1350, platform: 'Reddit', zone: 'testing', previewUrl: 'https://ads.reddit.com/ad/123457/preview' },
+  { name: 'YouTube Pre-roll', spend: 8200, cpa: 1050, platform: 'Google', zone: 'testing', previewUrl: 'https://ads.google.com/nav/ads?subid=gb-en-ha-aw-bk-c-bau&adsid=126' },
+  { name: 'Podcast Style Ad', spend: 2500, cpa: 1100, platform: 'Meta', zone: 'testing', previewUrl: 'https://adsmanager.facebook.com/ads_manager/preview?act=123&id=467' },
 ];
 
 // ─── Ad Churn / Retesting Control (Stacked by creative age) ───

@@ -10,8 +10,32 @@ export default function ReportToAlfred() {
   const [description, setDescription] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = () => {
-    console.log('[Report to Alfred]', { type, description, timestamp: new Date().toISOString() });
+  const handleSubmit = async () => {
+    const report = {
+      type,
+      description,
+      timestamp: new Date().toISOString(),
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+    };
+
+    // Save to localStorage for Alfred to check
+    const existingReports = JSON.parse(localStorage.getItem('alfredReports') || '[]');
+    existingReports.push(report);
+    localStorage.setItem('alfredReports', JSON.stringify(existingReports));
+
+    // Also try to send to a webhook endpoint if available
+    try {
+      await fetch('/api/alfred-reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(report),
+      });
+    } catch (error) {
+      // Fallback: save to localStorage
+      console.log('[Report to Alfred] Saved locally:', report);
+    }
+
     setSubmitted(true);
     setTimeout(() => {
       setOpen(false);

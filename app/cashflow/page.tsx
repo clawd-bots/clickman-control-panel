@@ -1,9 +1,10 @@
 'use client';
 import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
-import ExportButton from '@/components/ui/ExportButton';
+
 import { cashFlowDefaults, cohortWaterfall, monthlySummary, sensitivityCards } from '@/lib/sample-data';
 import { formatCurrency } from '@/lib/utils';
+import { useCurrency } from '@/components/CurrencyProvider';
 import {
   BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -11,6 +12,7 @@ import {
 import { Check } from 'lucide-react';
 
 export default function CashFlowPage() {
+  const { currency, convertValue } = useCurrency();
   const [inputs, setInputs] = useState({
     ...cashFlowDefaults,
     subAttachRate: 0,
@@ -118,9 +120,9 @@ export default function CashFlowPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
         {[
           { label: 'Peak Deficit', value: '₱0', desc: 'No deficit projected', metric: 'Peak Deficit' },
-          { label: 'Ending Position', value: '₱13.4M', desc: 'Cumulative cash at M12', metric: 'Peak Deficit' },
+          { label: 'Ending Position', value: '₱13.4M', desc: 'Cumulative cash at M12', metric: 'Ending Position' },
           { label: 'Monthly Break-Even', value: 'Month 1', desc: 'Profitable from start', metric: 'Monthly Break-Even' },
-          { label: 'Total Spend', value: '₱5.93M', desc: '12-month acquisition spend', metric: 'Marketing Costs' },
+          { label: 'Total Spend', value: '₱5.93M', desc: '12-month acquisition spend', metric: 'Total Spend' },
           { label: 'LTV:CAC', value: '3.15x', desc: 'Healthy unit economics', metric: 'LTV:CAC' },
         ].map((card) => (
           <div key={card.label} className="bg-bg-surface border border-border rounded-lg p-4 min-w-0">
@@ -134,8 +136,10 @@ export default function CashFlowPage() {
       {/* Cohort Waterfall Table */}
       <div className="bg-bg-surface border border-border rounded-lg p-5">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-text-primary">Cohort Waterfall (₱ thousands)</h3>
-          <ExportButton />
+          <div className="flex items-center gap-4">
+            <h3 className="text-sm font-medium text-text-primary">Cohort Waterfall ({currency} thousands)</h3>
+            <span className="text-xs text-text-tertiary">Forecast Model</span>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs min-w-[800px]">
@@ -153,10 +157,12 @@ export default function CashFlowPage() {
                 <tr key={row.cohort} className="border-b border-border/30 hover:bg-bg-elevated/50">
                   <td className="py-2 px-2 font-medium text-text-primary">{row.cohort}</td>
                   {months.map((m) => {
-                    const val = row[m];
+                    const originalVal = row[m];
+                    const val = convertValue(originalVal);
+                    const displayVal = Math.round(val);
                     return (
-                      <td key={m} className={`py-2 px-2 text-right ${val < 0 ? 'text-danger' : val > 0 ? 'text-success' : 'text-text-tertiary'}`}>
-                        {val !== 0 ? val : '—'}
+                      <td key={m} className={`py-2 px-2 text-right ${originalVal < 0 ? 'text-danger' : originalVal > 0 ? 'text-success' : 'text-text-tertiary'}`}>
+                        {originalVal !== 0 ? displayVal : '—'}
                       </td>
                     );
                   })}
@@ -175,7 +181,10 @@ export default function CashFlowPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Revenue Composition — now with 3 streams */}
         <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue Composition</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-secondary">Revenue Composition</h3>
+            <span className="text-xs text-text-tertiary">Forecast Model</span>
+          </div>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={monthlySummary.map(m => ({
               month: m.month,
@@ -196,7 +205,10 @@ export default function CashFlowPage() {
 
         {/* Cash Flow Waterfall */}
         <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <h3 className="text-sm font-medium text-text-secondary mb-4">Cumulative Cash Flow</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-secondary">Cumulative Cash Flow</h3>
+            <span className="text-xs text-text-tertiary">Forecast Model</span>
+          </div>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={monthlySummary}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -228,7 +240,6 @@ export default function CashFlowPage() {
       <div className="bg-bg-surface border border-border rounded-lg p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-primary">Monthly Summary</h3>
-          <ExportButton />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs min-w-[700px]">

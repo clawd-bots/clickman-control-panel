@@ -1,7 +1,7 @@
 'use client';
 import KPICard from '@/components/ui/KPICard';
 import InfoTooltip from '@/components/ui/InfoTooltip';
-import ExportButton from '@/components/ui/ExportButton';
+
 import { kpiCards, dailyMetrics, channelAttribution, productKPIs, revenueInsights } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import {
@@ -43,7 +43,10 @@ export default function DashboardPage() {
       {/* Revenue & Marketing Chart */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue & Marketing Costs</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-secondary">Revenue & Marketing Costs</h3>
+            <span className="text-xs text-text-tertiary">Triple Whale</span>
+          </div>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={dailyMetrics}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -58,7 +61,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <h3 className="text-sm font-medium text-text-secondary mb-4">Net Orders & New Customers</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-secondary">Net Orders & New Customers</h3>
+            <span className="text-xs text-text-tertiary">Triple Whale</span>
+          </div>
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={dailyMetrics}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -76,7 +82,10 @@ export default function DashboardPage() {
       {/* Marketing Insights */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-bg-surface border border-border rounded-lg p-5 space-y-4">
-          <h3 className="text-sm font-medium text-text-secondary">Marketing Insights</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-secondary">Marketing Insights</h3>
+            <span className="text-xs text-text-tertiary">Google Analytics</span>
+          </div>
           {[
             { label: 'Sessions', value: '33,850', change: 8.2 },
             { label: 'CVR', value: '3.33%', change: 2.1 },
@@ -97,7 +106,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="col-span-2 bg-bg-surface border border-border rounded-lg p-5">
-          <h3 className="text-sm font-medium text-text-secondary mb-4">Marketing Metrics Trend</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-secondary">Marketing Metrics Trend</h3>
+            <span className="text-xs text-text-tertiary">Triple Whale</span>
+          </div>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={dailyMetrics}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -116,14 +128,13 @@ export default function DashboardPage() {
           <div>
             <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
             <div className="flex gap-3 mt-2">
-              {['Data Driven', 'Order Date', 'Validated'].map((tab, i) => (
+              {['Linear All', 'Linear Paid', 'Validated'].map((tab, i) => (
                 <button key={tab} className={`text-xs px-3 py-1 rounded-md ${i === 0 ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>
                   {tab}
                 </button>
               ))}
             </div>
           </div>
-          <ExportButton />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -164,7 +175,10 @@ export default function DashboardPage() {
       {/* Revenue Insights */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-bg-surface border border-border rounded-lg p-5">
-          <h3 className="text-sm font-medium text-text-secondary mb-4">Revenue Composition (NC vs RC)</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-secondary">Revenue Composition (NC vs RC)</h3>
+            <span className="text-xs text-text-tertiary">Triple Whale</span>
+          </div>
           <ResponsiveContainer width="100%" height={240}>
             <BarChart data={revenueInsights.monthly}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -179,7 +193,10 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-bg-surface border border-border rounded-lg p-5 space-y-4">
-          <h3 className="text-sm font-medium text-text-secondary">Revenue Breakdown</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-secondary">Revenue Breakdown</h3>
+            <span className="text-xs text-text-tertiary">Triple Whale</span>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
               { label: 'NC Revenue', value: formatCurrency(revenueInsights.ncRevenue), metric: 'NC Revenue' },
@@ -220,7 +237,6 @@ export default function DashboardPage() {
       <div className="bg-bg-surface border border-border rounded-lg p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-primary">Product KPIs</h3>
-          <ExportButton />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">

@@ -39,7 +39,9 @@ export const tooltips: Record<string, string> = {
 
   // Cash Flow
   'Peak Deficit': 'The maximum negative cash position during the projection period. This is how much working capital you need.',
+  'Ending Position': 'Total cumulative cash position at the end of the forecast period (M12). Shows the business financial health after 12 months.',
   'Monthly Break-Even': 'The month where cumulative cash flow turns positive. When the business starts "paying back" its acquisition investment.',
+  'Total Spend': 'Total marketing investment across all acquisition channels over the forecast period.',
   'LTV:CAC': 'Lifetime Value to Customer Acquisition Cost ratio. Above 3:1 is healthy. Below 1:1 means you lose money on each customer.',
   'Gross Margin %': 'Percentage of revenue retained after COGS. For AndYou, this should be 65-75%.',
   'CPA Escalation': 'Expected monthly increase in Cost Per Acquisition as you scale. Accounts for audience saturation.',

@@ -51,6 +51,13 @@ export default function Sidebar() {
             priority
           />
         </Link>
+        {/* Desktop collapse toggle */}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="hidden lg:flex ml-auto p-1 text-text-tertiary hover:text-text-secondary transition-colors"
+        >
+          {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
         {/* Mobile close button */}
         <button
           onClick={() => setMobileOpen(false)}
@@ -84,13 +91,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Collapse toggle — desktop only */}
-      <button
-        onClick={() => setCollapsed(!collapsed)}
-        className="hidden lg:flex h-10 items-center justify-center border-t border-border text-text-tertiary hover:text-text-secondary transition-colors"
-      >
-        {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-      </button>
+
     </>
   );
 

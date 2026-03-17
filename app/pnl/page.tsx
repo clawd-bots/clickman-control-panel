@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import KPICard from '@/components/ui/KPICard';
-import ExportButton from '@/components/ui/ExportButton';
+
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { pnlData, pnlTrend } from '@/lib/sample-data';
 import { formatCurrency } from '@/lib/utils';
@@ -103,7 +103,6 @@ export default function PnLPage() {
               <ChevronsUpDown size={13} />
               {allExpanded ? 'Collapse All' : 'Expand All'}
             </button>
-            <ExportButton />
           </div>
         </div>
         <div className="overflow-x-auto">

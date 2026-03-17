@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
-import ExportButton from '@/components/ui/ExportButton';
+
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import {
   creativePerformance, creativeAISuggestions,
@@ -31,8 +31,8 @@ const tabDescriptions: Record<string, string> = {
   'Demographics': 'Are you producing for the audience that is actually buying? If women 25-34 drive your profit but you keep producing TikTok-style ads for Gen Z, you\'re burning cash. Align your production queue with your paying demographic.',
 };
 
-const attributionModels = ['First Click', 'Last Click', 'Linear', 'Triple Attribution (No Views)', 'Data-Driven'];
-const attributionWindows = ['1-Day Click', '7-Day Click', '14-Day Click', '28-Day Click', '7-Day Click + 1-Day View'];
+const attributionModels = ['Linear All', 'Linear Paid', 'First Click', 'Last Click', 'Triple Attribution (No Views)'];
+const attributionWindows = ['1-day click', '7-day click / 1-day view', '28-day click / 1-day view', '28-day click / 28-day view'];
 
 // Zone colors for account control scatter
 const zoneColors: Record<string, string> = { scaling: '#10B981', zombie: '#EF4444', testing: '#4A6BD6', untapped: '#EDBF63' };
@@ -55,7 +55,7 @@ export default function CreativePage() {
   const [activeTab, setActiveTab] = useState('Performance');
   const [platform, setPlatform] = useState('All');
   const [attrModel, setAttrModel] = useState('Data-Driven');
-  const [attrWindow, setAttrWindow] = useState('7-Day Click');
+  const [attrWindow, setAttrWindow] = useState('7-day click / 1-day view');
 
   const filtered = platform === 'All'
     ? creativePerformance
@@ -94,34 +94,42 @@ export default function CreativePage() {
 
       {/* Filters */}
       <div className="flex items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-text-secondary font-medium">Platform:</span>
-          <div className="flex gap-1">
-            {platforms.map(p => (
-              <button key={p} onClick={() => setPlatform(p)} className={`px-2.5 py-1 rounded-md text-xs ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>
-                {p}
-              </button>
-            ))}
+        {/* Platform controls - hide for Production & Slugging and Ad Churn */}
+        {!['Top Creatives', 'Ad Churn'].includes(activeTab) && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-text-secondary font-medium">Platform:</span>
+            <div className="flex gap-1">
+              {platforms.map(p => (
+                <button key={p} onClick={() => setPlatform(p)} className={`px-2.5 py-1 rounded-md text-xs ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>
+                  {p}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-text-secondary font-medium">Model:</span>
-          <div className="relative">
-            <select value={attrModel} onChange={(e) => setAttrModel(e.target.value)} className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors">
-              {attributionModels.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-text-secondary font-medium">Window:</span>
-          <div className="relative">
-            <select value={attrWindow} onChange={(e) => setAttrWindow(e.target.value)} className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors">
-              {attributionWindows.map(w => <option key={w} value={w}>{w}</option>)}
-            </select>
-            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
-          </div>
-        </div>
+        )}
+        {/* Attribution controls - hide for Production & Slugging and Ad Churn */}
+        {!['Top Creatives', 'Ad Churn'].includes(activeTab) && (
+          <>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-secondary font-medium">Model:</span>
+              <div className="relative">
+                <select value={attrModel} onChange={(e) => setAttrModel(e.target.value)} className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors">
+                  {attributionModels.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-secondary font-medium">Window:</span>
+              <div className="relative">
+                <select value={attrWindow} onChange={(e) => setAttrWindow(e.target.value)} className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors">
+                  {attributionWindows.map(w => <option key={w} value={w}>{w}</option>)}
+                </select>
+                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* ═══════════════════════ PERFORMANCE TAB ═══════════════════════ */}
@@ -129,7 +137,6 @@ export default function CreativePage() {
         <div className="bg-bg-surface border border-border rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary">Creative Performance</h3>
-            <ExportButton />
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
@@ -209,12 +216,36 @@ export default function CreativePage() {
                 cursor={{ strokeDasharray: '3 3' }}
                 contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={(value: any, name: any) => [name === 'Spend' ? formatCurrency(Number(value)) : `₱${value}`, String(name)]}
-                labelFormatter={() => ''}
+                formatter={(value: any, name: any, props: any) => [
+                  name === 'Spend' ? formatCurrency(Number(value)) : `₱${value}`, 
+                  String(name)
+                ]}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                labelFormatter={(label: any, payload: any) => {
+                  if (payload && payload[0] && payload[0].payload) {
+                    return `${payload[0].payload.name} (click to view)`;
+                  }
+                  return '';
+                }}
               />
-              <Scatter data={accountControlData} name="Ads">
+              <Scatter 
+                data={accountControlData} 
+                name="Ads"
+                onClick={(data) => {
+                  if (data && data.payload && data.payload.previewUrl) {
+                    window.open(data.payload.previewUrl, '_blank');
+                  }
+                }}
+              >
                 {accountControlData.map((entry, i) => (
-                  <Cell key={i} fill={zoneColors[entry.zone]} fillOpacity={0.85} stroke={zoneColors[entry.zone]} strokeWidth={1} />
+                  <Cell 
+                    key={i} 
+                    fill={zoneColors[entry.zone]} 
+                    fillOpacity={0.85} 
+                    stroke={zoneColors[entry.zone]} 
+                    strokeWidth={1}
+                    className="cursor-pointer hover:opacity-75 transition-opacity"
+                  />
                 ))}
               </Scatter>
             </ScatterChart>
@@ -397,8 +428,19 @@ export default function CreativePage() {
             <BarChart data={paretoData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis dataKey="name" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-30} textAnchor="end" height={80} />
-              <YAxis yAxisId="left" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} domain={[0, 100]} tickFormatter={v => `${v}%`} />
+              <YAxis 
+                yAxisId="left" 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                label={{ value: 'Conversions', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
+              <YAxis 
+                yAxisId="right" 
+                orientation="right" 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                domain={[0, 100]} 
+                tickFormatter={v => `${v}%`} 
+                label={{ value: 'Cumulative %', angle: 90, position: 'insideRight', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+              />
               <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
               <Bar yAxisId="left" dataKey="conversions" name="Conversions" fill="#4A6BD6" radius={[3, 3, 0, 0]} />
               <Bar yAxisId="right" dataKey="cumPct" name="Cumulative %" fill="#EDBF63" radius={[3, 3, 0, 0]} />
@@ -527,7 +569,12 @@ export default function CreativePage() {
       </div>
 
       {/* AI Suggestions */}
-      <AISuggestionsPanel suggestions={creativeAISuggestions} title="Creative Intelligence" />
+      <AISuggestionsPanel 
+        suggestions={creativeAISuggestions} 
+        title="Creative Intelligence"
+        attributionModel={attrModel}
+        attributionWindow={attrWindow}
+      />
     </div>
   );
 }

@@ -1,9 +1,10 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Calendar, ChevronDown, RefreshCw, User, Sun, Moon, Menu } from 'lucide-react';
+import { Calendar, ChevronDown, RefreshCw, User, Sun, Moon, Menu, DollarSign } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { useSidebar } from '@/components/layout/SidebarContext';
+import { useCurrency } from '@/components/CurrencyProvider';
 
 const datePresets = [
   { label: 'Today', value: 'today' },
@@ -55,6 +56,7 @@ export default function TopBar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const { toggleMobile } = useSidebar();
+  const { currency, setCurrency } = useCurrency();
   const [datePreset, setDatePreset] = useState('7d');
   const [comparison, setComparison] = useState('prev-period');
   const [showDateDropdown, setShowDateDropdown] = useState(false);
@@ -157,6 +159,16 @@ export default function TopBar() {
             </div>
           </>
         )}
+
+        {/* Currency Toggle */}
+        <button
+          onClick={() => setCurrency(currency === '₱' ? '$' : '₱')}
+          className="flex items-center gap-1 px-2 py-1.5 rounded-md hover:bg-bg-elevated text-text-tertiary hover:text-text-primary transition-colors text-xs font-medium"
+          title={`Switch to ${currency === '₱' ? 'USD ($)' : 'PHP (₱)'}`}
+        >
+          {currency === '₱' ? <span>₱</span> : <DollarSign size={12} />}
+          <span className="hidden sm:inline">{currency === '₱' ? 'PHP' : 'USD'}</span>
+        </button>
 
         {/* Theme Toggle */}
         <button

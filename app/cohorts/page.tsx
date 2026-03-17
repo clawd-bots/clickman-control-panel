@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
-import ExportButton from '@/components/ui/ExportButton';
+
 import { cohortRetention, clvExtension, productComparison } from '@/lib/sample-data';
 import { getHeatmapClass } from '@/lib/utils';
 import { Sparkles } from 'lucide-react';
@@ -38,7 +38,7 @@ export default function CohortsPage() {
           <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <span className="text-xs text-text-secondary font-medium">Metric:</span>
-              {['Net Revenue', 'CM2', 'Orders'].map(m => (
+              {['Net Revenue', 'Orders'].map(m => (
                 <button key={m} onClick={() => setMetric(m)} className={`px-2.5 py-1 rounded-md text-xs ${metric === m ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary'}`}>{m}</button>
               ))}
             </div>
@@ -52,19 +52,13 @@ export default function CohortsPage() {
               <button onClick={() => setFormat('%')} className={`px-2.5 py-1 rounded-md text-xs ${format === '%' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary'}`}>%</button>
               <button onClick={() => setFormat('#')} className={`px-2.5 py-1 rounded-md text-xs ${format === '#' ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary'}`}>#</button>
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-text-secondary flex items-center gap-1.5 cursor-pointer">
-                <input type="checkbox" checked={heatmap} onChange={() => setHeatmap(!heatmap)} className="rounded" />
-                Heatmap
-              </label>
-            </div>
+
           </div>
 
           {/* Cohort Table */}
           <div className="bg-bg-surface border border-border rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-text-primary">Retention by Cohort <InfoTooltip metric="Cohort" /></h3>
-              <ExportButton />
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
@@ -216,7 +210,6 @@ export default function CohortsPage() {
           <div className="bg-bg-surface border border-border rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-text-primary">Product Comparison <InfoTooltip metric="Repeat Rate" /></h3>
-              <ExportButton />
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
