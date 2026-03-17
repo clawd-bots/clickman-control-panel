@@ -221,9 +221,8 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-        <div className="overflow-x-auto -mx-1 sm:mx-0">
-          <div className="min-w-[800px]">
-            <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[800px]">
               <thead>
                 <tr className="border-b border-border text-xs text-text-secondary uppercase">
                   <th className="text-left py-3 px-2 sm:px-3 font-medium min-w-[100px]">Channel</th>
@@ -270,7 +269,6 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
-          </div>
         </div>
       </div>
 
@@ -359,9 +357,8 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-primary">Product KPIs</h3>
         </div>
-        <div className="overflow-x-auto -mx-1 sm:mx-0">
-          <div className="min-w-[700px]">
-            <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[700px]">
               <thead>
                 <tr className="border-b border-border text-xs text-text-secondary uppercase">
                   <th className="text-left py-3 px-2 sm:px-3 font-medium min-w-[120px]">Product</th>
@@ -393,7 +390,6 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
-          </div>
         </div>
       </div>
     </div>
