@@ -9,6 +9,7 @@ import {
   productionSlugging, demographicsAge, demographicsGender, demographicsGenderAge,
 } from '@/lib/sample-data';
 import { formatCurrency } from '@/lib/utils';
+import { useCurrency } from '@/components/CurrencyProvider';
 import { ChevronDown } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -16,21 +17,21 @@ import {
   AreaChart, Area, LineChart, Line, ComposedChart,
 } from 'recharts';
 
-const tabs = ['Performance', 'Ad Churn', 'Account Control', 'Top Creatives', 'Creative Launches', 'Pareto', 'Demographics'];
+const tabs = ['Performance', 'Ad Churn', 'Account Control', 'Top Creatives', 'Pareto', 'Demographics'];
 const platforms = ['Meta', 'TikTok', 'Reddit'];
 
 const tabDescriptions: Record<string, string> = {
   'Performance': 'Overview of all active ad creatives with spend, engagement, and conversion metrics. Use this to monitor your live ads and spot issues quickly.',
-  'Ad Churn': 'Shows how ad spend is distributed across creative age brackets. Dark = newest ads, lighter = older. A healthy account has a steady flow of new creative taking over. If 100% reliant on old ads, you\'re fragile. If you never retest old winners, you\'re leaving money on the table.',
+  'Ad Churn': 'Shows how ad spend is distributed across creative age brackets and launch cohorts. Dark = newest ads/cohorts, lighter = older. A healthy account has a steady flow of new creative taking over spend from older creative.',
   'Account Control': 'Scatter plot of CPA vs Spend per ad. Bottom-right = winners scaling efficiently. Top-right = "zombies" burning budget. The horizontal line is your CPA target. The vertical line separates testing from scaled ads.',
   'Top Creatives': 'Production & Slugging Rate , tracks your "at bats" vs "hits." Bars show ads launched per month. Dark sections show how many actually scaled. If you launch many ads and none scale, you have a creative strategy problem, not a media buying problem.',
-  'Creative Launches': 'Creative Churn by Cohort. Each color = a cohort of ads launched in the same month. Newer cohorts (darker) should take over spend from older ones. If old cohorts still dominate, creative fatigue is building and performance will decline.',
+
   'Pareto': 'The 80/20 principle applied to ad creatives. Usually 20% of creatives drive 80% of results. Use this to identify your winners and stop spreading budget too thin.',
   'Demographics': 'Are you producing for the audience that is actually buying? If women 25-34 drive your profit but you keep producing TikTok-style ads for Gen Z, you\'re burning cash. Align your production queue with your paying demographic.',
 };
 
 const attributionModels = ['Linear All', 'Linear Paid', 'First Click', 'Last Click', 'Triple Attribution (No Views)'];
-const attributionWindows = ['1-day click', '7-day click / 1-day view', '28-day click / 1-day view', '28-day click / 28-day view'];
+const attributionWindows = ['1-day click', '7-day click', '14-day click', '28-day click', '7-day click / 1-day view', '28-day click / 1-day view', '28-day click / 28-day view'];
 
 // Zone colors for account control scatter
 const zoneColors: Record<string, string> = { scaling: '#10B981', zombie: '#EF4444', testing: '#4A6BD6', untapped: '#EDBF63' };
@@ -64,10 +65,16 @@ function getAITitle(tab: string): string {
 }
 
 export default function CreativePage() {
+  const { currency, convertValue } = useCurrency();
   const [activeTab, setActiveTab] = useState('Performance');
   const [platform, setPlatform] = useState('Meta');
   const [attrModel, setAttrModel] = useState('Linear All');
   const [attrWindow, setAttrWindow] = useState('7-day click / 1-day view');
+
+  // Helper function to format currency with current context
+  const formatCurrencyValue = (value: number) => {
+    return formatCurrency(convertValue(value), currency);
+  };
 
   const filtered = creativePerformance.filter(c => c.platform === platform);
 
@@ -177,6 +184,7 @@ export default function CreativePage() {
                       </div>
                     </th>
                     <th className="text-center py-2 px-2 font-medium min-w-[60px]">Status</th>
+                    <th className="text-center py-2 px-2 font-medium min-w-[70px]">Preview</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -186,14 +194,22 @@ export default function CreativePage() {
                       <td className="py-2.5 px-2">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.platform === 'Meta' ? 'bg-brand-blue/15 text-brand-blue-light' : row.platform === 'Google' ? 'bg-warm-gold/15 text-warm-gold' : 'bg-success/15 text-success'}`}>{row.platform}</span>
                       </td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrency(row.spend)}</td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.spend)}</td>
                       <td className="py-2.5 px-2 text-right text-text-secondary">{(row.impressions / 1000).toFixed(0)}K</td>
                       <td className="py-2.5 px-2 text-right text-text-secondary">{row.ctr.toFixed(2)}%</td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrency(row.cpc)}</td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.cpc)}</td>
                       <td className="py-2.5 px-2 text-right text-text-primary font-medium">{row.conversions}</td>
-                      <td className="py-2.5 px-2 text-right"><span className={row.cpa <= 700 ? 'text-success' : row.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>{formatCurrency(row.cpa)}</span></td>
+                      <td className="py-2.5 px-2 text-right"><span className={row.cpa <= 700 ? 'text-success' : row.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>{formatCurrencyValue(row.cpa)}</span></td>
                       <td className="py-2.5 px-2 text-right"><span className={row.roas >= 3.0 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>{row.roas.toFixed(2)}x</span></td>
                       <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.status === 'Active' ? 'bg-success/15 text-success' : 'bg-warm-gold/15 text-warm-gold'}`}>{row.status}</span></td>
+                      <td className="py-2.5 px-2 text-center">
+                        <button 
+                          onClick={() => window.open(`/api/ad-preview/${row.name.replace(/\s+/g, '-').toLowerCase()}`, '_blank')}
+                          className="text-brand-blue-light hover:text-brand-blue text-xs font-medium px-2 py-1 rounded-md border border-brand-blue/30 hover:border-brand-blue/50 transition-colors"
+                        >
+                          View
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -228,26 +244,26 @@ export default function CreativePage() {
               <XAxis
                 type="number" dataKey="spend" name="Spend"
                 tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
-                tickFormatter={(v) => v >= 1000 ? `₱${(v / 1000).toFixed(0)}K` : `₱${v}`}
+                tickFormatter={(v) => v >= 1000 ? `${currency}${(convertValue(v) / 1000).toFixed(0)}K` : `${currency}${convertValue(v)}`}
                 domain={[0, 60000]}
                 label={{ value: 'Total Spend', position: 'insideBottom', offset: -10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }}
               />
               <YAxis
                 type="number" dataKey="cpa" name="CPA"
                 tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
-                tickFormatter={(v) => `₱${v}`}
+                tickFormatter={(v) => `${currency}${convertValue(v)}`}
                 domain={[200, 1500]}
                 label={{ value: 'CPA', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }}
               />
               <ZAxis type="number" range={[80, 200]} />
-              <ReferenceLine y={787} stroke="#EF4444" strokeDasharray="6 4" strokeWidth={2} label={{ value: 'CPA Target ₱787', position: 'right', style: { fill: '#EF4444', fontSize: 10, fontWeight: 600 } }} />
+              <ReferenceLine y={787} stroke="#EF4444" strokeDasharray="6 4" strokeWidth={2} label={{ value: `CPA Target ${formatCurrencyValue(787)}`, position: 'right', style: { fill: '#EF4444', fontSize: 10, fontWeight: 600 } }} />
               <ReferenceLine x={20000} stroke="var(--color-text-tertiary)" strokeDasharray="4 4" strokeWidth={1} label={{ value: 'Scale threshold', position: 'top', style: { fill: 'var(--color-text-tertiary)', fontSize: 10 } }} />
               <Tooltip
                 cursor={{ strokeDasharray: '3 3' }}
                 contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(value: any, name: any, props: any) => [
-                  name === 'Spend' ? formatCurrency(Number(value)) : `₱${value}`, 
+                  name === 'Spend' ? formatCurrencyValue(Number(value)) : `${currency}${convertValue(value)}`, 
                   String(name)
                 ]}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -303,16 +319,18 @@ export default function CreativePage() {
         </div>
       )}
 
-      {/* ═══════════════════════ AD CHURN (Stacked Bar by Age) ═══════════════════════ */}
+      {/* ═══════════════════════ AD CHURN (Stacked Bar by Age + Cohort Analysis) ═══════════════════════ */}
       {activeTab === 'Ad Churn' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
-              <span className="truncate">Churn & Retesting Control , Spend by Creative Age</span>
-              <InfoTooltip metric="Ad Churn" />
-            </h3>
-            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
-          </div>
+        <div className="space-y-4 sm:space-y-6 mx-1">
+          {/* Creative Age Analysis */}
+          <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+              <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+                <span className="truncate">Churn & Retesting Control , Spend by Creative Age</span>
+                <InfoTooltip metric="Ad Churn" />
+              </h3>
+              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+            </div>
           <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
             {churnAgeKeys.map((key, i) => (
               <div key={key} className="flex items-center gap-1.5">
@@ -326,10 +344,10 @@ export default function CreativePage() {
               <BarChart data={adChurnData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
-                <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}K`} />
+                <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${currency}${(convertValue(v) / 1000).toFixed(0)}K`} />
                 <Tooltip
                   contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
-                  formatter={(value: any, name: any) => [formatCurrency(value), name]}
+                  formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
                 />
                 <Bar dataKey="Last 7 Days" stackId="churn" fill="#1e3a5f" />
                 <Bar dataKey="8-14 Days" stackId="churn" fill="#2563EB" />
@@ -340,63 +358,64 @@ export default function CreativePage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-4 bg-bg-elevated border border-border rounded-lg p-3">
-            <p className="text-xs text-text-secondary leading-relaxed">
-              <span className="font-medium text-text-primary">Reading this chart:</span> Dark bars = newest ads (last 7 days). Lighter bars = older ads.
-              A healthy account shows new creative steadily taking over spend from older creative.
-              If the lightest bars (180+ days) dominate, you're running on legacy creative and vulnerable to fatigue.
-              March shows a positive trend , new creative (dark) is gaining share.
-            </p>
+            <div className="mt-4 bg-bg-elevated border border-border rounded-lg p-3">
+              <p className="text-xs text-text-secondary leading-relaxed">
+                <span className="font-medium text-text-primary">Reading this chart:</span> Dark bars = newest ads (last 7 days). Lighter bars = older ads.
+                A healthy account shows new creative steadily taking over spend from older creative.
+                If the lightest bars (180+ days) dominate, you're running on legacy creative and vulnerable to fatigue.
+                March shows a positive trend , new creative (dark) is gaining share.
+              </p>
+            </div>
+          </div>
+
+          {/* Creative Launch Cohorts */}
+          <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
+              <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+                <span className="truncate">Creative Churn , Spend by Launch Cohort</span>
+                <InfoTooltip metric="Creative Churn Cohorts" />
+              </h3>
+              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+            </div>
+            <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
+              {cohortKeys.map((key) => (
+                <div key={key} className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: cohortColors[key] }} />
+                  <span className="text-xs text-text-secondary truncate">{cohortLabels[key]}</span>
+                </div>
+              ))}
+            </div>
+            <div className="min-h-[320px] sm:min-h-[380px]" style={{ width: '100%', height: '380px' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={creativeChurnCohorts} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-30} textAnchor="end" height={60} />
+                  <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${currency}${(convertValue(v) / 1000).toFixed(0)}K`} />
+                  <Tooltip
+                    contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
+                    formatter={(value: any, name: any) => [value > 0 ? formatCurrencyValue(value) : ',', cohortLabels[name] || name]}
+                  />
+                  <Area type="monotone" dataKey="oct" stackId="cohort" fill="#C5D8FB" stroke="#C5D8FB" fillOpacity={0.85} />
+                  <Area type="monotone" dataKey="nov" stackId="cohort" fill="#93B4F5" stroke="#93B4F5" fillOpacity={0.85} />
+                  <Area type="monotone" dataKey="dec" stackId="cohort" fill="#6B8DE8" stroke="#6B8DE8" fillOpacity={0.85} />
+                  <Area type="monotone" dataKey="jan" stackId="cohort" fill="#4A6BD6" stroke="#4A6BD6" fillOpacity={0.85} />
+                  <Area type="monotone" dataKey="feb" stackId="cohort" fill="#2563EB" stroke="#2563EB" fillOpacity={0.85} />
+                  <Area type="monotone" dataKey="mar" stackId="cohort" fill="#1e3a5f" stroke="#1e3a5f" fillOpacity={0.85} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mt-4 bg-bg-elevated border border-border rounded-lg p-3">
+              <p className="text-xs text-text-secondary leading-relaxed">
+                <span className="font-medium text-text-primary">Key insight:</span> Watch how darker (newer) cohorts take over spend from lighter (older) ones.
+                This is healthy creative rotation. If old cohorts still dominate spend, creative fatigue is building and performance will decline.
+                This chart is the most critical for forecasting future performance.
+              </p>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ═══════════════════════ CREATIVE LAUNCHES (Creative Churn Cohorts) ═══════════════════════ */}
-      {activeTab === 'Creative Launches' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
-              <span className="truncate">Creative Churn , Spend by Launch Cohort</span>
-              <InfoTooltip metric="Creative Churn Cohorts" />
-            </h3>
-            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
-          </div>
-          <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
-            {cohortKeys.map((key) => (
-              <div key={key} className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: cohortColors[key] }} />
-                <span className="text-xs text-text-secondary truncate">{cohortLabels[key]}</span>
-              </div>
-            ))}
-          </div>
-          <div className="min-h-[320px] sm:min-h-[380px]" style={{ width: '100%', height: '380px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={creativeChurnCohorts} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-30} textAnchor="end" height={60} />
-                <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}K`} />
-                <Tooltip
-                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
-                  formatter={(value: any, name: any) => [value > 0 ? formatCurrency(value) : ',', cohortLabels[name] || name]}
-                />
-                <Area type="monotone" dataKey="oct" stackId="cohort" fill="#C5D8FB" stroke="#C5D8FB" fillOpacity={0.85} />
-                <Area type="monotone" dataKey="nov" stackId="cohort" fill="#93B4F5" stroke="#93B4F5" fillOpacity={0.85} />
-                <Area type="monotone" dataKey="dec" stackId="cohort" fill="#6B8DE8" stroke="#6B8DE8" fillOpacity={0.85} />
-                <Area type="monotone" dataKey="jan" stackId="cohort" fill="#4A6BD6" stroke="#4A6BD6" fillOpacity={0.85} />
-                <Area type="monotone" dataKey="feb" stackId="cohort" fill="#2563EB" stroke="#2563EB" fillOpacity={0.85} />
-                <Area type="monotone" dataKey="mar" stackId="cohort" fill="#1e3a5f" stroke="#1e3a5f" fillOpacity={0.85} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 bg-bg-elevated border border-border rounded-lg p-3">
-            <p className="text-xs text-text-secondary leading-relaxed">
-              <span className="font-medium text-text-primary">Key insight:</span> Watch how darker (newer) cohorts take over spend from lighter (older) ones.
-              This is healthy creative rotation. If old cohorts still dominate spend, creative fatigue is building and performance will decline.
-              This chart is the most critical for forecasting future performance.
-            </p>
-          </div>
-        </div>
-      )}
+
 
       {/* ═══════════════════════ TOP CREATIVES (Production & Slugging Rate) ═══════════════════════ */}
       {activeTab === 'Top Creatives' && (
@@ -494,6 +513,25 @@ export default function CreativePage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          <div className="mt-4 bg-warm-gold/5 border border-warm-gold/20 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium text-warm-gold">80% Rule Analysis</div>
+              <InfoTooltip metric="Pareto 80/20 Analysis" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <div className="text-text-secondary mb-1">Top 20% of creatives generate:</div>
+                <div className="text-lg font-bold text-warm-gold">~80% of results</div>
+              </div>
+              <div>
+                <div className="text-text-secondary mb-1">To improve 80% outcome by 25%:</div>
+                <div className="text-lg font-bold text-text-primary">Focus budget on top 3-4 creatives</div>
+              </div>
+            </div>
+            <div className="mt-3 text-xs text-text-secondary">
+              <strong>Action:</strong> Stop spreading budget across weak performers. Double down on your proven winners and create variations of your top 20% performers.
+            </div>
+          </div>
         </div>
       )}
 
@@ -524,7 +562,7 @@ export default function CreativePage() {
                     />
                     <div className="absolute inset-0 flex items-center px-2 sm:px-3 justify-between">
                       <span className="text-xs font-medium text-text-primary truncate">{row.conversions} conv.</span>
-                      <span className={`text-xs font-medium shrink-0 ${row.cpa <= 700 ? 'text-success' : row.cpa <= 800 ? 'text-warm-gold' : 'text-danger'}`}>₱{row.cpa} CPA</span>
+                      <span className={`text-xs font-medium shrink-0 ${row.cpa <= 700 ? 'text-success' : row.cpa <= 800 ? 'text-warm-gold' : 'text-danger'}`}>{formatCurrencyValue(row.cpa)} CPA</span>
                     </div>
                   </div>
                   <div className="w-12 sm:w-16 text-right text-xs text-text-secondary shrink-0">{row.roas.toFixed(2)}x</div>
@@ -544,9 +582,9 @@ export default function CreativePage() {
                 <div key={row.gender} className="bg-bg-elevated border border-border rounded-lg p-4">
                   <div className="text-sm font-medium text-text-primary mb-3">{row.gender}</div>
                   <div className="space-y-2 text-xs">
-                    <div className="flex justify-between"><span className="text-text-secondary">Spend</span><span className="text-text-primary font-medium">{formatCurrency(row.spend)}</span></div>
+                    <div className="flex justify-between"><span className="text-text-secondary">Spend</span><span className="text-text-primary font-medium">{formatCurrencyValue(row.spend)}</span></div>
                     <div className="flex justify-between"><span className="text-text-secondary">Conversions</span><span className="text-text-primary font-medium">{row.conversions} ({row.pctConversions}%)</span></div>
-                    <div className="flex justify-between"><span className="text-text-secondary">CPA</span><span className={row.cpa <= 700 ? 'text-success font-medium' : row.cpa <= 800 ? 'text-warm-gold font-medium' : 'text-danger font-medium'}>₱{row.cpa}</span></div>
+                    <div className="flex justify-between"><span className="text-text-secondary">CPA</span><span className={row.cpa <= 700 ? 'text-success font-medium' : row.cpa <= 800 ? 'text-warm-gold font-medium' : 'text-danger font-medium'}>{formatCurrencyValue(row.cpa)}</span></div>
                     <div className="flex justify-between"><span className="text-text-secondary">ROAS</span><span className={row.roas >= 3.0 ? 'text-success font-medium' : 'text-warm-gold font-medium'}>{row.roas.toFixed(2)}x</span></div>
                   </div>
                 </div>
@@ -573,10 +611,10 @@ export default function CreativePage() {
                 <AreaChart data={demographicsGenderAge} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
-                  <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v / 1000).toFixed(0)}K`} />
+                  <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${currency}${(convertValue(v) / 1000).toFixed(0)}K`} />
                   <Tooltip
                     contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11 }}
-                    formatter={(value: any, name: any) => [formatCurrency(value), name]}
+                    formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
                   />
                   <Area type="monotone" dataKey="F 18-24" stackId="demo" fill="#fca5a5" stroke="#fca5a5" fillOpacity={0.85} />
                   <Area type="monotone" dataKey="F 25-34" stackId="demo" fill="#ef4444" stroke="#ef4444" fillOpacity={0.85} />
@@ -606,7 +644,7 @@ export default function CreativePage() {
       )}
 
       {/* ═══════════════════════ OTHER TABS (Placeholder) ═══════════════════════ */}
-      {!['Performance', 'Pareto', 'Account Control', 'Ad Churn', 'Creative Launches', 'Top Creatives', 'Demographics'].includes(activeTab) && (
+      {!['Performance', 'Pareto', 'Account Control', 'Ad Churn', 'Top Creatives', 'Demographics'].includes(activeTab) && (
         <div className="bg-bg-surface border border-border rounded-lg p-8 sm:p-12 text-center mx-1">
           <div className="text-text-secondary text-sm">{activeTab} view</div>
           <div className="text-text-secondary text-xs mt-1">Data will populate when connected to live sources</div>
