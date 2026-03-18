@@ -19,8 +19,8 @@ const DEFAULT_PROMPTS: Record<string, string> = {
 export default function AISuggestionsPanel({ 
   suggestions, 
   title = 'AI Insights',
-  attributionModel = 'Linear All',
-  attributionWindow = '7-day click / 1-day view'
+  attributionModel,
+  attributionWindow
 }: AISuggestionsPanelProps) {
   const [visible, setVisible] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -113,11 +113,13 @@ export default function AISuggestionsPanel({
       </div>
       {visible && (
         <div className="space-y-4">
-          <div className="flex items-center gap-4 text-xs text-text-tertiary pb-2 border-b border-border/50">
-            <span>Attribution Model: <strong className="text-text-secondary">{attributionModel}</strong></span>
-            <span>•</span>
-            <span>Window: <strong className="text-text-secondary">{attributionWindow}</strong></span>
-          </div>
+          {attributionModel && attributionWindow && (
+            <div className="flex items-center gap-4 text-xs text-text-tertiary pb-2 border-b border-border/50">
+              <span>Attribution Model: <strong className="text-text-secondary">{attributionModel}</strong></span>
+              <span>•</span>
+              <span>Window: <strong className="text-text-secondary">{attributionWindow}</strong></span>
+            </div>
+          )}
           <div className="space-y-3">
             {suggestions.map((s, i) => (
               <div key={i} className="flex gap-3 text-sm text-text-secondary leading-relaxed">

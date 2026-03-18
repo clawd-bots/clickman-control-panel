@@ -620,8 +620,8 @@ export default function CreativePage() {
         <AISuggestionsPanel 
           suggestions={creativeAISuggestions} 
           title={getAITitle(activeTab)}
-          attributionModel={attrModel}
-          attributionWindow={attrWindow}
+          attributionModel={['Top Creatives', 'Ad Churn'].includes(activeTab) ? undefined : attrModel}
+          attributionWindow={['Top Creatives', 'Ad Churn'].includes(activeTab) ? undefined : attrWindow}
         />
       </div>
     </div>
