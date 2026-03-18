@@ -72,6 +72,7 @@ export default function CreativePage() {
   const filtered = creativePerformance.filter(c => c.platform === platform);
 
   const paretoData = [...creativePerformance]
+    .filter(c => c.platform === platform) // Apply platform filter
     .sort((a, b) => b.conversions - a.conversions)
     .map((c) => ({
       name: c.name.slice(0, 20),
@@ -477,7 +478,7 @@ export default function CreativePage() {
                 <YAxis 
                   yAxisId="left" 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  label={{ value: 'Conversions', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                  label={{ value: 'Number of Creatives', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <YAxis 
                   yAxisId="right" 

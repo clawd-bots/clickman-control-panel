@@ -94,6 +94,21 @@ export default function Sidebar() {
         })}
       </nav>
 
+      {/* Report to Alfred button */}
+      <div className="p-2">
+        <button
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors"
+          title={collapsed ? 'Report to Alfred' : undefined}
+          onClick={() => {
+            // TODO: Implement chat panel logic
+            alert('Report to Alfred feature coming soon!');
+          }}
+        >
+          <span className="text-lg shrink-0">🎩</span>
+          <span className={collapsed ? 'lg:hidden' : ''}>Report to Alfred</span>
+        </button>
+      </div>
+
 
     </>
   );
