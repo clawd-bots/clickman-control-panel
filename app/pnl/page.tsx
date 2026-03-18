@@ -5,6 +5,7 @@ import KPICard from '@/components/ui/KPICard';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { pnlData, pnlTrend } from '@/lib/sample-data';
 import { formatCurrency } from '@/lib/utils';
+import { useCurrency } from '@/components/CurrencyProvider';
 import { ChevronRight, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -30,8 +31,14 @@ const pnlRows: PnlRow[] = [
 ];
 
 export default function PnLPage() {
+  const { currency, convertValue } = useCurrency();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [timePeriod, setTimePeriod] = useState('Total');
+
+  // Helper function to format currency with current context
+  const formatCurrencyValue = (value: number) => {
+    return formatCurrency(convertValue(value), currency);
+  };
 
   const toggle = (label: string) => setExpanded(prev => ({ ...prev, [label]: !prev[label] }));
 
@@ -66,11 +73,11 @@ export default function PnLPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mx-1">
-        <KPICard label="Net Revenue" value={formatCurrency(pnlData.netRevenue.value)} change={9.5} sparkline={pnlTrend.map(t => t.netRevenue / 1000)} />
-        <KPICard label="CM1" value={formatCurrency(pnlData.cm1.value)} change={8.2} sparkline={pnlTrend.map(t => t.cm1 / 1000)} />
-        <KPICard label="CM2" value={formatCurrency(pnlData.cm2.value)} change={6.1} sparkline={pnlTrend.map(t => t.cm2 / 1000)} />
-        <KPICard label="CM3" value={formatCurrency(pnlData.cm3.value)} change={11.8} sparkline={pnlTrend.map(t => t.cm3 / 1000)} />
-        <KPICard label="EBITDA" value={formatCurrency(pnlData.ebitda.value)} change={14.2} sparkline={pnlTrend.map(t => t.cm3 * 0.76 / 1000)} />
+        <KPICard label="Net Revenue" value={formatCurrencyValue(pnlData.netRevenue.value)} change={9.5} sparkline={pnlTrend.map(t => t.netRevenue / 1000)} />
+        <KPICard label="CM1" value={formatCurrencyValue(pnlData.cm1.value)} change={8.2} sparkline={pnlTrend.map(t => t.cm1 / 1000)} />
+        <KPICard label="CM2" value={formatCurrencyValue(pnlData.cm2.value)} change={6.1} sparkline={pnlTrend.map(t => t.cm2 / 1000)} />
+        <KPICard label="CM3" value={formatCurrencyValue(pnlData.cm3.value)} change={11.8} sparkline={pnlTrend.map(t => t.cm3 / 1000)} />
+        <KPICard label="EBITDA" value={formatCurrencyValue(pnlData.ebitda.value)} change={14.2} sparkline={pnlTrend.map(t => t.cm3 * 0.76 / 1000)} />
       </div>
 
       {/* Trend Chart */}
@@ -81,7 +88,7 @@ export default function PnLPage() {
           <LineChart data={pnlTrend}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} interval={0} />
-            <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} />
+            <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${currency}${(convertValue(v)/1000000).toFixed(1)}M`} />
             <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <Line type="monotone" dataKey="netRevenue" name="Net Revenue" stroke="#34D399" strokeWidth={2} dot={false} />
@@ -135,7 +142,7 @@ export default function PnLPage() {
                         <InfoTooltip metric={row.label} />
                       </div>
                     </td>
-                    <td className="py-3.5 px-3 text-right text-text-primary font-semibold">{formatCurrency(row.value)}</td>
+                    <td className="py-3.5 px-3 text-right text-text-primary font-semibold">{formatCurrencyValue(row.value)}</td>
                     <td className="py-3.5 px-3 text-right text-text-secondary">
                       {row.pct !== undefined ? `${row.pct.toFixed(1)}%` : row.value > 0 ? `${((row.value / pnlData.netRevenue.value) * 100).toFixed(1)}%` : ','}
                     </td>
@@ -153,7 +160,7 @@ export default function PnLPage() {
                         </td>
                         <td className="py-2.5 px-3 text-right text-text-secondary">
                           {typeof child.value === 'number' && Math.abs(child.value) > 100
-                            ? formatCurrency(child.value)
+                            ? formatCurrencyValue(child.value)
                             : child.value.toLocaleString()}
                         </td>
                         <td className="py-2.5 px-3 text-right text-text-tertiary">
