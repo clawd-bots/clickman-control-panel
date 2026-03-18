@@ -288,8 +288,8 @@ export default function CashFlowPage() {
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={monthlySummary.map(m => ({
-              month: m.month,
+            <AreaChart data={monthlySummary.map((m, i) => ({
+              month: months[i],
               new: m.newCust * inputs.aov * (1 - inputs.subAttachRate / 100),
               repeat: m.repeatOrders * inputs.aov * 0.7,
               subscription: m.newCust * inputs.aov * (inputs.subAttachRate / 100) * (inputs.subRetentionM6 / 100),
@@ -329,7 +329,7 @@ export default function CashFlowPage() {
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={monthlySummary}>
+            <BarChart data={monthlySummary.map((m, i) => ({ ...m, month: months[i] }))}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis 
                 dataKey="month" 
@@ -398,9 +398,9 @@ export default function CashFlowPage() {
               </tr>
             </thead>
             <tbody>
-              {monthlySummary.map((row) => (
+              {monthlySummary.map((row, i) => (
                 <tr key={row.month} className="border-b border-border/30 hover:bg-bg-elevated/50">
-                  <td className="py-2 px-2 font-medium text-text-primary">{row.month}</td>
+                  <td className="py-2 px-2 font-medium text-text-primary">{months[i]}</td>
                   <td className="py-2 px-2 text-right text-text-secondary">{row.newCust}</td>
                   <td className="py-2 px-2 text-right text-text-secondary">{formatCurrencyValue(row.acqSpend)}</td>
                   <td className="py-2 px-2 text-right text-text-secondary">{row.repeatOrders}</td>
