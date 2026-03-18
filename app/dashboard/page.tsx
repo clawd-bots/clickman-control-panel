@@ -1,6 +1,7 @@
 'use client';
 import KPICard from '@/components/ui/KPICard';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import { useCurrency } from '@/components/CurrencyProvider';
 
 import { kpiCards, dailyMetrics, channelAttribution, productKPIs, revenueInsights } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
@@ -17,6 +18,13 @@ function pctChange(curr: number, prev: number) {
 }
 
 export default function DashboardPage() {
+  const { currency, convertValue } = useCurrency();
+
+  // Helper function to format currency with current context
+  const formatCurrencyValue = (value: number) => {
+    return formatCurrency(convertValue(value), currency);
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
@@ -24,30 +32,22 @@ export default function DashboardPage() {
         <p className="text-sm text-text-secondary mt-0.5">What's happening right now , actuals, trends, and channel performance.</p>
       </div>
 
-      {/* KPI Cards Row 1 */}
+      {/* KPI Cards Row 1: Net Revenue, Marketing Costs, MER, aMER */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard 
           label="Net Revenue" 
-          value={formatCurrency(kpiCards.netRevenue.value)} 
+          value={formatCurrencyValue(kpiCards.netRevenue.value)} 
           change={pctChange(kpiCards.netRevenue.value, kpiCards.netRevenue.prev)} 
           sparkline={kpiCards.netRevenue.sparkline}
-          target={formatCurrency(kpiCards.netRevenue.target)}
+          target={formatCurrencyValue(kpiCards.netRevenue.target)}
           targetAchievement={(kpiCards.netRevenue.value / kpiCards.netRevenue.target) * 100}
         />
         <KPICard 
-          label="Net Orders" 
-          value={formatNumber(kpiCards.netOrders.value)} 
-          change={pctChange(kpiCards.netOrders.value, kpiCards.netOrders.prev)} 
-          sparkline={kpiCards.netOrders.sparkline}
-          target={formatNumber(kpiCards.netOrders.target)}
-          targetAchievement={(kpiCards.netOrders.value / kpiCards.netOrders.target) * 100}
-        />
-        <KPICard 
           label="Marketing Costs" 
-          value={formatCurrency(kpiCards.marketingCosts.value)} 
+          value={formatCurrencyValue(kpiCards.marketingCosts.value)} 
           change={pctChange(kpiCards.marketingCosts.value, kpiCards.marketingCosts.prev)} 
           sparkline={kpiCards.marketingCosts.sparkline}
-          target={formatCurrency(kpiCards.marketingCosts.target)}
+          target={formatCurrencyValue(kpiCards.marketingCosts.target)}
           targetAchievement={(kpiCards.marketingCosts.value / kpiCards.marketingCosts.target) * 100}
         />
         <KPICard 
@@ -58,10 +58,26 @@ export default function DashboardPage() {
           target={`${kpiCards.mer.target}x`}
           targetAchievement={(kpiCards.mer.value / kpiCards.mer.target) * 100}
         />
+        <KPICard 
+          label="aMER" 
+          value={`${kpiCards.nmer.value}x`} 
+          change={pctChange(kpiCards.nmer.value, kpiCards.nmer.prev)} 
+          sparkline={kpiCards.nmer.sparkline}
+          target={`${kpiCards.nmer.target}x`}
+          targetAchievement={(kpiCards.nmer.value / kpiCards.nmer.target) * 100}
+        />
       </div>
 
-      {/* KPI Cards Row 2 */}
+      {/* KPI Cards Row 2: Orders, New Customers, CAC, nCAC */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard 
+          label="Net Orders" 
+          value={formatNumber(kpiCards.netOrders.value)} 
+          change={pctChange(kpiCards.netOrders.value, kpiCards.netOrders.prev)} 
+          sparkline={kpiCards.netOrders.sparkline}
+          target={formatNumber(kpiCards.netOrders.target)}
+          targetAchievement={(kpiCards.netOrders.value / kpiCards.netOrders.target) * 100}
+        />
         <KPICard 
           label="New Customers" 
           value={formatNumber(kpiCards.newCustomers.value)} 
@@ -71,28 +87,20 @@ export default function DashboardPage() {
           targetAchievement={(kpiCards.newCustomers.value / kpiCards.newCustomers.target) * 100}
         />
         <KPICard 
-          label="nCAC" 
-          value={formatCurrency(kpiCards.ncac.value)} 
-          change={pctChange(kpiCards.ncac.value, kpiCards.ncac.prev)} 
-          sparkline={kpiCards.ncac.sparkline}
-          target={formatCurrency(kpiCards.ncac.target)}
-          targetAchievement={(kpiCards.ncac.target / kpiCards.ncac.value) * 100}
-        />
-        <KPICard 
-          label="nMER" 
-          value={`${kpiCards.nmer.value}x`} 
-          change={pctChange(kpiCards.nmer.value, kpiCards.nmer.prev)} 
-          sparkline={kpiCards.nmer.sparkline}
-          target={`${kpiCards.nmer.target}x`}
-          targetAchievement={(kpiCards.nmer.value / kpiCards.nmer.target) * 100}
-        />
-        <KPICard 
           label="CAC" 
-          value={formatCurrency(kpiCards.cac.value)} 
+          value={formatCurrencyValue(kpiCards.cac.value)} 
           change={pctChange(kpiCards.cac.value, kpiCards.cac.prev)} 
           sparkline={kpiCards.cac.sparkline}
-          target={formatCurrency(kpiCards.cac.target)}
+          target={formatCurrencyValue(kpiCards.cac.target)}
           targetAchievement={(kpiCards.cac.target / kpiCards.cac.value) * 100}
+        />
+        <KPICard 
+          label="nCAC" 
+          value={formatCurrencyValue(kpiCards.ncac.value)} 
+          change={pctChange(kpiCards.ncac.value, kpiCards.ncac.prev)} 
+          sparkline={kpiCards.ncac.sparkline}
+          target={formatCurrencyValue(kpiCards.ncac.target)}
+          targetAchievement={(kpiCards.ncac.target / kpiCards.ncac.value) * 100}
         />
       </div>
 
@@ -118,8 +126,8 @@ export default function DashboardPage() {
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} 
-                  label={{ value: 'Revenue (₱K)', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                  tickFormatter={(v) => `${currency}${(convertValue(v)/1000).toFixed(0)}K`} 
+                  label={{ value: `Revenue (${currency}K)`, angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -172,7 +180,7 @@ export default function DashboardPage() {
           {[
             { label: 'Sessions', value: '33,850', change: 8.2 },
             { label: 'CVR', value: '3.33%', change: 2.1 },
-            { label: 'EPS', value: '₱66.58', change: 5.4 },
+            { label: 'EPS', value: formatCurrencyValue(66.58), change: 5.4 },
           ].map((m) => (
             <div key={m.label} className="flex items-center justify-between">
               <div className="flex items-center text-xs text-text-secondary gap-1">
@@ -266,15 +274,15 @@ export default function DashboardPage() {
                 {channelAttribution.map((row) => (
                   <tr key={row.channel} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
                     <td className="py-3 px-2 sm:px-3 font-medium text-text-primary">{row.channel}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{formatCurrency(row.costs)}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{formatCurrency(row.revenue)}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{formatCurrencyValue(row.costs)}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{formatCurrencyValue(row.revenue)}</td>
                     <td className="py-3 px-2 sm:px-3 text-right">
                       <span className={row.roas >= 3.5 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>
                         {row.roas > 0 ? `${row.roas.toFixed(2)}x` : ','}
                       </span>
                     </td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.orders}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cpo > 0 ? formatCurrency(row.cpo) : ','}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cpo > 0 ? formatCurrencyValue(row.cpo) : ','}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.newCustomers}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncPct.toFixed(1)}%</td>
                   </tr>
@@ -306,8 +314,8 @@ export default function DashboardPage() {
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  tickFormatter={(v) => `₱${(v/1000000).toFixed(1)}M`} 
-                  label={{ value: 'Revenue (₱M)', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                  tickFormatter={(v) => `${currency}${(convertValue(v)/1000000).toFixed(1)}M`} 
+                  label={{ value: `Revenue (${currency}M)`, angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -325,10 +333,10 @@ export default function DashboardPage() {
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {[
-              { label: 'NC Revenue', value: formatCurrency(revenueInsights.ncRevenue), metric: 'NC Revenue' },
-              { label: 'RC Revenue', value: formatCurrency(revenueInsights.rcRevenue), metric: 'RC Revenue' },
-              { label: 'NC AOV', value: formatCurrency(revenueInsights.ncAOV), metric: 'NC AOV' },
-              { label: 'RC AOV', value: formatCurrency(revenueInsights.rcAOV), metric: 'RC AOV' },
+              { label: 'NC Revenue', value: formatCurrencyValue(revenueInsights.ncRevenue), metric: 'NC Revenue' },
+              { label: 'RC Revenue', value: formatCurrencyValue(revenueInsights.rcRevenue), metric: 'RC Revenue' },
+              { label: 'NC AOV', value: formatCurrencyValue(revenueInsights.ncAOV), metric: 'NC AOV' },
+              { label: 'RC AOV', value: formatCurrencyValue(revenueInsights.rcAOV), metric: 'RC AOV' },
             ].map((item) => (
               <div key={item.label} className="bg-bg-elevated rounded-md p-3 min-h-[70px] flex flex-col justify-between">
                 <div className="flex items-center text-xs text-text-secondary mb-1 gap-1">
@@ -398,7 +406,7 @@ export default function DashboardPage() {
                 {productKPIs.map((row) => (
                   <tr key={row.product} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
                     <td className="py-3 px-2 sm:px-3 font-medium text-text-primary">{row.product}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{formatCurrency(row.revenue)}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{formatCurrencyValue(row.revenue)}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.units}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.priceReduction > 0 ? `${row.priceReduction}%` : ','}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.discountCode > 0 ? `${row.discountCode}%` : ','}</td>
@@ -406,6 +414,42 @@ export default function DashboardPage() {
                 ))}
               </tbody>
             </table>
+        </div>
+      </div>
+
+      {/* Summary AI Analysis */}
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-5 h-5 rounded-full bg-gradient-to-r from-brand-blue to-warm-gold flex items-center justify-center shrink-0">
+            <span className="text-xs font-bold text-white">AI</span>
+          </div>
+          <h3 className="text-sm font-medium text-text-primary">Daily Summary & Intelligence</h3>
+        </div>
+        <div className="space-y-3">
+          <div className="flex gap-3">
+            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-success/20 flex items-center justify-center">
+              <span className="text-xs text-success font-bold">✓</span>
+            </div>
+            <p className="text-sm text-text-secondary leading-relaxed">
+              <strong className="text-text-primary">Strong Performance:</strong> MER at 3.67x exceeds the healthy 3.5x threshold with nCAC improving 2.6% MoM to {formatCurrencyValue(787)}. Meta remains your highest-performing channel at 3.91x ROAS.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-warm-gold/20 flex items-center justify-center">
+              <span className="text-xs text-warm-gold font-bold">!</span>
+            </div>
+            <p className="text-sm text-text-secondary leading-relaxed">
+              <strong className="text-text-primary">Watch:</strong> aMER at {kpiCards.nmer.value}x shows heavy reliance on repeat purchases. Monitor cohort quality closely as this affects long-term sustainability.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-blue/20 flex items-center justify-center">
+              <span className="text-xs text-brand-blue-light font-bold">→</span>
+            </div>
+            <p className="text-sm text-text-secondary leading-relaxed">
+              <strong className="text-text-primary">Recommend:</strong> Scale Meta spend by 15% while capping TikTok at current levels. Consider launching subscription model for GLP-1 (highest repeat rate product).
+            </p>
+          </div>
         </div>
       </div>
     </div>
