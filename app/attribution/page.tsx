@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import { useCurrency } from '@/components/CurrencyProvider';
+import { formatCurrency } from '@/lib/utils';
 import { attributionSurvey, trackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { Star, GitBranch, Activity, Database, Layers, Sparkles, ChevronDown } from 'lucide-react';
@@ -29,56 +31,82 @@ interface LayerInsights {
   stopDoing: string[];
 }
 
-const layerInsights: Record<string, LayerInsights> = {
-  star: {
-    working: ['MER at 3.67x is above the 3.5x healthy threshold , marketing is generating strong returns', 'nCAC trending down 2.6% MoM from ₱808 to ₱787 , acquisition getting more efficient'],
-    notWorking: ['nMER at 1.92x means new customer revenue alone doesn\'t cover spend , reliant on repeats', 'MER variance across channels is high (Meta 3.91x vs Referral 0.40x)'],
-    doNext: ['Set a max CPA ceiling by channel based on LTV:CAC ratios', 'Build an automated alert when MER drops below 3.0x'],
-    stopDoing: ['Don\'t optimize purely on blended MER , it hides channel-level inefficiencies'],
-  },
-  upper: {
-    working: ['Post-purchase survey captures 1,240 responses/month , statistically significant sample', 'TikTok shows 22% survey attribution, validating its top-of-funnel role beyond click tracking'],
-    notWorking: ['No MMM model built yet , relying solely on survey data for channel allocation', 'No geo-lift tests run to validate incrementality of any channel'],
-    doNext: ['Commission an MMM study , even a simple one using 6 months of data', 'Run a geo-lift test on TikTok to prove incremental value vs. organic discovery'],
-    stopDoing: ['Stop treating survey data as ground truth for budget decisions without cross-validation'],
-  },
-  lower: {
-    working: ['Brand Search at ₱420 CPA and 4.76x ROAS , the most efficient channel by far', 'Hair Before/After creative achieves ₱577 CPA , well below target'],
-    notWorking: ['Competitor Keywords at ₱880 CPA is 12% above target and losing money', 'Platform reporting overlap inflates total attributed conversions by ~30%'],
-    doNext: ['Deduplicate conversions across platforms before making budget decisions', 'Test moving top Meta creatives to TikTok format for potentially lower CPCs'],
-    stopDoing: ['Stop trusting individual platform ROAS numbers at face value , always cross-reference with MER'],
-  },
-  trunk: {
-    working: ['Meta Pixel + CAPI dual setup achieving 89-92% match rates', 'GA4 processing 22,400 events/day with stable tracking'],
-    notWorking: ['Server-side GTM is completely down (0 events/day) , losing ~15% of conversion data', 'TikTok Pixel match rate at 71% , significant data loss'],
-    doNext: ['Fix Server-side GTM immediately , this is the #1 priority before any budget decisions', 'Improve TikTok tracking with enhanced match keys (email, phone hashing)'],
-    stopDoing: ['Stop making budget allocation decisions while server-side GTM is broken'],
-  },
-  roots: {
-    working: ['Google Brand customers have 3.8x LTV:CAC , excellent unit economics', 'GLP-1 product has highest LTV (₱9,200 at 365d) driving overall retention'],
-    notWorking: ['TikTok LTV:CAC at 1.4x is below the 2.0x minimum threshold', 'TikTok payback period of 6.8 months creates cash flow pressure'],
-    doNext: ['Cap TikTok CPA at ₱600 until LTV:CAC improves above 2.0x', 'Segment TikTok cohorts by product to see if specific products have better TikTok LTV'],
-    stopDoing: ['Stop scaling TikTok spend without addressing the LTV:CAC gap first'],
-  },
-};
+// This will be created dynamically inside the component
 
-const globalInsights = [
-  '🔑 Overall, your attribution stack is functioning but incomplete. MER is healthy (3.67x), but you\'re flying partially blind with server-side GTM down and no MMM model.',
-  '📊 Meta drives the lion\'s share of tracked conversions but survey data suggests TikTok is under-credited by platform reporting. Run a geo-lift test to validate.',
-  '⚠️ Your nMER of 1.92x means you\'re relying heavily on repeat purchases to make the economics work. This is fine if retention holds, but risky if cohort quality drops.',
-  '💰 Brand Search is your most efficient channel at ₱420 CPA. Ensure you\'re maxing out impression share before increasing spend elsewhere.',
-  '🛠️ Fix server-side GTM before making any major budget reallocation. You\'re missing ~15% of conversion data, which skews all analysis.',
-  '📈 Consider building a simple MMM model using the past 6 months of spend + revenue data. This will give you a second opinion on channel allocation beyond surveys.',
-  '🎯 Set channel-specific CPA ceilings: Meta ₱850, Google ₱500, TikTok ₱600. Review weekly and pause anything consistently above ceiling.',
-];
+// This will be created dynamically inside the component
 
 export default function AttributionPage() {
+  const { currency, convertValue } = useCurrency();
   const [activeLayer, setActiveLayer] = useState<string>('star');
   const [cohortAttrModel, setCohortAttrModel] = useState('First Click');
   const [cohortAttrWindow, setCohortAttrWindow] = useState('7-day click / 1-day view');
+  const [tiktokPixelExpanded, setTiktokPixelExpanded] = useState(false);
+
+  // Helper function to format currency with current context
+  const formatCurrencyValue = (value: number) => {
+    return formatCurrency(convertValue(value), currency);
+  };
+
+  // Dynamic layer insights with currency conversion
+  const getLayerInsights = (): Record<string, LayerInsights> => ({
+    star: {
+      working: ['MER at 3.67x is above the 3.5x healthy threshold , marketing is generating strong returns', `nCAC trending down 2.6% MoM from ${formatCurrencyValue(808)} to ${formatCurrencyValue(787)} , acquisition getting more efficient`],
+      notWorking: ['nMER at 1.92x means new customer revenue alone doesn\'t cover spend , reliant on repeats', 'MER variance across channels is high (Meta 3.91x vs Referral 0.40x)'],
+      doNext: ['Set a max CPA ceiling by channel based on LTV:CAC ratios', 'Build an automated alert when MER drops below 3.0x'],
+      stopDoing: ['Don\'t optimize purely on blended MER , it hides channel-level inefficiencies'],
+    },
+    upper: {
+      working: ['Post-purchase survey captures 1,240 responses/month , statistically significant sample', 'TikTok shows 22% survey attribution, validating its top-of-funnel role beyond click tracking'],
+      notWorking: ['No MMM model built yet , relying solely on survey data for channel allocation', 'No geo-lift tests run to validate incrementality of any channel'],
+      doNext: ['Commission an MMM study , even a simple one using 6 months of data', 'Run a geo-lift test on TikTok to prove incremental value vs. organic discovery'],
+      stopDoing: ['Stop treating survey data as ground truth for budget decisions without cross-validation'],
+    },
+    lower: {
+      working: [`Brand Search at ${formatCurrencyValue(420)} CPA and 4.76x ROAS , the most efficient channel by far`, `Hair Before/After creative achieves ${formatCurrencyValue(577)} CPA , well below target`],
+      notWorking: [`Competitor Keywords at ${formatCurrencyValue(880)} CPA is 12% above target and losing money`, 'Platform reporting overlap inflates total attributed conversions by ~30%'],
+      doNext: ['Deduplicate conversions across platforms before making budget decisions', 'Test moving top Meta creatives to TikTok format for potentially lower CPCs'],
+      stopDoing: ['Stop trusting individual platform ROAS numbers at face value , always cross-reference with MER'],
+    },
+    trunk: {
+      working: ['Meta Pixel + CAPI dual setup achieving 89-92% match rates', 'GA4 processing 22,400 events/day with stable tracking'],
+      notWorking: ['Server-side GTM is completely down (0 events/day) , losing ~15% of conversion data', 'TikTok Pixel match rate at 71% , significant data loss'],
+      doNext: ['Fix Server-side GTM immediately , this is the #1 priority before any budget decisions', 'Improve TikTok tracking with enhanced match keys (email, phone hashing)'],
+      stopDoing: ['Stop making budget allocation decisions while server-side GTM is broken'],
+    },
+    roots: {
+      working: ['Google Brand customers have 3.8x LTV:CAC , excellent unit economics', `GLP-1 product has highest LTV (${formatCurrencyValue(9200)} at 365d) driving overall retention`],
+      notWorking: ['TikTok LTV:CAC at 1.4x is below the 2.0x minimum threshold', 'TikTok payback period of 6.8 months creates cash flow pressure'],
+      doNext: [`Cap TikTok CPA at ${formatCurrencyValue(600)} until LTV:CAC improves above 2.0x`, 'Segment TikTok cohorts by product to see if specific products have better TikTok LTV'],
+      stopDoing: ['Stop scaling TikTok spend without addressing the LTV:CAC gap first'],
+    },
+  });
+
+  // Dynamic global insights with currency conversion
+  const getGlobalInsights = () => [
+    '🔑 Overall, your attribution stack is functioning but incomplete. MER is healthy (3.67x), but you\'re flying partially blind with server-side GTM down and no MMM model.',
+    '📊 Meta drives the lion\'s share of tracked conversions but survey data suggests TikTok is under-credited by platform reporting. Run a geo-lift test to validate.',
+    '⚠️ Your nMER of 1.92x means you\'re relying heavily on repeat purchases to make the economics work. This is fine if retention holds, but risky if cohort quality drops.',
+    `💰 Brand Search is your most efficient channel at ${formatCurrencyValue(420)} CPA. Ensure you\'re maxing out impression share before increasing spend elsewhere.`,
+    '🛠️ Fix server-side GTM before making any major budget reallocation. You\'re missing ~15% of conversion data, which skews all analysis.',
+    '📈 Consider building a simple MMM model using the past 6 months of spend + revenue data. This will give you a second opinion on channel allocation beyond surveys.',
+    `🎯 Set channel-specific CPA ceilings: Meta ${formatCurrencyValue(850)}, Google ${formatCurrencyValue(500)}, TikTok ${formatCurrencyValue(600)}. Review weekly and pause anything consistently above ceiling.`,
+  ];
 
   const activeInfo = treeLayers.find(l => l.id === activeLayer)!;
-  const insights = layerInsights[activeLayer];
+  const insights = getLayerInsights()[activeLayer];
+
+  // Dynamic AI suggestions with currency conversion
+  const getDynamicAISuggestions = () => {
+    return [
+      'Overall attribution stack is functioning but incomplete. MER is healthy (3.67x), but flying partially blind with server-side GTM down and no MMM model.',
+      'Meta drives lion\'s share of tracked conversions but survey data suggests TikTok is under-credited by platform reporting. Run geo-lift test to validate.',
+      'nMER of 1.92x means heavy reliance on repeat purchases. Fine if retention holds, but risky if cohort quality drops.',
+      `Brand Search is most efficient channel at ${formatCurrencyValue(420)} CPA. Ensure maxing out impression share before increasing spend elsewhere.`,
+      'Fix server-side GTM before major budget reallocation. Missing ~15% of conversion data, which skews all analysis.',
+      'Consider building simple MMM model using past 6 months of spend + revenue data for second opinion on channel allocation beyond surveys.',
+      `Set channel-specific CPA ceilings: Meta ${formatCurrencyValue(850)}, Google ${formatCurrencyValue(500)}, TikTok ${formatCurrencyValue(600)}. Review weekly and pause anything consistently above ceiling.`,
+    ];
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -92,7 +120,14 @@ export default function AttributionPage() {
           return (
             <button
               key={layer.id}
-              onClick={() => setActiveLayer(layer.id)}
+              onClick={() => {
+                if (layer.id === 'lower') {
+                  // Redirect to Creative & MTA Control Panel
+                  window.location.href = '/creative';
+                } else {
+                  setActiveLayer(layer.id);
+                }
+              }}
               className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-lg text-xs font-medium transition-all border min-w-0 ${
                 isActive
                   ? 'border-transparent shadow-md'
@@ -168,17 +203,17 @@ export default function AttributionPage() {
                 <span>nCAC</span>
                 <InfoTooltip metric="nCAC" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">₱787</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(787)}</div>
               <div className="text-xs text-success mt-2">↓ 2.6% MoM</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary">Max Mktg Spend</div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">₱680K</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(680000)}</div>
               <div className="text-xs text-text-secondary mt-2">At 25% CM3 target</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary">Target CPA</div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">₱750</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(750)}</div>
               <div className="text-xs text-text-secondary mt-2">Based on 3.15x LTV:CAC</div>
             </div>
           </div>
@@ -221,6 +256,20 @@ export default function AttributionPage() {
               ))}
             </div>
           </div>
+          
+          {/* AI Insights for Surveys & MMM - Above Cross-Layer Analysis as per attribution tree rules */}
+          <div className="mt-6">
+            <AISuggestionsPanel 
+              suggestions={[
+                `Survey data shows TikTok accounts for 22% of attribution vs 15% in platform reporting, suggesting TikTok is under-credited by ~${formatCurrencyValue(45000)} weekly.`,
+                'Facebook/Instagram dominates survey responses at 35%, aligning with platform data showing healthy tracking coverage.',
+                'Friend/Family referral at 12% represents untapped growth opportunity - consider implementing formal referral program.',
+                'Google Search at 18% confirms brand strength but suggests potential to scale non-brand search campaigns.',
+                'Other sources (6%) indicate attribution gaps - investigate direct traffic patterns and potential dark social influence.'
+              ]} 
+              title="Surveys & MMM Intelligence"
+            />
+          </div>
         </div>
       )}
 
@@ -237,13 +286,13 @@ export default function AttributionPage() {
             <ResponsiveContainer width="100%" height={320}>
               <ScatterChart>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="spend" name="Spend" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${(v/1000).toFixed(0)}K`} />
-                <YAxis dataKey="cpa" name="CPA" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `₱${v}`} />
+                <XAxis dataKey="spend" name="Spend" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${currency}${(convertValue(v)/1000).toFixed(0)}K`} />
+                <YAxis dataKey="cpa" name="CPA" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${currency}${convertValue(v)}`} />
                 <ZAxis dataKey="spend" range={[60, 400]} />
                 <Tooltip
                   contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  formatter={(value: any, name: any) => [name === 'Spend' ? `₱${(Number(value)/1000).toFixed(1)}K` : `₱${value}`, name || '']}
+                  formatter={(value: any, name: any) => [name === 'Spend' ? `${currency}${(convertValue(Number(value))/1000).toFixed(1)}K` : `${currency}${convertValue(value)}`, name || '']}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.name || ''}
                 />
                 <Scatter data={adScatterData.filter(d => d.platform === 'Meta')} fill="#4A6BD6" name="Meta" />
@@ -266,25 +315,83 @@ export default function AttributionPage() {
           </div>
           <div className="space-y-3">
             {trackingHealth.map((item) => (
-              <div key={item.system} className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-bg-elevated rounded-md p-3 gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${item.status === 'healthy' ? 'bg-success' : item.status === 'warning' ? 'bg-warm-gold' : 'bg-danger'}`} />
-                  <span className="text-sm font-medium text-text-primary truncate">{item.system}</span>
-                  <InfoTooltip metric={item.system} />
+              <div key={item.system}>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-bg-elevated rounded-md p-3 gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${item.status === 'healthy' ? 'bg-success' : item.status === 'warning' ? 'bg-warm-gold' : 'bg-danger'}`} />
+                    <span className="text-sm font-medium text-text-primary truncate">{item.system}</span>
+                    <InfoTooltip metric={item.system} />
+                    {item.system === 'TikTok Pixel' && (
+                      <button
+                        onClick={() => setTiktokPixelExpanded(!tiktokPixelExpanded)}
+                        className="text-xs text-text-tertiary hover:text-text-secondary transition-colors"
+                      >
+                        {tiktokPixelExpanded ? '▼' : '▶'} Options
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-text-secondary">
+                    <span>Events: {item.events}</span>
+                    <span>Match Rate: {item.matchRate}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium self-start sm:self-auto ${
+                      item.status === 'healthy' ? 'bg-success/15 text-success' :
+                      item.status === 'warning' ? 'bg-warm-gold/15 text-warm-gold' :
+                      'bg-danger/15 text-danger'
+                    }`}>
+                      {item.status === 'healthy' ? 'Healthy' : item.status === 'warning' ? 'Warning' : 'Error'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-text-secondary">
-                  <span>Events: {item.events}</span>
-                  <span>Match Rate: {item.matchRate}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium self-start sm:self-auto ${
-                    item.status === 'healthy' ? 'bg-success/15 text-success' :
-                    item.status === 'warning' ? 'bg-warm-gold/15 text-warm-gold' :
-                    'bg-danger/15 text-danger'
-                  }`}>
-                    {item.status === 'healthy' ? 'Healthy' : item.status === 'warning' ? 'Warning' : 'Error'}
-                  </span>
-                </div>
+                
+                {/* TikTok Pixel Options */}
+                {item.system === 'TikTok Pixel' && tiktokPixelExpanded && (
+                  <div className="mt-2 ml-6 bg-bg-surface border border-border rounded-md p-3 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <span className="w-2 h-2 rounded-full bg-warm-gold shrink-0" />
+                        <span className="text-sm font-medium text-text-primary">TikTok cAPI</span>
+                        <InfoTooltip metric="TikTok cAPI" />
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-text-secondary">
+                        <span>Events: 0/day</span>
+                        <span>Match Rate: N/A</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-danger/15 text-danger">
+                          Not Connected
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <div className="flex items-center gap-3">
+                        <span className="w-2 h-2 rounded-full bg-success shrink-0" />
+                        <span className="text-sm font-medium text-text-primary">TikTok Browser</span>
+                        <InfoTooltip metric="TikTok Browser" />
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-text-secondary">
+                        <span>Events: 5,100/day</span>
+                        <span>Match Rate: 71%</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-warm-gold/15 text-warm-gold">
+                          Connected
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
+          </div>
+          
+          {/* AI Insights for Tracking Infrastructure - Above Cross-Layer Analysis as per attribution tree rules */}
+          <div className="mt-6">
+            <AISuggestionsPanel 
+              suggestions={[
+                'Server-side GTM is completely down (0 events/day) - this is losing ~15% of conversion data and skewing all analysis.',
+                `Meta CAPI showing 89% match rate vs 92% pixel - normal variance. Both systems healthy with ${trackingHealth[1].events} daily events.`,
+                'TikTok match rate at 71% below industry standard 85%. Consider implementing cAPI for improved data quality.',
+                'Google Ads tracking strongest at 94% match rate - continue using as benchmark for other platforms.',
+                'Priority: Fix server-side GTM, then implement TikTok cAPI, then optimize TikTok pixel match rate.'
+              ]} 
+              title="Tracking Infrastructure Intelligence"
+            />
           </div>
         </div>
       )}
@@ -328,9 +435,9 @@ export default function AttributionPage() {
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {[
-              { channel: 'Meta', ltvCac: 2.1, ltv: '₱6,580', cac: '₱3,133', payback: '4.2 months' },
-              { channel: 'Google (Brand)', ltvCac: 3.8, ltv: '₱7,220', cac: '₱1,900', payback: '2.1 months' },
-              { channel: 'TikTok', ltvCac: 1.4, ltv: '₱4,200', cac: '₱3,000', payback: '6.8 months' },
+              { channel: 'Meta', ltvCac: 2.1, ltv: 6580, cac: 3133, payback: '4.2 months' },
+              { channel: 'Google (Brand)', ltvCac: 3.8, ltv: 7220, cac: 1900, payback: '2.1 months' },
+              { channel: 'TikTok', ltvCac: 1.4, ltv: 4200, cac: 3000, payback: '6.8 months' },
             ].map((ch) => (
               <div key={ch.channel} className="bg-bg-elevated rounded-md p-4 space-y-3">
                 <div className="text-sm font-medium text-text-primary">{ch.channel}</div>
@@ -340,7 +447,7 @@ export default function AttributionPage() {
                     {ch.ltvCac}x
                   </span>
                 </div>
-                <div className="text-xs text-text-secondary">LTV: {ch.ltv} • CAC: {ch.cac}</div>
+                <div className="text-xs text-text-secondary">LTV: {formatCurrencyValue(ch.ltv)} • CAC: {formatCurrencyValue(ch.cac)}</div>
                 <div className="text-xs text-text-secondary">Payback: {ch.payback}</div>
               </div>
             ))}
@@ -351,7 +458,7 @@ export default function AttributionPage() {
       {/* Cross-Layer AI Analysis - Moved to bottom as requested */}
       <div>
         <AISuggestionsPanel 
-          suggestions={attributionAISuggestions} 
+          suggestions={getDynamicAISuggestions()} 
           title="Cross-Layer AI Analysis"
         />
       </div>

@@ -1,6 +1,8 @@
 'use client';
+import { useState } from 'react';
 import KPICard from '@/components/ui/KPICard';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { useCurrency } from '@/components/CurrencyProvider';
 
 import { kpiCards, dailyMetrics, channelAttribution, productKPIs, revenueInsights } from '@/lib/sample-data';
@@ -19,10 +21,53 @@ function pctChange(curr: number, prev: number) {
 
 export default function DashboardPage() {
   const { currency, convertValue } = useCurrency();
+  const [activeAttributionTab, setActiveAttributionTab] = useState('Last Click');
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
     return formatCurrency(convertValue(value), currency);
+  };
+
+  // Different data for Last Click vs Linear attribution  
+  const channelAttributionLastClick = [
+    { channel: 'Meta Ads', costs: 320000, revenue: 1180000, roas: 3.69, orders: 545, cpo: 587, newCustomers: 380, ncPct: 69.7 },
+    { channel: 'Google Ads', costs: 165000, revenue: 620000, roas: 3.76, orders: 315, cpo: 524, newCustomers: 200, ncPct: 63.5 },
+    { channel: 'TikTok Ads', costs: 88000, revenue: 295000, roas: 3.35, orders: 165, cpo: 533, newCustomers: 130, ncPct: 78.8 },
+    { channel: 'Organic Search', costs: 0, revenue: 95000, roas: 0, orders: 58, cpo: 0, newCustomers: 40, ncPct: 69.0 },
+    { channel: 'Direct', costs: 0, revenue: 48000, roas: 0, orders: 35, cpo: 0, newCustomers: 20, ncPct: 57.1 },
+    { channel: 'Referral', costs: 40000, revenue: 15000, roas: 0.38, orders: 8, cpo: 5000, newCustomers: 9, ncPct: 112.5 },
+  ];
+
+  const channelAttributionLinear = channelAttribution; // Use existing data as Linear
+  
+  const getCurrentChannelData = () => {
+    return activeAttributionTab === 'Last Click' ? channelAttributionLastClick : channelAttributionLinear;
+  };
+
+  // Comprehensive cross-page AI analysis
+  const getCrossPageInsights = () => {
+    return [
+      {
+        type: 'success',
+        title: 'Strong Performance',
+        insight: `MER at 3.67x exceeds the healthy 3.5x threshold with nCAC improving 2.6% MoM to ${formatCurrencyValue(787)}. Meta remains your highest-performing channel at 3.91x ROAS. Oct-Dec cohorts show improving M1 retention (28.5% to 32.8%), validating recent targeting changes.`
+      },
+      {
+        type: 'warning', 
+        title: 'Watch',
+        insight: `aMER at ${kpiCards.nmer.value}x shows heavy reliance on repeat purchases. Server-side GTM is down (0 events/day), losing ~15% of conversion data. Creative fatigue detected in "Doc Consultation UGC" with CTR dropping from 1.8% to 1.3%.`
+      },
+      {
+        type: 'action',
+        title: 'Immediate Actions',
+        insight: `Scale Meta spend +15% (Hair Before/After creative at ${formatCurrencyValue(577)} CPA is top performer). Fix server-side GTM before budget reallocation. Launch subscription for GLP-1 (highest repeat rate at 51.8%). Cap TikTok at current levels until LTV:CAC improves above 2.0x.`
+      },
+      {
+        type: 'strategic',
+        title: 'Strategic Opportunities', 
+        insight: `Revenue is 90% of target with 2 weeks remaining - achievable at current ${formatCurrencyValue(322000)} daily run rate. Consider MMM model using past 6 months data for channel validation. TikTok CPCs 60% lower than Meta - test creative format migration for cheaper reach.`
+      }
+    ];
   };
 
   return (
@@ -71,7 +116,7 @@ export default function DashboardPage() {
       {/* KPI Cards Row 2: Orders, New Customers, CAC, nCAC */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard 
-          label="Net Orders" 
+          label="Orders" 
           value={formatNumber(kpiCards.netOrders.value)} 
           change={pctChange(kpiCards.netOrders.value, kpiCards.netOrders.prev)} 
           sparkline={kpiCards.netOrders.sparkline}
@@ -79,7 +124,7 @@ export default function DashboardPage() {
           targetAchievement={(kpiCards.netOrders.value / kpiCards.netOrders.target) * 100}
         />
         <KPICard 
-          label="New Customers" 
+          label="NC Orders" 
           value={formatNumber(kpiCards.newCustomers.value)} 
           change={pctChange(kpiCards.newCustomers.value, kpiCards.newCustomers.prev)} 
           sparkline={kpiCards.newCustomers.sparkline}
@@ -95,7 +140,7 @@ export default function DashboardPage() {
           targetAchievement={(kpiCards.cac.target / kpiCards.cac.value) * 100}
         />
         <KPICard 
-          label="nCAC" 
+          label="ncCAC" 
           value={formatCurrencyValue(kpiCards.ncac.value)} 
           change={pctChange(kpiCards.ncac.value, kpiCards.ncac.prev)} 
           sparkline={kpiCards.ncac.sparkline}
@@ -126,7 +171,7 @@ export default function DashboardPage() {
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  tickFormatter={(v) => `${currency}${(convertValue(v)/1000).toFixed(0)}K`} 
+                  tickFormatter={(v) => formatCurrencyValue(v)} 
                   label={{ value: `Revenue (${currency}K)`, angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
@@ -181,6 +226,8 @@ export default function DashboardPage() {
             { label: 'Sessions', value: '33,850', change: 8.2 },
             { label: 'CVR', value: '3.33%', change: 2.1 },
             { label: 'EPS', value: formatCurrencyValue(66.58), change: 5.4 },
+            { label: 'Bounce Rate', value: '42.7%', change: -3.4 },
+            { label: 'Time on Site', value: '2:34', change: 12.1 },
           ].map((m) => (
             <div key={m.label} className="flex items-center justify-between">
               <div className="flex items-center text-xs text-text-secondary gap-1">
@@ -233,8 +280,12 @@ export default function DashboardPage() {
           <div>
             <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
             <div className="flex gap-2 sm:gap-3 mt-2 flex-wrap">
-              {['Linear All', 'Linear Paid', 'Validated'].map((tab, i) => (
-                <button key={tab} className={`text-xs px-3 py-1.5 rounded-md transition-colors ${i === 0 ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+              {['Last Click', 'Linear'].map((tab) => (
+                <button 
+                  key={tab} 
+                  onClick={() => setActiveAttributionTab(tab)}
+                  className={`text-xs px-3 py-1.5 rounded-md transition-colors ${activeAttributionTab === tab ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}
+                >
                   {tab}
                 </button>
               ))}
@@ -271,7 +322,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {channelAttribution.map((row) => (
+                {getCurrentChannelData().map((row) => (
                   <tr key={row.channel} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
                     <td className="py-3 px-2 sm:px-3 font-medium text-text-primary">{row.channel}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{formatCurrencyValue(row.costs)}</td>
@@ -314,7 +365,7 @@ export default function DashboardPage() {
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  tickFormatter={(v) => `${currency}${(convertValue(v)/1000000).toFixed(1)}M`} 
+                  tickFormatter={(v) => formatCurrencyValue(v)} 
                   label={{ value: `Revenue (${currency}M)`, angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
@@ -417,40 +468,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Summary AI Analysis */}
-      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-5 h-5 rounded-full bg-gradient-to-r from-brand-blue to-warm-gold flex items-center justify-center shrink-0">
-            <span className="text-xs font-bold text-white">AI</span>
-          </div>
-          <h3 className="text-sm font-medium text-text-primary">Daily Summary & Intelligence</h3>
-        </div>
-        <div className="space-y-3">
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-success/20 flex items-center justify-center">
-              <span className="text-xs text-success font-bold">✓</span>
-            </div>
-            <p className="text-sm text-text-secondary leading-relaxed">
-              <strong className="text-text-primary">Strong Performance:</strong> MER at 3.67x exceeds the healthy 3.5x threshold with nCAC improving 2.6% MoM to {formatCurrencyValue(787)}. Meta remains your highest-performing channel at 3.91x ROAS.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-warm-gold/20 flex items-center justify-center">
-              <span className="text-xs text-warm-gold font-bold">!</span>
-            </div>
-            <p className="text-sm text-text-secondary leading-relaxed">
-              <strong className="text-text-primary">Watch:</strong> aMER at {kpiCards.nmer.value}x shows heavy reliance on repeat purchases. Monitor cohort quality closely as this affects long-term sustainability.
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <div className="flex-shrink-0 w-5 h-5 rounded-full bg-brand-blue/20 flex items-center justify-center">
-              <span className="text-xs text-brand-blue-light font-bold">→</span>
-            </div>
-            <p className="text-sm text-text-secondary leading-relaxed">
-              <strong className="text-text-primary">Recommend:</strong> Scale Meta spend by 15% while capping TikTok at current levels. Consider launching subscription model for GLP-1 (highest repeat rate product).
-            </p>
-          </div>
-        </div>
+      {/* Summary AI Analysis with full controls */}
+      <div>
+        <AISuggestionsPanel 
+          suggestions={getCrossPageInsights().map((item, i) => `**${item.title}:** ${item.insight}`)}
+          title="Daily Summary & Intelligence"
+        />
       </div>
     </div>
   );

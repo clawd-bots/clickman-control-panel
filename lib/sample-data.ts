@@ -180,14 +180,14 @@ export const adScatterData = [
 
 // ─── Creative & MTA ───
 export const creativePerformance = [
-  { name: 'GLP-1 Testimonial V3', platform: 'Meta', spend: 45200, impressions: 892000, clicks: 12480, ctr: 1.40, cpc: 3.62, conversions: 69, cpa: 655, roas: 3.05, status: 'Active' },
-  { name: 'Hair Before/After Carousel', platform: 'Meta', spend: 38100, impressions: 756000, clicks: 10584, ctr: 1.40, cpc: 3.60, conversions: 66, cpa: 577, roas: 3.47, status: 'Active' },
-  { name: 'Doc Consultation UGC', platform: 'Meta', spend: 32400, impressions: 645000, clicks: 8385, ctr: 1.30, cpc: 3.86, conversions: 45, cpa: 720, roas: 2.78, status: 'Active' },
-  { name: 'Weight Loss Journey TikTok', platform: 'TikTok', spend: 28300, impressions: 1250000, clicks: 18750, ctr: 1.50, cpc: 1.51, conversions: 41, cpa: 690, roas: 2.90, status: 'Active' },
-  { name: 'Brand Search Exact', platform: 'Google', spend: 52100, impressions: 125000, clicks: 31250, ctr: 25.0, cpc: 1.67, conversions: 124, cpa: 420, roas: 4.76, status: 'Active' },
-  { name: 'Competitor Keywords', platform: 'Google', spend: 35200, impressions: 98000, clicks: 5880, ctr: 6.0, cpc: 5.99, conversions: 40, cpa: 880, roas: 2.27, status: 'Under Review' },
-  { name: 'Hair Regrowth Demo', platform: 'TikTok', spend: 22100, impressions: 980000, clicks: 14700, ctr: 1.50, cpc: 1.50, conversions: 36, cpa: 614, roas: 3.26, status: 'Active' },
-  { name: 'Semaglutide Explainer', platform: 'Meta', spend: 41500, impressions: 820000, clicks: 10660, ctr: 1.30, cpc: 3.89, conversions: 62, cpa: 669, roas: 2.99, status: 'Active' },
+  { name: 'GLP-1 Testimonial V3', platform: 'Meta', spend: 45200, impressions: 892000, clicks: 12480, ctr: 1.40, cpc: 3.62, conversions: 69, cpa: 655, roas: 3.05, status: 'Active', campaign: 'scale' },
+  { name: 'Hair Before/After Carousel', platform: 'Meta', spend: 38100, impressions: 756000, clicks: 10584, ctr: 1.40, cpc: 3.60, conversions: 66, cpa: 577, roas: 3.47, status: 'Active', campaign: 'scale' },
+  { name: 'Doc Consultation UGC', platform: 'Meta', spend: 32400, impressions: 645000, clicks: 8385, ctr: 1.30, cpc: 3.86, conversions: 45, cpa: 720, roas: 2.78, status: 'Active', campaign: 'test' },
+  { name: 'Weight Loss Journey TikTok', platform: 'TikTok', spend: 28300, impressions: 1250000, clicks: 18750, ctr: 1.50, cpc: 1.51, conversions: 41, cpa: 690, roas: 2.90, status: 'Active', campaign: 'scale' },
+  { name: 'Brand Search Exact', platform: 'Google', spend: 52100, impressions: 125000, clicks: 31250, ctr: 25.0, cpc: 1.67, conversions: 124, cpa: 420, roas: 4.76, status: 'Active', campaign: 'scale' },
+  { name: 'Competitor Keywords', platform: 'Google', spend: 35200, impressions: 98000, clicks: 5880, ctr: 6.0, cpc: 5.99, conversions: 40, cpa: 880, roas: 2.27, status: 'Under Review', campaign: 'kill' },
+  { name: 'Hair Regrowth Demo', platform: 'TikTok', spend: 22100, impressions: 980000, clicks: 14700, ctr: 1.50, cpc: 1.50, conversions: 36, cpa: 614, roas: 3.26, status: 'Active', campaign: 'test' },
+  { name: 'Semaglutide Explainer', platform: 'Meta', spend: 41500, impressions: 820000, clicks: 10660, ctr: 1.30, cpc: 3.89, conversions: 62, cpa: 669, roas: 2.99, status: 'Active', campaign: 'learn' },
 ];
 
 // ─── Account Control Scatter Data ───

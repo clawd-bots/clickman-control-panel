@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 
 import { cashFlowDefaults, cohortWaterfall, monthlySummary, sensitivityCards } from '@/lib/sample-data';
@@ -21,6 +21,10 @@ export default function CashFlowPage() {
     subRetentionM6: 55,
     subRetentionM12: 40,
   });
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showLoadDropdown, setShowLoadDropdown] = useState(false);
+  const [modelName, setModelName] = useState('');
+  const [savedModels, setSavedModels] = useState<Array<{name: string, inputs: any, timestamp: string}>>([]);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -32,22 +36,60 @@ export default function CashFlowPage() {
   const monthKeys = ['m1','m2','m3','m4','m5','m6','m7','m8','m9','m10','m11','m12'] as const;
 
   // Save/Load Models functionality
-  const saveModel = () => {
-    const modelData = {
-      inputs,
-      timestamp: new Date().toISOString(),
-      name: `Cash Flow Model - ${new Date().toLocaleDateString()}`
-    };
-    localStorage.setItem('clickman-cashflow-model', JSON.stringify(modelData));
-  };
-
-  const loadModel = () => {
-    const saved = localStorage.getItem('clickman-cashflow-model');
+  const loadSavedModels = () => {
+    const saved = localStorage.getItem('clickman-cashflow-models');
     if (saved) {
-      const modelData = JSON.parse(saved);
-      setInputs(modelData.inputs);
+      setSavedModels(JSON.parse(saved));
     }
   };
+
+  const saveModel = () => {
+    if (!modelName.trim()) return;
+    
+    const newModel = {
+      name: modelName.trim(),
+      inputs,
+      timestamp: new Date().toISOString(),
+    };
+    
+    const existingModels = JSON.parse(localStorage.getItem('clickman-cashflow-models') || '[]');
+    const updatedModels = [newModel, ...existingModels.filter((m: any) => m.name !== newModel.name)];
+    
+    localStorage.setItem('clickman-cashflow-models', JSON.stringify(updatedModels));
+    setSavedModels(updatedModels);
+    setShowSaveModal(false);
+    setModelName('');
+  };
+
+  const loadModel = (model: {name: string, inputs: any, timestamp: string}) => {
+    setInputs(model.inputs);
+    setShowLoadDropdown(false);
+  };
+
+  const deleteModel = (modelName: string) => {
+    const existingModels = JSON.parse(localStorage.getItem('clickman-cashflow-models') || '[]');
+    const updatedModels = existingModels.filter((m: any) => m.name !== modelName);
+    localStorage.setItem('clickman-cashflow-models', JSON.stringify(updatedModels));
+    setSavedModels(updatedModels);
+  };
+
+  // Load saved models on component mount
+  useEffect(() => {
+    loadSavedModels();
+  }, []);
+
+  // Click-away handler for load model dropdown
+  useEffect(() => {
+    const handleClickAway = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (showLoadDropdown && !target.closest('.load-model-dropdown')) {
+        setShowLoadDropdown(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickAway);
+    return () => document.removeEventListener('click', handleClickAway);
+  }, [showLoadDropdown]);
 
   const allSensitivityCards = [
     { 
@@ -101,18 +143,81 @@ export default function CashFlowPage() {
         </p>
         <div className="flex gap-2 mt-3">
           <button
-            onClick={saveModel}
+            onClick={() => setShowSaveModal(true)}
             className="text-xs px-3 py-1.5 bg-brand-blue/15 text-brand-blue-light rounded-md hover:bg-brand-blue/25 transition-colors"
           >
             Save Model
           </button>
-          <button
-            onClick={loadModel}
-            className="text-xs px-3 py-1.5 bg-bg-elevated text-text-secondary border border-border rounded-md hover:bg-bg-surface transition-colors"
-          >
-            Load Model
-          </button>
+          <div className="relative load-model-dropdown">
+            <button
+              onClick={() => setShowLoadDropdown(!showLoadDropdown)}
+              className="text-xs px-3 py-1.5 bg-bg-elevated text-text-secondary border border-border rounded-md hover:bg-bg-surface transition-colors"
+            >
+              Load Model ({savedModels.length})
+            </button>
+            {showLoadDropdown && savedModels.length > 0 && (
+              <div className="absolute top-full left-0 mt-1 bg-bg-surface border border-border rounded-lg shadow-lg z-10 min-w-[200px] max-h-[200px] overflow-y-auto">
+                {savedModels.map((model) => (
+                  <div key={model.name} className="flex items-center justify-between p-2 hover:bg-bg-elevated border-b border-border/30 last:border-b-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-text-primary truncate">{model.name}</div>
+                      <div className="text-xs text-text-secondary">{new Date(model.timestamp).toLocaleDateString()}</div>
+                    </div>
+                    <div className="flex gap-1 ml-2">
+                      <button
+                        onClick={() => loadModel(model)}
+                        className="text-xs px-2 py-1 bg-brand-blue/15 text-brand-blue-light rounded hover:bg-brand-blue/25 transition-colors"
+                      >
+                        Load
+                      </button>
+                      <button
+                        onClick={() => deleteModel(model.name)}
+                        className="text-xs px-2 py-1 bg-danger/15 text-danger rounded hover:bg-danger/25 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+        
+        {/* Save Model Modal */}
+        {showSaveModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-bg-surface border border-border rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-medium text-text-primary mb-4">Save Cash Flow Model</h3>
+              <div className="mb-4">
+                <label className="block text-sm text-text-secondary mb-2">Model Name</label>
+                <input
+                  type="text"
+                  value={modelName}
+                  onChange={(e) => setModelName(e.target.value)}
+                  placeholder="e.g., Q2 Aggressive Growth, Conservative Baseline..."
+                  className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-md text-sm text-text-primary outline-none focus:border-brand-blue transition-colors"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => setShowSaveModal(false)}
+                  className="px-4 py-2 text-sm text-text-secondary bg-bg-elevated border border-border rounded-md hover:bg-bg-surface transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveModel}
+                  disabled={!modelName.trim()}
+                  className="px-4 py-2 text-sm text-white bg-brand-blue rounded-md hover:bg-brand-blue-light transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Save Model
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Input Panel */}
@@ -193,7 +298,7 @@ export default function CashFlowPage() {
             </div>
           </div>
           <p className="text-xs text-text-secondary mt-2">
-            Currently {inputs.subAttachRate}% subscription attach rate. {inputs.subAttachRate === 0 ? 'Projected subscription launch in 1–2 months.' : ''}
+            Currently {inputs.subAttachRate}% subscription attach rate. {inputs.subAttachRate === 0 ? 'Projected subscription launch in 1-2 months.' : ''}
           </p>
         </div>
       </div>

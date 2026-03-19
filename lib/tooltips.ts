@@ -4,7 +4,7 @@ export const tooltips: Record<string, string> = {
   'Net Orders': 'Total orders minus cancelled and returned orders. Reflects actual fulfilled demand.',
   'Marketing Costs': 'Total ad spend across all paid channels (Meta, Google, TikTok, etc.). Does not include organic or content costs.',
   'MER': 'Marketing Efficiency Ratio = Net Revenue ÷ Marketing Costs. Higher is better. Shows how many pesos of revenue each peso of ad spend generates.',
-  'New Customers': 'First-time purchasers within the period. The lifeblood of growth — these are people who never bought from AndYou before.',
+  'New Customers': 'First-time purchasers within the period. The lifeblood of growth - these are people who never bought from AndYou before.',
   'nCAC': 'New Customer Acquisition Cost = Marketing Costs ÷ New Customers. How much you pay to acquire each new customer.',
   'nMER': 'New Customer MER = New Customer Revenue ÷ Marketing Costs. Isolates efficiency of spend at acquiring new customers vs. all revenue.',
   'CAC': 'Customer Acquisition Cost = Marketing Costs ÷ Total Orders. Blended cost per order including repeat customers.',
@@ -16,7 +16,7 @@ export const tooltips: Record<string, string> = {
   'NC%': 'New Customer Percentage = New Customers ÷ Total Orders × 100. Higher means more acquisition vs. repeat.',
 
   // P&L
-  'GMV': 'Gross Merchandise Value — the total value of all items sold before any deductions. The "sticker price" total.',
+  'GMV': 'Gross Merchandise Value - the total value of all items sold before any deductions. The "sticker price" total.',
   'Gross Revenue': 'Revenue after price reductions and discounts but before returns and taxes. Closer to what was actually transacted.',
   'CM1': 'Contribution Margin 1 = Net Revenue − COGS. Profit after product costs but before logistics and marketing.',
   'CM2': 'Contribution Margin 2 = CM1 − Logistics − Transaction Costs. Profit after fulfillment but before marketing.',
@@ -26,7 +26,7 @@ export const tooltips: Record<string, string> = {
   'CM2%': 'CM2 as a percentage of Net Revenue. Target: 55-65% for efficient fulfillment.',
   'CM3%': 'CM3 as a percentage of Net Revenue. Target: 15-25% for healthy growth.',
   'AOV': 'Average Order Value = Net Revenue ÷ Net Orders. Higher AOV means more revenue per transaction.',
-  'COGS': 'Cost of Goods Sold — direct product costs including manufacturing, packaging, and ingredients.',
+  'COGS': 'Cost of Goods Sold - direct product costs including manufacturing, packaging, and ingredients.',
   'Logistics': 'Shipping and fulfillment costs including courier fees, packaging materials, and warehouse handling.',
   'Transaction Costs': 'Payment processing fees from GCash, Maya, credit cards, and COD handling charges.',
   'Price Reductions': 'Revenue lost from sale prices vs. original retail price. Tracks markdown impact.',
@@ -48,29 +48,29 @@ export const tooltips: Record<string, string> = {
   'Untracked Lift': 'Additional conversions driven by marketing but not attributed by tracking. Usually 10-30% for DTC brands.',
   'Untracked Lift %': 'Additional conversions driven by marketing but not attributed by tracking. Usually 10-30% for DTC brands.',
   'Monthly Growth %': 'Expected month-over-month growth rate in customer acquisition. Compounds monthly.',
-  'M1 Spend': 'Month 1 acquisition spend — the starting point for projected marketing investment.',
+  'M1 Spend': 'Month 1 acquisition spend - the starting point for projected marketing investment.',
   'Subscription Attach Rate': 'Percentage of new customers who subscribe to a recurring plan vs. one-time purchase.',
-  'CPA': 'Cost Per Acquisition — how much it costs to acquire one new customer.',
+  'CPA': 'Cost Per Acquisition - how much it costs to acquire one new customer.',
 
   // Attribution
   'Post-Purchase Survey': 'Self-reported attribution from "How did you hear about us?" surveys. Best for understanding awareness channels like TikTok and word-of-mouth.',
-  'MMM': 'Marketing Mix Modeling — statistical model that estimates each channel\'s contribution using aggregate data. Good for budget allocation.',
+  'MMM': 'Marketing Mix Modeling - statistical model that estimates each channel\'s contribution using aggregate data. Good for budget allocation.',
   'Geo-Lift Testing': 'Incrementality testing by comparing regions where ads run vs. don\'t. The gold standard for proving causality.',
-  'MTA': 'Multi-Touch Attribution — assigns credit to touchpoints in the customer journey using tracking data. Good for ad-level optimization.',
+  'MTA': 'Multi-Touch Attribution - assigns credit to touchpoints in the customer journey using tracking data. Good for ad-level optimization.',
   'Platform Reporting': 'Native reporting from Meta, Google, TikTok dashboards. Often inflated due to overlapping attribution windows.',
-  'CAPI': 'Conversions API — server-side event tracking that bypasses browser limitations and ad blockers.',
+  'CAPI': 'Conversions API - server-side event tracking that bypasses browser limitations and ad blockers.',
   'Meta Pixel': 'Client-side tracking pixel that fires events in the browser when users interact with your site after seeing Meta ads.',
-  'Meta CAPI': 'Server-side Conversions API for Meta — sends events directly from your server, bypassing ad blockers for better match rates.',
+  'Meta CAPI': 'Server-side Conversions API for Meta - sends events directly from your server, bypassing ad blockers for better match rates.',
   'Google Ads Tag': 'Google\'s conversion tracking tag that measures actions users take after clicking or viewing your Google ads.',
   'TikTok Pixel': 'TikTok\'s tracking pixel and Conversions API for measuring conversions from TikTok ad campaigns. Like Meta, supports both browser-side pixel and server-side cAPI.',
-  'GA4': 'Google Analytics 4 — Google\'s current analytics platform for measuring website and app activity.',
-  'Server-side GTM': 'Server-side Google Tag Manager — processes tracking events on your server instead of the user\'s browser for better reliability.',
+  'GA4': 'Google Analytics 4 - Google\'s current analytics platform for measuring website and app activity.',
+  'Server-side GTM': 'Server-side Google Tag Manager - processes tracking events on your server instead of the user\'s browser for better reliability.',
 
   // Creative
   'Ad Churn': 'Shows how your ad spend is distributed across creative age brackets. Dark = newest ads (last 7 days), lighter = older ads. A healthy account has a steady flow of new creative taking over spend. If 100% reliant on 180+ day old ads, you\'re fragile. If you never retest old winners, you\'re leaving money on the table.',
   'Account Control Chart': 'Scatter plot of CPA vs. Spend per ad. Bottom-right = winners scaling efficiently. Top-right = "zombies" burning budget at high CPA. Bottom-left = promising tests. Top-left = underperformers still in learning. The horizontal line is your CPA target (₱787). The vertical line separates testing (<₱20K) from scaled ads.',
   'Creative Churn Cohorts': 'Each color represents a cohort of creatives launched in the same month. Newer cohorts (darker) should be taking over spend from older ones. If old cohorts still dominate, creative fatigue is building and performance will decline. This is the most critical chart for forecasting.',
-  'Production Rate': 'Total bars = how many new ads you launched that month. Dark section = how many actually "hit" (scaled to >₱10K spend at profitable CPA). Your slugging rate is the % that hit. If you launch 50 ads and zero scale, you don\'t have a media buying problem — you have a creative strategy problem.',
+  'Production Rate': 'Total bars = how many new ads you launched that month. Dark section = how many actually "hit" (scaled to >₱10K spend at profitable CPA). Your slugging rate is the % that hit. If you launch 50 ads and zero scale, you don\'t have a media buying problem - you have a creative strategy problem.',
   'Demographics Analysis': 'Are you producing for the audience that is actually buying? If women 25-34 drive the bulk of conversions at the lowest CPA, but you keep producing content for other demographics, you\'re misallocating creative resources. Align your production queue with your paying demographic.',
   'Pareto': 'The 80/20 distribution of ad performance. Usually 20% of creatives drive 80% of results.',
   'Time to Purchase': 'Days between first ad click and purchase. Longer windows may indicate higher consideration products.',
@@ -78,16 +78,16 @@ export const tooltips: Record<string, string> = {
   // Cohorts
   'Cohort': 'A group of customers who made their first purchase in the same time period. Used to track retention behavior over time.',
   'Retention Rate': 'Percentage of customers from a cohort who make another purchase in a given period.',
-  'CLV': 'Customer Lifetime Value — total revenue (or margin) a customer generates over their entire relationship.',
-  'CLR': 'Customer Lifetime Revenue — cumulative revenue per customer at a given time horizon (90d, 365d, etc.).',
+  'CLV': 'Customer Lifetime Value - total revenue (or margin) a customer generates over their entire relationship.',
+  'CLR': 'Customer Lifetime Revenue - cumulative revenue per customer at a given time horizon (90d, 365d, etc.).',
   'Repeat Rate': 'Percentage of customers who make at least one additional purchase after their first.',
-  'NC Revenue': 'New Customer Revenue — revenue from first-time purchasers only.',
-  'RC Revenue': 'Repeat Customer Revenue — revenue from returning customers. The holy grail of DTC profitability.',
+  'NC Revenue': 'New Customer Revenue - revenue from first-time purchasers only.',
+  'RC Revenue': 'Repeat Customer Revenue - revenue from returning customers. The holy grail of DTC profitability.',
   'NC AOV': 'New Customer Average Order Value. Often lower than repeat due to trial/starter products.',
   'RC AOV': 'Repeat Customer Average Order Value. Usually higher as customers trade up to larger sizes or bundles.',
 
   // Targets
-  'aMER': 'Adjusted MER — MER calculated with estimated untracked conversions included. More realistic efficiency view.',
+  'aMER': 'Adjusted MER - MER calculated with estimated untracked conversions included. More realistic efficiency view.',
   'Target Pace': 'Current run rate vs. monthly target. Green = on track, Yellow = at risk, Red = behind.',
   'Repeat Rate (30d)': 'Percentage of customers who make a repeat purchase within 30 days of their first order.',
 
@@ -98,4 +98,10 @@ export const tooltips: Record<string, string> = {
   'Demographics': 'Audience demographic breakdown by age, gender, and location. Shows which segments convert best.',
   'Top Creatives': 'Ranked list of your best-performing ad creatives by ROAS and conversion volume.',
   'Creative Launches': 'Timeline of new creative launches and their initial performance signals.',
+
+  // Missing tooltips identified in audit
+  'Monthly Targets': 'Target values for key metrics to measure progress. Green = on track, Yellow = at risk, Red = behind pace.',
+  'Pareto 80/20 Analysis': 'The 80/20 principle: typically 20% of creatives drive 80% of results. Focus budget on top performers rather than spreading thin.',
+  'TikTok Browser': 'Client-side TikTok Pixel tracking events. Match quality depends on browser settings and ad blocker usage. Typically lower match rates than server-side.',
+  'TikTok cAPI': 'TikTok Conversions API - server-side event tracking that bypasses browser limitations. Better match rates and data quality than browser pixel alone.',
 };

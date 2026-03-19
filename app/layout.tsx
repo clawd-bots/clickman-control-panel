@@ -3,6 +3,7 @@ import './globals.css';
 import Sidebar from '@/components/layout/Sidebar';
 import TopBar from '@/components/layout/TopBar';
 
+
 import ThemeProvider from '@/components/ThemeProvider';
 import { SidebarProvider } from '@/components/layout/SidebarContext';
 import { CurrencyProvider } from '@/components/CurrencyProvider';
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </main>
                 </div>
               </div>
+
               <ActivityLogger />
             </SidebarProvider>
           </CurrencyProvider>

@@ -35,6 +35,46 @@ const sampleTemplates: PromptTemplate[] = [
     prompt: 'Analyze the CPA vs Spend scatter plot data. Categorize ads into quadrants and provide: 1) Scaling opportunities (low CPA, high spend), 2) Zombie ads to pause (high CPA, high spend), 3) Testing prospects to scale (low CPA, low spend), 4) Learning phase ads needing attention, 5) Specific CPA targets and budget recommendations.',
     category: 'Account Management',
     lastModified: '2026-03-16'
+  },
+  {
+    id: '4',
+    name: 'ROAS Performance Optimization',
+    description: 'Evaluates campaign performance metrics and identifies optimization opportunities',
+    prompt: 'Review the performance metrics including ROAS, CTR, CPC, and conversion rates across campaigns. Provide: 1) ROAS optimization opportunities by campaign and ad set, 2) Budget reallocation recommendations, 3) Underperforming campaigns to pause or restructure, 4) Scaling opportunities for high-performers, 5) Platform-specific optimization strategies.',
+    category: 'Performance',
+    lastModified: '2026-03-16'
+  },
+  {
+    id: '5',
+    name: 'Channel Performance Analysis',
+    description: 'Cross-platform performance comparison and budget allocation guidance',
+    prompt: 'Compare performance across Meta, Google, TikTok, and other channels. Analyze: 1) Cost efficiency by platform (CPA, CPC trends), 2) Audience quality differences, 3) Optimal budget distribution recommendations, 4) Channel-specific creative performance patterns, 5) Scaling vs testing budget allocation per platform.',
+    category: 'Performance',
+    lastModified: '2026-03-16'
+  },
+  {
+    id: '6',
+    name: 'Cohort LTV Analysis',
+    description: 'Customer lifetime value analysis by acquisition cohort',
+    prompt: 'Analyze cohort performance data to identify LTV patterns. Focus on: 1) Monthly cohort LTV progression and retention rates, 2) CAC vs LTV trends by cohort, 3) High-value customer segment identification, 4) Retention improvement opportunities, 5) Cohort-based budget allocation recommendations for maximum LTV.',
+    category: 'Cohort Analysis',
+    lastModified: '2026-03-16'
+  },
+  {
+    id: '7',
+    name: 'Retention & Repeat Purchase',
+    description: 'Cohort retention analysis and repeat purchase behavior insights',
+    prompt: 'Examine cohort retention data and repeat purchase patterns. Provide insights on: 1) Retention rate trends by acquisition month, 2) Product/channel impact on retention, 3) Critical retention drop-off points, 4) Strategies to improve M1, M3, and M6 retention rates, 5) Subscription vs one-time purchase performance by cohort.',
+    category: 'Cohort Analysis',
+    lastModified: '2026-03-16'
+  },
+  {
+    id: '8',
+    name: 'Cohort Quality Assessment',
+    description: 'Evaluates cohort quality based on acquisition source and timing',
+    prompt: 'Assess the quality of customer cohorts based on acquisition data. Analyze: 1) Cohort quality by traffic source and campaign, 2) Seasonal vs evergreen cohort performance, 3) First-purchase behavior impact on LTV, 4) Cohort CAC efficiency over time, 5) Recommendations for improving future cohort quality.',
+    category: 'Cohort Analysis',
+    lastModified: '2026-03-16'
   }
 ];
 

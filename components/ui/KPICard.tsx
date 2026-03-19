@@ -11,9 +11,10 @@ interface KPICardProps {
   suffix?: string;
   target?: string;
   targetAchievement?: number; // percentage of target achieved
+  secondary?: string; // secondary value displayed below main value
 }
 
-export default function KPICard({ label, value, change, sparkline, target, targetAchievement }: KPICardProps) {
+export default function KPICard({ label, value, change, sparkline, target, targetAchievement, secondary }: KPICardProps) {
   const isPositive = change >= 0;
   const data = sparkline.map((v, i) => ({ v, i }));
 
@@ -39,6 +40,9 @@ export default function KPICard({ label, value, change, sparkline, target, targe
         </div>
       </div>
       <div className="text-2xl font-bold text-text-primary">{value}</div>
+      {secondary && (
+        <div className="text-sm text-text-secondary">{secondary}</div>
+      )}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${

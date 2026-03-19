@@ -1,6 +1,7 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 import { Calendar, ChevronDown, RefreshCw, User, Sun, Moon, Menu, DollarSign } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { useSidebar } from '@/components/layout/SidebarContext';
@@ -27,12 +28,12 @@ function getDisplayDate(preset: string): string {
   switch (preset) {
     case 'today': return 'Mar 14, 2026';
     case 'yesterday': return 'Mar 13, 2026';
-    case '7d': return 'Mar 8 – Mar 14, 2026';
-    case '30d': return 'Feb 13 – Mar 14, 2026';
-    case 'this-month': return 'Mar 1 – Mar 14, 2026';
-    case 'last-month': return 'Feb 1 – Feb 28, 2026';
-    case 'this-quarter': return 'Jan 1 – Mar 14, 2026';
-    default: return 'Mar 1 – Mar 7, 2026';
+    case '7d': return 'Mar 8 - Mar 14, 2026';
+    case '30d': return 'Feb 13 - Mar 14, 2026';
+    case 'this-month': return 'Mar 1 - Mar 14, 2026';
+    case 'last-month': return 'Feb 1 - Feb 28, 2026';
+    case 'this-quarter': return 'Jan 1 - Mar 14, 2026';
+    default: return 'Mar 1 - Mar 7, 2026';
   }
 }
 
@@ -77,7 +78,7 @@ export default function TopBar() {
 
   return (
     <header className="h-14 bg-bg-surface border-b border-border flex items-center justify-between px-3 md:px-6 sticky top-0 z-40 transition-colors min-w-0">
-      {/* Left — Hamburger (mobile) + Title */}
+      {/* Left - Hamburger (mobile) + AndYou Logo + Title */}
       <div className="flex items-center gap-2 min-w-0">
         <button
           onClick={toggleMobile}
@@ -85,13 +86,20 @@ export default function TopBar() {
         >
           <Menu size={20} />
         </button>
+        <Image 
+          src="/andyou-logo.png" 
+          alt="AndYou" 
+          width={32}
+          height={24}
+          className="h-6 w-auto shrink-0" 
+        />
         <h1 className="text-sm md:text-base font-bold tracking-wide text-text-primary truncate">
           <span className="text-warm-gold">Click-Man</span>{' '}
           <span className="text-text-primary hidden sm:inline">Control Panel</span>
         </h1>
       </div>
 
-      {/* Right — Date picker & controls */}
+      {/* Right - Date picker & controls */}
       <div className="flex items-center justify-end gap-1 md:gap-2 ml-auto shrink-0">
         {showDatePicker && (
           <>
@@ -125,7 +133,7 @@ export default function TopBar() {
               )}
             </div>
 
-            {/* Comparison Period — hidden on small screens */}
+            {/* Comparison Period - hidden on small screens */}
             <div ref={compRef} className="relative hidden sm:block">
               <button
                 onClick={() => { setShowCompDropdown(!showCompDropdown); setShowDateDropdown(false); }}
@@ -178,9 +186,6 @@ export default function TopBar() {
         <button className="hidden sm:block p-2 rounded-md hover:bg-bg-elevated text-text-tertiary hover:text-text-secondary transition-colors shrink-0">
           <RefreshCw size={14} />
         </button>
-        <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-brand-blue/20 flex items-center justify-center">
-          <User size={14} className="text-brand-blue-light" />
-        </div>
       </div>
     </header>
   );

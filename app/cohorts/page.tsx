@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import { useCurrency } from '@/components/CurrencyProvider';
+import { formatCurrency } from '@/lib/utils';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { cohortRetention, clvExtension, productComparison, cohortAISuggestions } from '@/lib/sample-data';
 import { getHeatmapClass } from '@/lib/utils';
@@ -9,13 +11,71 @@ import {
 } from 'recharts';
 
 export default function CohortsPage() {
+  const { currency, convertValue } = useCurrency();
   const [activeTab, setActiveTab] = useState<'analysis' | 'comparison'>('analysis');
   const [metric, setMetric] = useState('Net Revenue');
   const [format, setFormat] = useState<'%' | '#'>('%');
   const [heatmap, setHeatmap] = useState(true);
   const [mode, setMode] = useState<'incremental' | 'accumulative'>('incremental');
 
-  const maxRetention = Math.max(...cohortRetention.flatMap(c => c.periods.filter(p => p > 0 && p < 100)));
+  // Helper function to format currency with current context
+  const formatCurrencyValue = (value: number) => {
+    return formatCurrency(convertValue(value), currency);
+  };
+
+  // Dynamic AI suggestions with currency conversion
+  const getDynamicAISuggestions = () => {
+    return [
+      'Scale Meta spend +15%: Oct to Dec cohorts show consistently improving M1 retention (28.5% to 32.8%), suggesting recent targeting improvements are working.',
+      'Maintain Google Brand: Lowest CAC channel with best LTV. Max out impression share before expanding elsewhere.',
+      `Cap TikTok at current levels: March cohort has lowest first-order AOV (${formatCurrencyValue(1850)} isn't bad but TikTok LTV:CAC needs monitoring before scaling).`,
+      'Jan 2026 cohort dipped: M1 retention dropped to 29.8% from Dec\'s 32.8%. Could be post-holiday buyer quality or seasonal effects. Monitor closely.',
+      'GLP-1 is the retention engine: 51.8% 90-day repeat rate and 3.1 avg orders. Its recurring nature makes it the ideal subscription candidate.',
+      `First-order AOV trending up: ${formatCurrencyValue(1580)} (Sep) to ${formatCurrencyValue(1850)} (Mar) = +17% improvement. Better targeting or product mix shift toward GLP-1.`,
+      'Launch subscription for GLP-1 (highest repeat rate product) and send targeted re-engagement to Nov cohort (highest 30d repeat potential).',
+    ];
+  };
+
+  // Transform data based on selected metric and mode
+  const getTransformedData = () => {
+    return cohortRetention.map(cohort => {
+      let transformedPeriods = [...cohort.periods];
+      
+      // Transform for Orders metric (simulate 40% lower numbers)
+      if (metric === 'Orders') {
+        transformedPeriods = cohort.periods.map(p => p > 0 ? p * 0.6 : p);
+      }
+      
+      // Transform for Accumulative mode
+      if (mode === 'accumulative' && metric === 'Net Revenue') {
+        let accumulator = 0;
+        transformedPeriods = cohort.periods.map(p => {
+          if (p > 0 && p < 100) {
+            accumulator += p;
+            return Math.min(accumulator, 95); // Cap at 95%
+          }
+          return p;
+        });
+      } else if (mode === 'accumulative' && metric === 'Orders') {
+        let accumulator = 0;
+        transformedPeriods = cohort.periods.map(p => {
+          if (p > 0 && p < 100) {
+            accumulator += (p * 0.6);
+            return Math.min(accumulator, 90); // Cap at 90% for orders
+          }
+          return p > 0 ? p * 0.6 : p;
+        });
+      }
+      
+      return {
+        ...cohort,
+        periods: transformedPeriods
+      };
+    });
+  };
+
+  const transformedData = getTransformedData();
+  const maxRetention = Math.max(...transformedData.flatMap(c => c.periods.filter(p => p > 0 && p < 100)));
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -83,12 +143,12 @@ export default function CohortsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {cohortRetention.map((row) => (
+                  {transformedData.map((row) => (
                     <tr key={row.cohort} className="border-b border-border/30">
                       <td className="py-2.5 px-2 font-medium text-text-primary">{row.cohort}</td>
                       <td className="py-2.5 px-2 text-right text-text-secondary">{row.customers}</td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">₱{row.cac}</td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">₱{row.firstOrder.toLocaleString()}</td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.cac)}</td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.firstOrder)}</td>
                       {row.periods.map((val, i) => {
                         const displayVal = format === '%' ? `${val.toFixed(1)}%` : Math.round(row.customers * val / 100).toString();
                         const hClass = heatmap && val > 0 && val < 100 ? getHeatmapClass(val, maxRetention) : '';
@@ -103,15 +163,16 @@ export default function CohortsPage() {
                   {/* Average row */}
                   <tr className="border-t-2 border-border font-medium">
                     <td className="py-2.5 px-2 text-text-primary">Average</td>
-                    <td className="py-2.5 px-2 text-right text-text-primary">{Math.round(cohortRetention.reduce((s, c) => s + c.customers, 0) / cohortRetention.length)}</td>
-                    <td className="py-2.5 px-2 text-right text-text-primary">₱{Math.round(cohortRetention.reduce((s, c) => s + c.cac, 0) / cohortRetention.length)}</td>
-                    <td className="py-2.5 px-2 text-right text-text-primary">₱{Math.round(cohortRetention.reduce((s, c) => s + c.firstOrder, 0) / cohortRetention.length).toLocaleString()}</td>
+                    <td className="py-2.5 px-2 text-right text-text-primary">{Math.round(transformedData.reduce((s, c) => s + c.customers, 0) / transformedData.length)}</td>
+                    <td className="py-2.5 px-2 text-right text-text-primary">{formatCurrencyValue(Math.round(transformedData.reduce((s, c) => s + c.cac, 0) / transformedData.length))}</td>
+                    <td className="py-2.5 px-2 text-right text-text-primary">{formatCurrencyValue(Math.round(transformedData.reduce((s, c) => s + c.firstOrder, 0) / transformedData.length))}</td>
                     {[0, 1, 2, 3, 4, 5, 6].map(i => {
-                      const vals = cohortRetention.map(c => c.periods[i]).filter(v => v > 0);
+                      const vals = transformedData.map(c => c.periods[i]).filter(v => v > 0);
                       const avg = vals.length > 0 ? vals.reduce((s, v) => s + v, 0) / vals.length : 0;
+                      const displayAvg = format === '%' ? `${avg.toFixed(1)}%` : Math.round(transformedData.reduce((s, c) => s + c.customers, 0) * avg / (100 * transformedData.length)).toString();
                       return (
                         <td key={i} className="py-2.5 px-2 text-right text-text-primary">
-                          {avg > 0 ? `${avg.toFixed(1)}%` : ','}
+                          {avg > 0 ? displayAvg : ','}
                         </td>
                       );
                     })}
@@ -125,7 +186,7 @@ export default function CohortsPage() {
           {/* AI Suggestions */}
           <div className="px-1">
             <AISuggestionsPanel 
-              suggestions={cohortAISuggestions} 
+              suggestions={getDynamicAISuggestions()} 
               title="Retention Intelligence"
             />
           </div>

@@ -34,6 +34,8 @@ export default function PnLPage() {
   const { currency, convertValue } = useCurrency();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [timePeriod, setTimePeriod] = useState('Total');
+  const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
+  const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -55,6 +57,32 @@ export default function PnLPage() {
     }
   };
 
+  // Get data based on selected time period
+  const getCurrentPnLData = () => {
+    const baseData = pnlData;
+    
+    // Apply different multipliers based on time period
+    const multipliers = {
+      'Total': 1,
+      'Quarter': 0.33,
+      'Month': 0.1,
+      'Week': 0.025,
+      'Day': 0.0033,
+    };
+    
+    const mult = multipliers[timePeriod as keyof typeof multipliers] || 1;
+    
+    return {
+      netRevenue: { value: Math.round(baseData.netRevenue.value * mult) },
+      cm1: { value: Math.round(baseData.cm1.value * mult), pct: baseData.cm1.pct },
+      cm2: { value: Math.round(baseData.cm2.value * mult), pct: baseData.cm2.pct },
+      cm3: { value: Math.round(baseData.cm3.value * mult), pct: baseData.cm3.pct },
+      ebitda: { value: Math.round(baseData.ebitda.value * mult), pct: baseData.ebitda.pct },
+    };
+  };
+
+  const currentPnLData = getCurrentPnLData();
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
@@ -62,8 +90,15 @@ export default function PnLPage() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <span className="text-xs text-text-secondary font-medium">View by:</span>
           <div className="flex gap-1 flex-wrap">
-            {['Total', 'Quarter', 'Month', 'Week', 'Day'].map(p => (
-              <button key={p} onClick={() => setTimePeriod(p)} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${timePeriod === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+            {['Total', 'Quarter', 'Month', 'Week', 'Day', 'Custom'].map(p => (
+              <button key={p} onClick={() => {
+                setTimePeriod(p);
+                if (p === 'Custom') {
+                  setShowCustomDatePicker(true);
+                } else {
+                  setShowCustomDatePicker(false);
+                }
+              }} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${timePeriod === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
                 {p}
               </button>
             ))}
@@ -71,18 +106,83 @@ export default function PnLPage() {
         </div>
       </div>
 
+      {/* Custom Date Picker */}
+      {showCustomDatePicker && (
+        <div className="bg-bg-surface border border-border rounded-lg p-4 mx-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <span className="text-sm font-medium text-text-primary">Custom Date Range:</span>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-text-secondary">From:</label>
+                <input
+                  type="date"
+                  value={customDateRange.start}
+                  onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+                  className="px-3 py-1.5 bg-bg-elevated border border-border rounded-md text-xs text-text-primary outline-none focus:border-brand-blue"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-text-secondary">To:</label>
+                <input
+                  type="date"
+                  value={customDateRange.end}
+                  onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+                  className="px-3 py-1.5 bg-bg-elevated border border-border rounded-md text-xs text-text-primary outline-none focus:border-brand-blue"
+                />
+              </div>
+              <button
+                onClick={() => {
+                  // Here you would normally apply the custom date range to filter the data
+                  console.log('Applying custom date range:', customDateRange);
+                }}
+                className="px-4 py-1.5 bg-brand-blue text-white text-xs font-medium rounded-md hover:bg-brand-blue/90 transition-colors"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mx-1">
-        <KPICard label="Net Revenue" value={formatCurrencyValue(pnlData.netRevenue.value)} change={9.5} sparkline={pnlTrend.map(t => t.netRevenue / 1000)} />
-        <KPICard label="CM1" value={formatCurrencyValue(pnlData.cm1.value)} change={8.2} sparkline={pnlTrend.map(t => t.cm1 / 1000)} />
-        <KPICard label="CM2" value={formatCurrencyValue(pnlData.cm2.value)} change={6.1} sparkline={pnlTrend.map(t => t.cm2 / 1000)} />
-        <KPICard label="CM3" value={formatCurrencyValue(pnlData.cm3.value)} change={11.8} sparkline={pnlTrend.map(t => t.cm3 / 1000)} />
-        <KPICard label="EBITDA" value={formatCurrencyValue(pnlData.ebitda.value)} change={14.2} sparkline={pnlTrend.map(t => t.cm3 * 0.76 / 1000)} />
+        <KPICard label="Net Revenue" value={formatCurrencyValue(currentPnLData.netRevenue.value)} change={9.5} sparkline={pnlTrend.map(t => t.netRevenue / 1000)} />
+        <KPICard 
+          label="CM1" 
+          value={`${currentPnLData.cm1.pct}%`} 
+          change={8.2} 
+          sparkline={pnlTrend.map(t => (t.cm1 / t.netRevenue) * 100)} 
+          secondary={formatCurrencyValue(currentPnLData.cm1.value)}
+        />
+        <KPICard 
+          label="CM2" 
+          value={`${currentPnLData.cm2.pct}%`} 
+          change={6.1} 
+          sparkline={pnlTrend.map(t => (t.cm2 / t.netRevenue) * 100)} 
+          secondary={formatCurrencyValue(currentPnLData.cm2.value)}
+        />
+        <KPICard 
+          label="CM3" 
+          value={`${currentPnLData.cm3.pct}%`} 
+          change={11.8} 
+          sparkline={pnlTrend.map(t => (t.cm3 / t.netRevenue) * 100)} 
+          secondary={formatCurrencyValue(currentPnLData.cm3.value)}
+        />
+        <KPICard 
+          label="EBITDA" 
+          value={`${currentPnLData.ebitda.pct}%`} 
+          change={14.2} 
+          sparkline={pnlTrend.map(t => ((t.cm3 * 0.76) / t.netRevenue) * 100)} 
+          secondary={formatCurrencyValue(currentPnLData.ebitda.value)}
+        />
       </div>
 
       {/* Trend Chart */}
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-        <h3 className="text-sm font-medium text-text-secondary mb-4">Margin Levels Over Time</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-text-secondary">Margin Levels Over Time</h3>
+          <span className="text-xs text-text-tertiary shrink-0">Google Sheets</span>
+        </div>
         <div className="min-h-[300px]">
           <ResponsiveContainer width="100%" height={300}>
           <LineChart data={pnlTrend}>
@@ -103,7 +203,12 @@ export default function PnLPage() {
       {/* P&L Table */}
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-text-primary">P&L Breakdown</h3>
+          <div className="flex items-center justify-between w-full">
+            <h3 className="text-sm font-medium text-text-primary">P&L Breakdown</h3>
+            <span className="text-xs text-text-tertiary shrink-0">Google Sheets</span>
+          </div>
+        </div>
+        <div className="flex items-center justify-end mb-4">
           <div className="flex items-center gap-2">
             <button
               onClick={toggleAll}

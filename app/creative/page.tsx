@@ -30,7 +30,7 @@ const tabDescriptions: Record<string, string> = {
   'Demographics': 'Are you producing for the audience that is actually buying? If women 25-34 drive your profit but you keep producing TikTok-style ads for Gen Z, you\'re burning cash. Align your production queue with your paying demographic.',
 };
 
-const attributionModels = ['Linear All', 'Linear Paid', 'First Click', 'Last Click', 'Triple Attribution (No Views)'];
+const attributionModels = ['Linear All', 'Linear Paid'];
 const attributionWindows = ['1-day click', '7-day click', '14-day click', '28-day click', '7-day click / 1-day view', '28-day click / 1-day view', '28-day click / 28-day view'];
 
 // Zone colors for account control scatter
@@ -70,13 +70,69 @@ export default function CreativePage() {
   const [platform, setPlatform] = useState('Meta');
   const [attrModel, setAttrModel] = useState('Linear All');
   const [attrWindow, setAttrWindow] = useState('7-day click / 1-day view');
+  const [campaignFilter, setCampaignFilter] = useState('all');
+  const [genderFilter, setGenderFilter] = useState('all');
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
     return formatCurrency(convertValue(value), currency);
   };
 
-  const filtered = creativePerformance.filter(c => c.platform === platform);
+  // Dynamic AI suggestions with currency conversion - tab specific
+  const getDynamicAISuggestions = () => {
+    const suggestions: Record<string, string[]> = {
+      'Performance': [
+        `Hair Before/After Carousel has the best ROAS at 3.47x with a low CPA of ${formatCurrencyValue(577)}. Scale spend by 30% this week.`,
+        `"Doc Consultation UGC" CTR dropped from 1.8% to 1.3% over 2 weeks. Creative fatigue likely, queue replacement creative.`,
+        `${platform} platform currently selected shows ${filtered.length} active creatives. Top performer has 3.47x ROAS.`,
+        `Average CPA across ${platform} is ${formatCurrencyValue(650)}. Consider pausing ads above ${formatCurrencyValue(800)} CPA.`,
+        'Performance tab shows real-time creative health. Monitor daily for fatigue signals and scaling opportunities.',
+      ],
+      'Ad Churn': [
+        'March shows healthy creative rotation with newer ads (dark bars) gaining spend share from older creatives.',
+        'Legacy creatives (180+ days) should represent <20% of total spend. If higher, creative fatigue risk is building.',
+        'Dark cohorts (newer launches) taking over spend is positive. Light cohorts dominating spend signals staleness.',
+        'Aim for 60% of spend in last 30 days of creative launches. This indicates fresh creative pipeline.',
+        'Creative churn analysis helps predict performance drops before they happen in your metrics.',
+      ],
+      'Account Control': [
+        `Bottom-right quadrant (high spend, low CPA) contains your scaling winners. Top performers under ${formatCurrencyValue(700)} CPA.`,
+        `Top-right "zombie" quadrant burns budget at high CPA. Pause any ads consistently above ${formatCurrencyValue(850)}.`,
+        'Bottom-left testing quadrant shows new ads with potential. Scale winners that maintain CPA under target.',
+        'Account Control Chart requires ad identification. Bubble colors should map to specific creative names below.',
+        `Horizontal line at ${formatCurrencyValue(787)} is your CPA target. Vertical line at ${formatCurrencyValue(20000)} separates testing from scale.`,
+      ],
+      'Top Creatives': [
+        'Production rate tracking shows creative "at bats" vs "hits" - launches vs successful scaling.',
+        'Overall slugging rate should target 30% according to Curtis Howland methodology.',
+        'Dark sections show scaled creatives (>$10K spend at profitable CPA). Light sections show failed tests.',
+        'If launching 20+ ads monthly but <10% scale, you have creative strategy issues, not media buying problems.',
+        'February launched 25 ads with 6 hits (24% rate). March tracking shows improved hit rate trending upward.',
+      ],
+      'Pareto': [
+        'Current data shows top 20% of creatives drive 68% of conversions - healthy Pareto distribution.',
+        'Avoid spreading budget too thin. Focus 80% of new spend on top performing creative concepts.',
+        'Identify the 3-5 winning creative themes and produce more variants within those proven concepts.',
+        'Pareto analysis reveals creative concentration risk. Top 3 ads drive 48% of total volume.',
+        'Diversify creative pipeline within winning themes to reduce concentration dependency.',
+      ],
+      'Demographics': [
+        `Women 25-44 drive 62% of conversions at lowest CPA (${formatCurrencyValue(613)}-${formatCurrencyValue(656)}). Align creative production to this buying audience.`,
+        'Demographics mismatch is expensive. Producing Gen Z TikTok content for millennial women wastes budget.',
+        'Spend allocation should follow conversion demographics, not general platform demographics.',
+        `Female segments show consistently better ROAS across age groups. Male 25-34 is ${formatCurrencyValue(715)} CPA vs Female 25-34 at ${formatCurrencyValue(613)}.`,
+        'Creative production queue should be 70% women-focused based on actual conversion performance.',
+      ],
+    };
+    
+    return suggestions[activeTab] || suggestions['Performance'];
+  };
+
+  const filtered = creativePerformance.filter(c => {
+    const platformMatch = c.platform === platform;
+    const campaignMatch = campaignFilter === 'all' || c.campaign === campaignFilter;
+    return platformMatch && campaignMatch;
+  });
 
   const paretoData = [...creativePerformance]
     .filter(c => c.platform === platform) // Apply platform filter
@@ -91,6 +147,21 @@ export default function CreativePage() {
   paretoData.forEach(d => { cum += d.conversions; d.cumPct = Math.round((cum / total) * 100); });
 
   const totalSlugging = productionSlugging.reduce((a, b) => ({ launched: a.launched + b.launched, hits: a.hits + b.hits }), { launched: 0, hits: 0 });
+
+  // Filter demographics data based on gender selection
+  const getFilteredDemographicsAge = () => {
+    if (genderFilter === 'all') {
+      return demographicsAge;
+    }
+    // For demo purposes, create filtered data based on gender selection
+    // In a real app, this would be from separate male/female datasets
+    const multiplier = genderFilter === 'male' ? 0.4 : 0.6; // Simulate gender distribution
+    return demographicsAge.map(row => ({
+      ...row,
+      conversions: Math.round(row.conversions * multiplier),
+      spend: Math.round(row.spend * multiplier)
+    }));
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -122,6 +193,25 @@ export default function CreativePage() {
               {platforms.map(p => (
                 <button key={p} onClick={() => setPlatform(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
                   {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {/* Campaign Filter - only show for Performance tab */}
+        {activeTab === 'Performance' && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-text-secondary font-medium shrink-0">Campaign:</span>
+            <div className="flex gap-1 flex-wrap">
+              {[
+                { key: 'all', label: 'All' },
+                { key: 'scale', label: 'Scale' },
+                { key: 'kill', label: 'Kill' },
+                { key: 'test', label: 'Test' },
+                { key: 'learn', label: 'Learn' }
+              ].map(f => (
+                <button key={f.key} onClick={() => setCampaignFilter(f.key)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${campaignFilter === f.key ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+                  {f.label}
                 </button>
               ))}
             </div>
@@ -184,11 +274,12 @@ export default function CreativePage() {
                       </div>
                     </th>
                     <th className="text-center py-2 px-2 font-medium min-w-[60px]">Status</th>
+                    <th className="text-center py-2 px-2 font-medium min-w-[60px]">Strategy</th>
                     <th className="text-center py-2 px-2 font-medium min-w-[70px]">Preview</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((row) => (
+                  {filtered.map((row: any) => (
                     <tr key={row.name} className="border-b border-border/30 hover:bg-bg-elevated/50 transition-colors">
                       <td className="py-2.5 px-2 font-medium text-text-primary max-w-[200px] truncate">{row.name}</td>
                       <td className="py-2.5 px-2">
@@ -202,10 +293,17 @@ export default function CreativePage() {
                       <td className="py-2.5 px-2 text-right"><span className={row.cpa <= 700 ? 'text-success' : row.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>{formatCurrencyValue(row.cpa)}</span></td>
                       <td className="py-2.5 px-2 text-right"><span className={row.roas >= 3.0 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>{row.roas.toFixed(2)}x</span></td>
                       <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.status === 'Active' ? 'bg-success/15 text-success' : 'bg-warm-gold/15 text-warm-gold'}`}>{row.status}</span></td>
+                      <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                        row.campaign === 'scale' ? 'bg-success/15 text-success' :
+                        row.campaign === 'kill' ? 'bg-danger/15 text-danger' :
+                        row.campaign === 'test' ? 'bg-brand-blue/15 text-brand-blue-light' :
+                        'bg-warm-gold/15 text-warm-gold'
+                      }`}>{row.campaign}</span></td>
                       <td className="py-2.5 px-2 text-center">
                         <button 
                           onClick={() => window.open(`/api/ad-preview/${row.name.replace(/\s+/g, '-').toLowerCase()}`, '_blank')}
                           className="text-brand-blue-light hover:text-brand-blue text-xs font-medium px-2 py-1 rounded-md border border-brand-blue/30 hover:border-brand-blue/50 transition-colors"
+                          title="Preview ad creative and performance details"
                         >
                           View
                         </button>
@@ -244,14 +342,14 @@ export default function CreativePage() {
               <XAxis
                 type="number" dataKey="spend" name="Spend"
                 tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
-                tickFormatter={(v) => v >= 1000 ? `${currency}${(convertValue(v) / 1000).toFixed(0)}K` : `${currency}${convertValue(v)}`}
+                tickFormatter={(v) => formatCurrencyValue(v)}
                 domain={[0, 60000]}
                 label={{ value: 'Total Spend', position: 'insideBottom', offset: -10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }}
               />
               <YAxis
                 type="number" dataKey="cpa" name="CPA"
                 tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
-                tickFormatter={(v) => `${currency}${convertValue(v)}`}
+                tickFormatter={(v) => formatCurrencyValue(v)}
                 domain={[200, 1500]}
                 label={{ value: 'CPA', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }}
               />
@@ -260,18 +358,53 @@ export default function CreativePage() {
               <ReferenceLine x={20000} stroke="var(--color-text-tertiary)" strokeDasharray="4 4" strokeWidth={1} label={{ value: 'Scale threshold', position: 'top', style: { fill: 'var(--color-text-tertiary)', fontSize: 10 } }} />
               <Tooltip
                 cursor={{ strokeDasharray: '3 3' }}
-                contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={(value: any, name: any, props: any) => [
-                  name === 'Spend' ? formatCurrencyValue(Number(value)) : `${currency}${convertValue(value)}`, 
-                  String(name)
-                ]}
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                labelFormatter={(label: any, payload: any) => {
-                  if (payload && payload[0] && payload[0].payload) {
-                    return `${payload[0].payload.name} (click to view)`;
+                contentStyle={{ 
+                  background: 'var(--color-bg-surface)', 
+                  border: '1px solid var(--color-border)', 
+                  borderRadius: 8, 
+                  fontSize: 12,
+                  padding: '8px 12px'
+                }}
+                content={({ active, payload }) => {
+                  if (active && payload && payload[0] && payload[0].payload) {
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-bg-surface border border-border rounded-lg p-3 shadow-lg">
+                        <div className="font-medium text-text-primary text-sm mb-2">{data.name}</div>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between gap-4">
+                            <span className="text-text-secondary">Spend (X-axis):</span>
+                            <span className="text-text-primary font-medium">{formatCurrencyValue(data.spend)}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-text-secondary">CPA (Y-axis):</span>
+                            <span className="text-text-primary font-medium">{formatCurrencyValue(data.cpa)}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-text-secondary">Platform:</span>
+                            <span className="text-text-primary font-medium">{data.platform}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-text-secondary">Zone:</span>
+                            <span className={`font-medium ${
+                              data.zone === 'scaling' ? 'text-success' :
+                              data.zone === 'zombie' ? 'text-danger' :
+                              data.zone === 'testing' ? 'text-brand-blue-light' :
+                              'text-warm-gold'
+                            }`}>
+                              {data.zone === 'scaling' ? 'Scaling' :
+                               data.zone === 'zombie' ? 'Zombie' :
+                               data.zone === 'testing' ? 'Testing' : 'Untapped'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-xs text-text-tertiary mt-2 pt-2 border-t border-border">
+                          Click to view ad preview
+                        </div>
+                      </div>
+                    );
                   }
-                  return '';
+                  return null;
                 }}
               />
               <Scatter 
@@ -316,6 +449,79 @@ export default function CreativePage() {
               <div className="text-xs text-text-secondary">Low spend, high CPA. Still in learning phase or needs new creative approach.</div>
             </div>
           </div>
+          
+          {/* Creative Listings Table */}
+          <div className="mt-6">
+            <h4 className="text-sm font-medium text-text-primary mb-3">
+              Account Control Creative Legend
+              <span className="text-xs text-text-secondary ml-2 font-normal">
+                (Colors match chart bubbles above)
+              </span>
+            </h4>
+            <div className="overflow-x-auto -mx-1 sm:mx-0">
+              <div className="min-w-[700px]">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border text-text-secondary uppercase">
+                      <th className="text-left py-2 px-2 font-medium min-w-[80px]">Color</th>
+                      <th className="text-left py-2 px-2 font-medium min-w-[160px]">Ad Name</th>
+                      <th className="text-center py-2 px-2 font-medium min-w-[80px]">Platform</th>
+                      <th className="text-right py-2 px-2 font-medium min-w-[80px]">Spend</th>
+                      <th className="text-right py-2 px-2 font-medium min-w-[80px]">CPA</th>
+                      <th className="text-center py-2 px-2 font-medium min-w-[70px]">Preview</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {accountControlData
+                      .filter(ad => ad.platform === platform)
+                      .sort((a, b) => b.spend - a.spend)
+                      .map((ad) => (
+                      <tr key={ad.name} className="border-b border-border/30 hover:bg-bg-elevated/50 transition-colors">
+                        <td className="py-2.5 px-2">
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-4 h-4 rounded-full border border-black/10" 
+                              style={{ backgroundColor: zoneColors[ad.zone] }}
+                            />
+                            <span className="text-xs text-text-tertiary">
+                              {ad.zone === 'scaling' ? 'Scale' :
+                               ad.zone === 'zombie' ? 'Kill' :
+                               ad.zone === 'testing' ? 'Test' : 'Learn'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-2 font-medium text-text-primary">
+                          <div className="max-w-[150px] truncate" title={ad.name}>
+                            {ad.name}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-2 text-center text-text-secondary">
+                          {ad.platform}
+                        </td>
+                        <td className="py-2.5 px-2 text-right text-text-secondary">
+                          {formatCurrencyValue(ad.spend)}
+                        </td>
+                        <td className="py-2.5 px-2 text-right">
+                          <span className={ad.cpa <= 700 ? 'text-success' : ad.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>
+                            {formatCurrencyValue(ad.cpa)}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-2 text-center">
+                          <button 
+                            onClick={() => window.open(`/api/ad-preview/${ad.name.replace(/\s+/g, '-').toLowerCase()}`, '_blank')}
+                            className="text-brand-blue-light hover:text-brand-blue text-xs font-medium px-2 py-1 rounded-md border border-brand-blue/30 hover:border-brand-blue/50 transition-colors"
+                            title="Preview ad creative, headline, and performance metrics"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -344,7 +550,7 @@ export default function CreativePage() {
               <BarChart data={adChurnData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
-                <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${currency}${(convertValue(v) / 1000).toFixed(0)}K`} />
+                <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
                 <Tooltip
                   contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
                   formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
@@ -390,7 +596,7 @@ export default function CreativePage() {
                 <AreaChart data={creativeChurnCohorts} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-30} textAnchor="end" height={60} />
-                  <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${currency}${(convertValue(v) / 1000).toFixed(0)}K`} />
+                  <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
                   <Tooltip
                     contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
                     formatter={(value: any, name: any) => [value > 0 ? formatCurrencyValue(value) : ',', cohortLabels[name] || name]}
@@ -474,6 +680,22 @@ export default function CreativePage() {
             <div className="bg-bg-elevated border border-border rounded-lg p-3 text-center">
               <div className="text-xs text-text-secondary mb-1">Overall Slugging Rate</div>
               <div className="text-xl font-bold text-warm-gold">{((totalSlugging.hits / totalSlugging.launched) * 100).toFixed(1)}%</div>
+              <div className="text-xs text-text-tertiary mt-1">
+                Target: 30% (Curtis)
+                <span className={`ml-2 ${
+                  ((totalSlugging.hits / totalSlugging.launched) * 100) >= 30 
+                    ? 'text-success' 
+                    : ((totalSlugging.hits / totalSlugging.launched) * 100) >= 25 
+                      ? 'text-warm-gold' 
+                      : 'text-danger'
+                }`}>
+                  {((totalSlugging.hits / totalSlugging.launched) * 100) >= 30 
+                    ? '✓ Above target' 
+                    : ((totalSlugging.hits / totalSlugging.launched) * 100) >= 25 
+                      ? '⚠ Close to target'
+                      : '⚠ Below target'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -482,12 +704,20 @@ export default function CreativePage() {
       {/* ═══════════════════════ PARETO ═══════════════════════ */}
       {activeTab === 'Pareto' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-medium text-text-secondary flex items-center gap-2">
               <span>Pareto Distribution</span>
               <InfoTooltip metric="Pareto" />
             </h3>
             <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+          </div>
+          <div className="flex items-center justify-between mb-4 pb-2 border-b border-border/30">
+            <div className="text-xs text-text-tertiary">
+              Attribution: <strong className="text-text-secondary">{attrModel}</strong> • Window: <strong className="text-text-secondary">{attrWindow}</strong>
+            </div>
+            <div className="text-xs text-text-tertiary">
+              Platform: <strong className="text-text-secondary">{platform}</strong>
+            </div>
           </div>
           <div className="min-h-[320px]">
             <ResponsiveContainer width="100%" height={320}>
@@ -540,15 +770,31 @@ export default function CreativePage() {
         <div className="space-y-4 sm:space-y-6 mx-1">
           {/* Age Group Performance */}
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
               <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
                 <span>Performance by Age Group</span>
                 <InfoTooltip metric="Demographics Analysis" />
               </h3>
-              <span className="text-xs text-text-tertiary shrink-0">Meta Ads</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-text-secondary font-medium">Gender:</span>
+                  <div className="flex gap-1">
+                    {[
+                      { key: 'all', label: 'All' },
+                      { key: 'male', label: 'Male' },
+                      { key: 'female', label: 'Female' }
+                    ].map(g => (
+                      <button key={g.key} onClick={() => setGenderFilter(g.key)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${genderFilter === g.key ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+                        {g.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <span className="text-xs text-text-tertiary shrink-0">{platform} Ads</span>
+              </div>
             </div>
             <div className="space-y-3">
-              {demographicsAge.map((row) => (
+              {getFilteredDemographicsAge().map((row) => (
                 <div key={row.group} className="flex items-center gap-2 sm:gap-3">
                   <div className="w-12 text-xs text-text-secondary font-medium shrink-0">{row.group}</div>
                   <div className="flex-1 h-8 bg-bg-elevated rounded-md overflow-hidden relative min-w-0">
@@ -575,7 +821,7 @@ export default function CreativePage() {
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-text-primary">Performance by Gender</h3>
-              <span className="text-xs text-text-tertiary shrink-0">Meta Ads</span>
+              <span className="text-xs text-text-tertiary shrink-0">{platform} Ads</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {demographicsGender.map((row) => (
@@ -596,7 +842,7 @@ export default function CreativePage() {
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-text-primary">Spend by Gender & Age Over Time</h3>
-              <span className="text-xs text-text-tertiary shrink-0">Meta Ads</span>
+              <span className="text-xs text-text-tertiary shrink-0">{platform} Ads</span>
             </div>
             <div className="flex gap-1 sm:gap-2 mb-4 flex-wrap">
               {demoKeys.map((key, i) => (
@@ -611,7 +857,7 @@ export default function CreativePage() {
                 <AreaChart data={demographicsGenderAge} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
-                  <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${currency}${(convertValue(v) / 1000).toFixed(0)}K`} />
+                  <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
                   <Tooltip
                     contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11 }}
                     formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
@@ -635,7 +881,7 @@ export default function CreativePage() {
           <div className="bg-success/5 border border-success/20 rounded-lg p-4">
             <div className="text-xs font-medium text-success mb-1">💡 Key Insight</div>
             <p className="text-xs text-text-secondary leading-relaxed">
-              Women 25-44 drive 62% of conversions at the lowest CPA (₱613-656 vs ₱724-1250 for other segments).
+              Women 25-44 drive 62% of conversions at the lowest CPA ({formatCurrencyValue(613)}-{formatCurrencyValue(656)} vs {formatCurrencyValue(724)}-{formatCurrencyValue(1250)} for other segments).
               This is your core buying demographic. Align creative production to this audience , if you're producing TikTok-style Gen Z content
               but your buyers are 25-44 women, you're misallocating resources.
             </p>
@@ -656,7 +902,7 @@ export default function CreativePage() {
       {/* AI Suggestions */}
       <div className="px-1">
         <AISuggestionsPanel 
-          suggestions={creativeAISuggestions} 
+          suggestions={getDynamicAISuggestions()} 
           title={getAITitle(activeTab)}
           attributionModel={['Top Creatives', 'Ad Churn'].includes(activeTab) ? undefined : attrModel}
           attributionWindow={['Top Creatives', 'Ad Churn'].includes(activeTab) ? undefined : attrWindow}
