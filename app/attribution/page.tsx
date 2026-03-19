@@ -257,19 +257,7 @@ export default function AttributionPage() {
             </div>
           </div>
           
-          {/* AI Insights for Surveys & MMM - Above Cross-Layer Analysis as per attribution tree rules */}
-          <div className="mt-6">
-            <AISuggestionsPanel 
-              suggestions={[
-                `Survey data shows TikTok accounts for 22% of attribution vs 15% in platform reporting, suggesting TikTok is under-credited by ~${formatCurrencyValue(45000)} weekly.`,
-                'Facebook/Instagram dominates survey responses at 35%, aligning with platform data showing healthy tracking coverage.',
-                'Friend/Family referral at 12% represents untapped growth opportunity - consider implementing formal referral program.',
-                'Google Search at 18% confirms brand strength but suggests potential to scale non-brand search campaigns.',
-                'Other sources (6%) indicate attribution gaps - investigate direct traffic patterns and potential dark social influence.'
-              ]} 
-              title="Surveys & MMM Intelligence"
-            />
-          </div>
+
         </div>
       )}
 
@@ -380,19 +368,7 @@ export default function AttributionPage() {
             ))}
           </div>
           
-          {/* AI Insights for Tracking Infrastructure - Above Cross-Layer Analysis as per attribution tree rules */}
-          <div className="mt-6">
-            <AISuggestionsPanel 
-              suggestions={[
-                'Server-side GTM is completely down (0 events/day) - this is losing ~15% of conversion data and skewing all analysis.',
-                `Meta CAPI showing 89% match rate vs 92% pixel - normal variance. Both systems healthy with ${trackingHealth[1].events} daily events.`,
-                'TikTok match rate at 71% below industry standard 85%. Consider implementing cAPI for improved data quality.',
-                'Google Ads tracking strongest at 94% match rate - continue using as benchmark for other platforms.',
-                'Priority: Fix server-side GTM, then implement TikTok cAPI, then optimize TikTok pixel match rate.'
-              ]} 
-              title="Tracking Infrastructure Intelligence"
-            />
-          </div>
+
         </div>
       )}
 
@@ -455,8 +431,39 @@ export default function AttributionPage() {
         </div>
       )}
 
-      {/* Cross-Layer AI Analysis - Moved to bottom as requested */}
-      <div>
+      {/* All AI Insights positioned ABOVE Cross-Layer Analysis for attribution tree tabs */}
+      {activeLayer === 'upper' && (
+        <div className="mt-6">
+          <AISuggestionsPanel 
+            suggestions={[
+              `Survey data shows TikTok accounts for 22% of attribution vs 15% in platform reporting, suggesting TikTok is under-credited by ~${formatCurrencyValue(45000)} weekly.`,
+              'Facebook/Instagram dominates survey responses at 35%, aligning with platform data showing healthy tracking coverage.',
+              'Friend/Family referral at 12% represents untapped growth opportunity - consider implementing formal referral program.',
+              'Google Search at 18% confirms brand strength but suggests potential to scale non-brand search campaigns.',
+              'Other sources (6%) indicate attribution gaps - investigate direct traffic patterns and potential dark social influence.'
+            ]} 
+            title="Surveys & MMM Intelligence"
+          />
+        </div>
+      )}
+
+      {activeLayer === 'trunk' && (
+        <div className="mt-6">
+          <AISuggestionsPanel 
+            suggestions={[
+              'Server-side GTM is completely down (0 events/day) - this is losing ~15% of conversion data and skewing all analysis.',
+              `Meta CAPI showing 89% match rate vs 92% pixel - normal variance. Both systems healthy with ${trackingHealth[1].events} daily events.`,
+              'TikTok match rate at 71% below industry standard 85%. Consider implementing cAPI for improved data quality.',
+              'Google Ads tracking strongest at 94% match rate - continue using as benchmark for other platforms.',
+              'Priority: Fix server-side GTM, then implement TikTok cAPI, then optimize TikTok pixel match rate.'
+            ]} 
+            title="Tracking Infrastructure Intelligence"
+          />
+        </div>
+      )}
+
+      {/* Cross-Layer AI Analysis - Always at bottom */}
+      <div className="mt-6">
         <AISuggestionsPanel 
           suggestions={getDynamicAISuggestions()} 
           title="Cross-Layer AI Analysis"

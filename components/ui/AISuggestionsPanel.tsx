@@ -52,21 +52,35 @@ export default function AISuggestionsPanel({
     const storageKey = `ai-prompt-${title.toLowerCase().replace(/\s+/g, '-')}`;
     const historyKey = `ai-prompt-history-${title.toLowerCase().replace(/\s+/g, '-')}`;
     
-    // Update current prompt
-    setCurrentPrompt(prompt);
-    localStorage.setItem(storageKey, prompt);
-    
-    // Add to history if it's different from current
-    if (prompt !== currentPrompt && !promptHistory.includes(prompt)) {
-      const newHistory = [prompt, ...promptHistory].slice(0, 10); // Keep last 10
+    // Always add to history when saving (create new version)
+    if (prompt.trim() !== '' && prompt !== currentPrompt) {
+      const timestamp = new Date().toLocaleString();
+      const versionedPrompt = `${prompt} (Saved: ${timestamp})`;
+      
+      const newHistory = [currentPrompt, ...promptHistory].slice(0, 10); // Keep last 10, add current before saving new
       setPromptHistory(newHistory);
       localStorage.setItem(historyKey, JSON.stringify(newHistory));
     }
+    
+    // Update current prompt
+    setCurrentPrompt(prompt);
+    localStorage.setItem(storageKey, prompt);
   };
 
   const restoreFromHistory = (prompt: string) => {
     setCurrentPrompt(prompt);
     setShowPromptHistory(false);
+  };
+
+  // Function to parse markdown bold text
+  const parseMarkdownBold = (text: string) => {
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={index} className="text-text-primary font-semibold">{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
   };
 
   const handleRefresh = () => {
@@ -126,7 +140,7 @@ export default function AISuggestionsPanel({
                 <span className="shrink-0 w-5 h-5 rounded-full bg-brand-blue/20 text-brand-blue-light text-xs flex items-center justify-center font-medium mt-0.5">
                   {i + 1}
                 </span>
-                <span>{s}</span>
+                <span>{parseMarkdownBold(s)}</span>
               </div>
             ))}
           </div>

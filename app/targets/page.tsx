@@ -134,20 +134,46 @@ export default function TargetsPage() {
           : target
       );
       
-      // Auto-calculate AOV when revenue and NC Orders are available
-      const revenue = updatedTargets.find(t => t.metric === 'Net Revenue');
-      const ncOrders = updatedTargets.find(t => t.metric === 'NC Orders');
-      const aovRow = updatedTargets.find(t => t.metric === 'AOV');
-      
-      if (revenue && ncOrders && aovRow && editingCell.col !== 'lastUpdated') {
+      // Auto-calculations for various metrics
+      if (editingCell.col !== 'lastUpdated') {
         const colKey = editingCell.col as keyof MonthlyTarget;
-        const revenueValue = parseFloat(revenue[colKey] as string) || 0;
-        const ordersValue = parseFloat(ncOrders[colKey] as string) || 0;
         
-        if (revenueValue > 0 && ordersValue > 0) {
+        // Get all relevant metrics
+        const revenue = updatedTargets.find(t => t.metric === 'Net Revenue');
+        const ncOrders = updatedTargets.find(t => t.metric === 'NC Orders');
+        const cac = updatedTargets.find(t => t.metric === 'CAC');
+        const ncac = updatedTargets.find(t => t.metric === 'nCAC');
+        const aovRow = updatedTargets.find(t => t.metric === 'AOV');
+        const merRow = updatedTargets.find(t => t.metric === 'MER');
+        const amerRow = updatedTargets.find(t => t.metric === 'aMER');
+        
+        const revenueValue = parseFloat(revenue?.[colKey] as string) || 0;
+        const ordersValue = parseFloat(ncOrders?.[colKey] as string) || 0;
+        const cacValue = parseFloat(cac?.[colKey] as string) || 0;
+        const ncacValue = parseFloat(ncac?.[colKey] as string) || 0;
+        
+        // Auto-calculate AOV when revenue and NC Orders are available
+        if (revenue && ncOrders && aovRow && revenueValue > 0 && ordersValue > 0) {
           const calculatedAOV = Math.round(revenueValue / ordersValue);
           aovRow[colKey] = calculatedAOV.toString();
           aovRow.lastUpdated = 'Auto-calculated';
+        }
+        
+        // Auto-calculate MER when Net Revenue and CAC are available
+        // MER = Net Revenue / (CAC * NC Orders) - simplified as Net Revenue / Marketing Spend
+        if (revenue && ncOrders && cac && merRow && revenueValue > 0 && ordersValue > 0 && cacValue > 0) {
+          const marketingSpend = cacValue * ordersValue;
+          const calculatedMER = (revenueValue / marketingSpend).toFixed(2);
+          merRow[colKey] = calculatedMER;
+          merRow.lastUpdated = 'Auto-calculated';
+        }
+        
+        // Auto-calculate aMER when Net Revenue and nCAC are available  
+        if (revenue && ncOrders && ncac && amerRow && revenueValue > 0 && ordersValue > 0 && ncacValue > 0) {
+          const newCustomerSpend = ncacValue * ordersValue;
+          const calculatedAMER = (revenueValue / newCustomerSpend).toFixed(2);
+          amerRow[colKey] = calculatedAMER;
+          amerRow.lastUpdated = 'Auto-calculated';
         }
       }
       

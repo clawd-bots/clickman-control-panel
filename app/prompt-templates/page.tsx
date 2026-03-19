@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { FileText, Edit3, Save, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { FileText, Edit3, Save, Plus, RefreshCw } from 'lucide-react';
 
 interface PromptTemplate {
   id: string;
@@ -243,13 +243,7 @@ export default function PromptTemplatesPage() {
                     >
                       <Edit3 className="w-3 h-3" />
                     </button>
-                    <button
-                      onClick={() => deleteTemplate(template.id)}
-                      className="p-1 text-text-tertiary hover:text-danger transition-colors"
-                      title="Delete template"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+
                   </div>
                 </div>
 
