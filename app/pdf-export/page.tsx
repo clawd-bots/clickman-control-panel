@@ -240,13 +240,7 @@ export default function PDFExportPage() {
         </p>
       </div>
 
-      {/* Excluded Items Notice */}
-      <div className="bg-warm-gold/10 border border-warm-gold/30 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-warm-gold mb-2">⚠️ Excluded from Export</h3>
-        <p className="text-xs text-text-secondary">
-          The following items are not available for PDF export: {excludedSections.join(', ')}
-        </p>
-      </div>
+
 
       {/* Selection Controls */}
       <div className="flex items-center gap-3">
