@@ -162,7 +162,6 @@ export default function DashboardPage() {
             <span className="text-xs text-text-tertiary">Target: 1:3.5</span>
           </div>
           
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue & Marketing Costs</h3>
             <span className="text-xs text-text-tertiary shrink-0">Triple Whale</span>
