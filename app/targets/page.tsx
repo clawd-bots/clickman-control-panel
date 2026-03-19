@@ -115,8 +115,19 @@ export default function TargetsPage() {
 
   // Start editing a cell
   const startEdit = (rowIndex: number, colKey: string, currentValue: string) => {
+    // Don't allow editing auto-calculated metrics
+    const metric = monthlyTargets[rowIndex].metric;
+    if (isAutoCalculated(metric)) {
+      return; // Block editing for auto-calculated targets
+    }
+    
     setEditingCell({ row: rowIndex, col: colKey });
     setEditValue(currentValue);
+  };
+
+  // Check if a metric is auto-calculated
+  const isAutoCalculated = (metric: string): boolean => {
+    return ['AOV', 'MER', 'aMER'].includes(metric);
   };
 
   // Save edit with auto-calculation logic
@@ -220,6 +231,21 @@ export default function TargetsPage() {
           <p className="text-xs text-text-secondary">
             Targets start from April 2026 as projection baseline. Click any cell to edit. Values automatically save.
           </p>
+          
+          {/* Auto-calculation notice */}
+          <div className="mt-3 p-2.5 bg-blue-50 border border-blue-200 rounded text-xs">
+            <div className="flex items-start gap-1.5">
+              <div className="text-blue-500 mt-0.5 text-sm">⚙</div>
+              <div className="text-blue-800">
+                <strong>Auto-calculated targets:</strong> AOV, MER, and aMER are automatically calculated and cannot be edited directly.
+                <div className="mt-1 text-[11px] text-blue-700">
+                  • AOV = Net Revenue ÷ NC Orders
+                  • MER = Net Revenue ÷ (CAC × NC Orders)  
+                  • aMER = Net Revenue ÷ (nCAC × NC Orders)
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
         <div className="overflow-x-auto">
@@ -249,6 +275,7 @@ export default function TargetsPage() {
                   {monthColumns.map((colKey, colIndex) => {
                     const isEditing = editingCell?.row === rowIndex && editingCell?.col === colKey;
                     const cellValue = row[colKey];
+                    const isAutoCalc = isAutoCalculated(row.metric);
                     
                     return (
                       <td key={`${rowIndex}-${colIndex}`} className="py-1.5 px-2 text-center">
@@ -273,7 +300,30 @@ export default function TargetsPage() {
                               <X size={12} />
                             </button>
                           </div>
+                        ) : isAutoCalc ? (
+                          // Auto-calculated cell - disabled from editing
+                          <div 
+                            className={`w-full py-1.5 px-2 rounded text-xs cursor-not-allowed ${
+                              cellValue 
+                                ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                                : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
+                            }`}
+                            title={cellValue 
+                              ? `Auto-calculated: ${cellValue} (based on other targets)` 
+                              : `Will be auto-calculated when Net Revenue, NC Orders, and ${row.metric === 'AOV' ? 'other' : row.metric === 'MER' ? 'CAC' : 'nCAC'} targets are set`
+                            }
+                          >
+                            {cellValue ? (
+                              <span className="flex items-center justify-center gap-1">
+                                <span>{cellValue}</span>
+                                <span className="text-blue-500 text-[10px]">⚙</span>
+                              </span>
+                            ) : (
+                              <span className="text-text-tertiary">Auto-calc</span>
+                            )}
+                          </div>
                         ) : (
+                          // Editable cell
                           <button 
                             className={`w-full py-1.5 px-2 rounded transition-all text-xs ${
                               cellValue 
