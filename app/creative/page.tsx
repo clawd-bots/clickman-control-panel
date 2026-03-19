@@ -256,6 +256,7 @@ export default function CreativePage() {
                 <thead>
                   <tr className="border-b border-border text-text-secondary uppercase">
                     <th className="text-left py-2 px-2 font-medium min-w-[150px]">Ad Name</th>
+                    <th className="text-center py-2 px-2 font-medium min-w-[90px]">Creative</th>
                     <th className="text-left py-2 px-2 font-medium min-w-[70px]">Platform</th>
                     <th className="text-right py-2 px-2 font-medium min-w-[70px]">Spend</th>
                     <th className="text-right py-2 px-2 font-medium min-w-[60px]">Impr.</th>
@@ -276,7 +277,6 @@ export default function CreativePage() {
                     </th>
                     <th className="text-center py-2 px-2 font-medium min-w-[60px]">Status</th>
                     <th className="text-center py-2 px-2 font-medium min-w-[60px]">Strategy</th>
-                    <th className="text-center py-2 px-2 font-medium min-w-[90px]">Creative</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -293,23 +293,6 @@ export default function CreativePage() {
                           {row.name}
                         </a>
                       </td>
-                      <td className="py-2.5 px-2">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.platform === 'Meta' ? 'bg-brand-blue/15 text-brand-blue-light' : row.platform === 'Google' ? 'bg-warm-gold/15 text-warm-gold' : 'bg-success/15 text-success'}`}>{row.platform}</span>
-                      </td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.spend)}</td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{(row.impressions / 1000).toFixed(0)}K</td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{row.ctr.toFixed(2)}%</td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.cpc)}</td>
-                      <td className="py-2.5 px-2 text-right text-text-primary font-medium">{row.conversions}</td>
-                      <td className="py-2.5 px-2 text-right"><span className={row.cpa <= 700 ? 'text-success' : row.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>{formatCurrencyValue(row.cpa)}</span></td>
-                      <td className="py-2.5 px-2 text-right"><span className={row.roas >= 3.0 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>{row.roas.toFixed(2)}x</span></td>
-                      <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.status === 'Active' ? 'bg-success/15 text-success' : 'bg-warm-gold/15 text-warm-gold'}`}>{row.status}</span></td>
-                      <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                        row.campaign === 'scale' ? 'bg-success/15 text-success' :
-                        row.campaign === 'kill' ? 'bg-danger/15 text-danger' :
-                        row.campaign === 'test' ? 'bg-brand-blue/15 text-brand-blue-light' :
-                        'bg-warm-gold/15 text-warm-gold'
-                      }`}>{row.campaign}</span></td>
                       <td className="py-2.5 px-2 text-center">
                         <div 
                           onClick={() => window.open(`/api/ad-preview/${row.name.replace(/\s+/g, '-').toLowerCase()}`, '_blank')}
@@ -334,6 +317,23 @@ export default function CreativePage() {
                           </div>
                         </div>
                       </td>
+                      <td className="py-2.5 px-2">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.platform === 'Meta' ? 'bg-brand-blue/15 text-brand-blue-light' : row.platform === 'Google' ? 'bg-warm-gold/15 text-warm-gold' : 'bg-success/15 text-success'}`}>{row.platform}</span>
+                      </td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.spend)}</td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{(row.impressions / 1000).toFixed(0)}K</td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{row.ctr.toFixed(2)}%</td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.cpc)}</td>
+                      <td className="py-2.5 px-2 text-right text-text-primary font-medium">{row.conversions}</td>
+                      <td className="py-2.5 px-2 text-right"><span className={row.cpa <= 700 ? 'text-success' : row.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>{formatCurrencyValue(row.cpa)}</span></td>
+                      <td className="py-2.5 px-2 text-right"><span className={row.roas >= 3.0 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>{row.roas.toFixed(2)}x</span></td>
+                      <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.status === 'Active' ? 'bg-success/15 text-success' : 'bg-warm-gold/15 text-warm-gold'}`}>{row.status}</span></td>
+                      <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                        row.campaign === 'scale' ? 'bg-success/15 text-success' :
+                        row.campaign === 'kill' ? 'bg-danger/15 text-danger' :
+                        row.campaign === 'test' ? 'bg-brand-blue/15 text-brand-blue-light' :
+                        'bg-warm-gold/15 text-warm-gold'
+                      }`}>{row.campaign}</span></td>
                     </tr>
                   ))}
                 </tbody>

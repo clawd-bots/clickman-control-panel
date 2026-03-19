@@ -40,11 +40,22 @@ export default function AttributionPage() {
   const [activeLayer, setActiveLayer] = useState<string>('star');
   const [cohortAttrModel, setCohortAttrModel] = useState('First Click');
   const [cohortAttrWindow, setCohortAttrWindow] = useState('7-day click / 1-day view');
-  const [tiktokPixelExpanded, setTiktokPixelExpanded] = useState(false);
+  const [expandedSystems, setExpandedSystems] = useState<Set<string>>(new Set());
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
     return formatCurrency(convertValue(value), currency);
+  };
+
+  // Helper function to toggle system expansion
+  const toggleSystemExpansion = (system: string) => {
+    const newExpanded = new Set(expandedSystems);
+    if (newExpanded.has(system)) {
+      newExpanded.delete(system);
+    } else {
+      newExpanded.add(system);
+    }
+    setExpandedSystems(newExpanded);
   };
 
   // Dynamic layer insights with currency conversion
@@ -220,6 +231,25 @@ export default function AttributionPage() {
         </div>
       )}
 
+      {/* AI Insights for MER/nCAC (star layer) */}
+      {activeLayer === 'star' && (
+        <div className="mt-6">
+          <AISuggestionsPanel 
+            suggestions={[
+              `**What's Working:** MER at 3.67x is above the 3.5x healthy threshold, marketing is generating strong returns`,
+              `**nCAC trending down 2.6% MoM** from ₱808.00 to ₱787.00, acquisition getting more efficient`,
+              `**Do Next:** Set a max CPA ceiling by channel based on LTV:CAC ratios`,
+              `**Build an automated alert** when MER drops below 3.0x`,
+              `**What's Not:** MER variance across channels is high (Meta 3.91x vs Referral 0.40x)`,
+              `**Stop Doing:** Don't optimize purely on blended MER, it hides channel-level inefficiencies`
+            ]} 
+            title="MER / nCAC , AI Insights"
+            attributionModel={cohortAttrModel}
+            attributionWindow={cohortAttrWindow}
+          />
+        </div>
+      )}
+
       {activeLayer === 'upper' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex items-center justify-between mb-4">
@@ -309,14 +339,12 @@ export default function AttributionPage() {
                     <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${item.status === 'healthy' ? 'bg-success' : item.status === 'warning' ? 'bg-warm-gold' : 'bg-danger'}`} />
                     <span className="text-sm font-medium text-text-primary truncate">{item.system}</span>
                     <InfoTooltip metric={item.system} />
-                    {item.system === 'TikTok Pixel' && (
-                      <button
-                        onClick={() => setTiktokPixelExpanded(!tiktokPixelExpanded)}
-                        className="text-xs text-text-tertiary hover:text-text-secondary transition-colors"
-                      >
-                        {tiktokPixelExpanded ? '▼' : '▶'} Options
-                      </button>
-                    )}
+                    <button
+                      onClick={() => toggleSystemExpansion(item.system)}
+                      className="text-xs text-text-tertiary hover:text-text-secondary transition-colors"
+                    >
+                      {expandedSystems.has(item.system) ? '▼' : '▶'} Events
+                    </button>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-text-secondary">
                     <span>Events: {item.events}</span>
@@ -331,37 +359,47 @@ export default function AttributionPage() {
                   </div>
                 </div>
                 
-                {/* TikTok Pixel Options */}
-                {item.system === 'TikTok Pixel' && tiktokPixelExpanded && (
+                {/* Event Breakdown */}
+                {expandedSystems.has(item.system) && item.eventBreakdown && (
                   <div className="mt-2 ml-6 bg-bg-surface border border-border rounded-md p-3 space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        <span className="w-2 h-2 rounded-full bg-warm-gold shrink-0" />
-                        <span className="text-sm font-medium text-text-primary">TikTok cAPI</span>
-                        <InfoTooltip metric="TikTok cAPI" />
+                    <div className="text-xs font-medium text-text-primary mb-2">Event Breakdown:</div>
+                    {item.eventBreakdown.map((event) => (
+                      <div key={event.event} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div className="flex items-center gap-3">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${
+                            event.matchRate === 'N/A' ? 'bg-text-tertiary' :
+                            parseFloat(event.matchRate.replace('%', '')) >= 90 ? 'bg-success' :
+                            parseFloat(event.matchRate.replace('%', '')) >= 80 ? 'bg-warm-gold' :
+                            'bg-danger'
+                          }`} />
+                          <span className="text-sm font-medium text-text-primary">{event.event}</span>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-text-secondary">
+                          <span>Count: {event.count}/day</span>
+                          <span>Match Rate: {event.matchRate}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-xs text-text-secondary">
-                        <span>Events: 0/day</span>
-                        <span>Match Rate: N/A</span>
-                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-danger/15 text-danger">
-                          Not Connected
-                        </span>
+                    ))}
+                    {/* Special TikTok cAPI section */}
+                    {item.system === 'TikTok Pixel' && (
+                      <div className="mt-3 pt-3 border-t border-border">
+                        <div className="text-xs font-medium text-text-primary mb-2">Additional Options:</div>
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                          <div className="flex items-center gap-3">
+                            <span className="w-2 h-2 rounded-full bg-danger shrink-0" />
+                            <span className="text-sm font-medium text-text-primary">TikTok cAPI</span>
+                            <InfoTooltip metric="TikTok cAPI" />
+                          </div>
+                          <div className="flex items-center gap-4 text-xs text-text-secondary">
+                            <span>Events: 0/day</span>
+                            <span>Match Rate: N/A</span>
+                            <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-danger/15 text-danger">
+                              Not Connected
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                      <div className="flex items-center gap-3">
-                        <span className="w-2 h-2 rounded-full bg-success shrink-0" />
-                        <span className="text-sm font-medium text-text-primary">TikTok Browser</span>
-                        <InfoTooltip metric="TikTok Browser" />
-                      </div>
-                      <div className="flex items-center gap-4 text-xs text-text-secondary">
-                        <span>Events: 5,100/day</span>
-                        <span>Match Rate: 71%</span>
-                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-warm-gold/15 text-warm-gold">
-                          Connected
-                        </span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </div>

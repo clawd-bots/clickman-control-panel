@@ -157,12 +157,78 @@ export const attributionSurvey = [
 ];
 
 export const trackingHealth = [
-  { system: 'Meta Pixel', status: 'healthy' as const, events: '14,230/day', matchRate: '92%' },
-  { system: 'Meta CAPI', status: 'healthy' as const, events: '13,850/day', matchRate: '89%' },
-  { system: 'Google Ads Tag', status: 'healthy' as const, events: '8,920/day', matchRate: '94%' },
-  { system: 'TikTok Pixel', status: 'warning' as const, events: '5,100/day', matchRate: '71%' },
-  { system: 'GA4', status: 'healthy' as const, events: '22,400/day', matchRate: 'N/A' },
-  { system: 'Server-side GTM', status: 'error' as const, events: '0/day', matchRate: '0%' },
+  { 
+    system: 'Meta Pixel', 
+    status: 'healthy' as const, 
+    events: '14,230/day', 
+    matchRate: '92%',
+    eventBreakdown: [
+      { event: 'PageView', count: '8,450', matchRate: '95%' },
+      { event: 'AddToCart', count: '3,210', matchRate: '91%' },
+      { event: 'InitiateCheckout', count: '1,820', matchRate: '89%' },
+      { event: 'Purchase', count: '750', matchRate: '94%' }
+    ]
+  },
+  { 
+    system: 'Meta CAPI', 
+    status: 'healthy' as const, 
+    events: '13,850/day', 
+    matchRate: '89%',
+    eventBreakdown: [
+      { event: 'PageView', count: '8,100', matchRate: '92%' },
+      { event: 'AddToCart', count: '3,050', matchRate: '87%' },
+      { event: 'InitiateCheckout', count: '1,750', matchRate: '85%' },
+      { event: 'Purchase', count: '950', matchRate: '91%' }
+    ]
+  },
+  { 
+    system: 'Google Ads Tag', 
+    status: 'healthy' as const, 
+    events: '8,920/day', 
+    matchRate: '94%',
+    eventBreakdown: [
+      { event: 'page_view', count: '5,200', matchRate: '96%' },
+      { event: 'add_to_cart', count: '1,870', matchRate: '93%' },
+      { event: 'begin_checkout', count: '1,120', matchRate: '92%' },
+      { event: 'purchase', count: '730', matchRate: '97%' }
+    ]
+  },
+  { 
+    system: 'TikTok Pixel', 
+    status: 'warning' as const, 
+    events: '5,100/day', 
+    matchRate: '71%',
+    eventBreakdown: [
+      { event: 'ViewContent', count: '3,200', matchRate: '73%' },
+      { event: 'AddToCart', count: '1,250', matchRate: '68%' },
+      { event: 'InitiateCheckout', count: '520', matchRate: '69%' },
+      { event: 'CompletePayment', count: '130', matchRate: '75%' }
+    ]
+  },
+  { 
+    system: 'GA4', 
+    status: 'healthy' as const, 
+    events: '22,400/day', 
+    matchRate: 'N/A',
+    eventBreakdown: [
+      { event: 'page_view', count: '15,400', matchRate: 'N/A' },
+      { event: 'add_to_cart', count: '3,800', matchRate: 'N/A' },
+      { event: 'begin_checkout', count: '2,200', matchRate: 'N/A' },
+      { event: 'purchase', count: '1,000', matchRate: 'N/A' }
+    ]
+  },
+  { 
+    system: 'Server-side GTM', 
+    status: 'error' as const, 
+    events: '0/day', 
+    matchRate: '0%',
+    eventBreakdown: [
+      { event: 'page_view', count: '0', matchRate: '0%' },
+      { event: 'add_to_cart', count: '0', matchRate: '0%' },
+      { event: 'begin_checkout', count: '0', matchRate: '0%' },
+      { event: 'purchase', count: '0', matchRate: '0%' }
+    ]
+  },
 ];
 
 export const adScatterData = [
