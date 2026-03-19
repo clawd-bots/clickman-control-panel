@@ -12,8 +12,9 @@ const thumbnailMappings: Record<string, string> = {
   'semaglutide-explainer': 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=200&h=200&fit=crop',
 };
 
-export async function GET(request: NextRequest, { params }: { params: { params: string[] } }) {
-  const [filename] = params.params;
+export async function GET(request: NextRequest, { params }: { params: Promise<{ params: string[] }> }) {
+  const resolvedParams = await params;
+  const [filename] = resolvedParams.params;
   const cleanName = filename?.replace(/\.(jpg|png)$/, '');
   
   if (!cleanName) {
