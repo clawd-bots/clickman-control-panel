@@ -255,7 +255,7 @@ export default function CreativePage() {
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-border text-text-secondary uppercase">
-                    <th className="text-left py-2 px-2 font-medium min-w-[150px]">Creative</th>
+                    <th className="text-left py-2 px-2 font-medium min-w-[150px]">Ad Name</th>
                     <th className="text-left py-2 px-2 font-medium min-w-[70px]">Platform</th>
                     <th className="text-right py-2 px-2 font-medium min-w-[70px]">Spend</th>
                     <th className="text-right py-2 px-2 font-medium min-w-[60px]">Impr.</th>
@@ -276,13 +276,23 @@ export default function CreativePage() {
                     </th>
                     <th className="text-center py-2 px-2 font-medium min-w-[60px]">Status</th>
                     <th className="text-center py-2 px-2 font-medium min-w-[60px]">Strategy</th>
-                    <th className="text-center py-2 px-2 font-medium min-w-[70px]">Preview</th>
+                    <th className="text-center py-2 px-2 font-medium min-w-[90px]">Creative</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((row: any) => (
                     <tr key={row.name} className="border-b border-border/30 hover:bg-bg-elevated/50 transition-colors">
-                      <td className="py-2.5 px-2 font-medium text-text-primary max-w-[200px] truncate">{row.name}</td>
+                      <td className="py-2.5 px-2 font-medium text-text-primary max-w-[200px]">
+                        <a 
+                          href={`/api/ad-preview/${row.name.replace(/\s+/g, '-').toLowerCase()}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand-blue-light hover:text-brand-blue underline truncate block"
+                          title={`View details for ${row.name}`}
+                        >
+                          {row.name}
+                        </a>
+                      </td>
                       <td className="py-2.5 px-2">
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.platform === 'Meta' ? 'bg-brand-blue/15 text-brand-blue-light' : row.platform === 'Google' ? 'bg-warm-gold/15 text-warm-gold' : 'bg-success/15 text-success'}`}>{row.platform}</span>
                       </td>
@@ -301,13 +311,28 @@ export default function CreativePage() {
                         'bg-warm-gold/15 text-warm-gold'
                       }`}>{row.campaign}</span></td>
                       <td className="py-2.5 px-2 text-center">
-                        <button 
+                        <div 
                           onClick={() => window.open(`/api/ad-preview/${row.name.replace(/\s+/g, '-').toLowerCase()}`, '_blank')}
-                          className="text-brand-blue-light hover:text-brand-blue text-xs font-medium px-2 py-1 rounded-md border border-brand-blue/30 hover:border-brand-blue/50 transition-colors"
-                          title="Preview ad creative and performance details"
+                          className="cursor-pointer hover:opacity-75 transition-opacity group relative"
+                          title={`Preview ${row.name}`}
                         >
-                          View
-                        </button>
+                          <img 
+                            src={`/api/ad-thumbnail/${row.name.replace(/\s+/g, '-').toLowerCase()}.jpg`}
+                            alt={`Thumbnail for ${row.name}`}
+                            className="w-12 h-12 object-cover rounded-md border border-border shadow-sm mx-auto"
+                            onError={(e) => {
+                              // Fallback to video thumbnail if image fails
+                              (e.target as HTMLImageElement).src = `/api/ad-thumbnail/${row.name.replace(/\s+/g, '-').toLowerCase()}.png`;
+                              (e.target as HTMLImageElement).onerror = () => {
+                                // Final fallback to generic placeholder
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDgiIGhlaWdodD0iNDgiIHZpZXdCb3g9IjAgMCA0OCA0OCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiBmaWxsPSIjRjMxNEY0IiByeD0iNCIvPgo8cGF0aCBkPSJNMTYgMjBIMzJWMjhIMTZWMjBaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNMjAuNSAyMy41TDIzLjI1IDI2LjI1TDI3LjUgMjFMMzIgMjhIMTZMMjAuNSAyMy41WiIgZmlsbD0iIzM3NEE2QiIvPgo8L3N2Zz4K';
+                              };
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity rounded-md flex items-center justify-center">
+                            <div className="text-white text-xs font-medium">View</div>
+                          </div>
+                        </div>
                       </td>
                     </tr>
                   ))}
