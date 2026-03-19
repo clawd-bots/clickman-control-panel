@@ -77,24 +77,8 @@ export default function DashboardPage() {
         <p className="text-sm text-text-secondary mt-0.5">What's happening right now , actuals, trends, and channel performance.</p>
       </div>
 
-      {/* KPI Cards Row 1: CAC/LTV, LTV per Customer, Net Revenue, Marketing Costs */}
+      {/* KPI Cards Row 1: Net Revenue, Marketing Costs, MER, aMER */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard 
-          label="CAC/LTV Ratio" 
-          value="1:3.2" 
-          change={8.1} 
-          sparkline={[0.28, 0.31, 0.29, 0.32, 0.30, 0.31, 0.28]}
-          target="1:3.5"
-          targetAchievement={(3.2 / 3.5) * 100}
-        />
-        <KPICard 
-          label="LTV per Customer" 
-          value={formatCurrencyValue(2520)} 
-          change={12.4} 
-          sparkline={[2180, 2240, 2290, 2380, 2420, 2480, 2520]}
-          target={formatCurrencyValue(2800)}
-          targetAchievement={(2520 / 2800) * 100}
-        />
         <KPICard 
           label="Net Revenue" 
           value={formatCurrencyValue(kpiCards.netRevenue.value)} 
@@ -111,10 +95,6 @@ export default function DashboardPage() {
           target={formatCurrencyValue(kpiCards.marketingCosts.target)}
           targetAchievement={(kpiCards.marketingCosts.value / kpiCards.marketingCosts.target) * 100}
         />
-      </div>
-
-      {/* KPI Cards Row 2: MER, aMER, Orders, New Customers */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard 
           label="MER" 
           value={`${kpiCards.mer.value}x`} 
@@ -131,6 +111,10 @@ export default function DashboardPage() {
           target={`${kpiCards.nmer.target}x`}
           targetAchievement={(kpiCards.nmer.value / kpiCards.nmer.target) * 100}
         />
+      </div>
+
+      {/* KPI Cards Row 2: Orders, New Customers, CAC, nCAC */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard 
           label="Orders" 
           value={formatNumber(kpiCards.netOrders.value)} 
@@ -147,10 +131,6 @@ export default function DashboardPage() {
           target={formatNumber(kpiCards.newCustomers.target)}
           targetAchievement={(kpiCards.newCustomers.value / kpiCards.newCustomers.target) * 100}
         />
-      </div>
-
-      {/* KPI Cards Row 3: CAC, nCAC, Net Revenue, Marketing Costs */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard 
           label="CAC" 
           value={formatCurrencyValue(kpiCards.cac.value)} 
@@ -167,59 +147,66 @@ export default function DashboardPage() {
           target={formatCurrencyValue(kpiCards.ncac.target)}
           targetAchievement={(kpiCards.ncac.target / kpiCards.ncac.value) * 100}
         />
-        <KPICard 
-          label="Net Revenue" 
-          value={formatCurrencyValue(kpiCards.netRevenue.value)} 
-          change={pctChange(kpiCards.netRevenue.value, kpiCards.netRevenue.prev)} 
-          sparkline={kpiCards.netRevenue.sparkline}
-          target={formatCurrencyValue(kpiCards.netRevenue.target)}
-          targetAchievement={(kpiCards.netRevenue.value / kpiCards.netRevenue.target) * 100}
-        />
-        <KPICard 
-          label="Marketing Costs" 
-          value={formatCurrencyValue(kpiCards.marketingCosts.value)} 
-          change={pctChange(kpiCards.marketingCosts.value, kpiCards.marketingCosts.prev)} 
-          sparkline={kpiCards.marketingCosts.sparkline}
-          target={formatCurrencyValue(kpiCards.marketingCosts.target)}
-          targetAchievement={(kpiCards.marketingCosts.value / kpiCards.marketingCosts.target) * 100}
-        />
       </div>
 
-      {/* Revenue & Marketing Chart */}
+      {/* Revenue & Marketing Chart with CAC/LTV Ratio */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+          {/* CAC/LTV Ratio - Above Revenue & Marketing Costs Chart */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-text-primary">CAC/LTV Ratio:</span>
+              <span className="text-lg font-bold text-success">1:3.2</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-success/15 text-success">↑ 8.1%</span>
+            </div>
+            <span className="text-xs text-text-tertiary">Target: 1:3.5</span>
+          </div>
+          
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue & Marketing Costs</h3>
             <span className="text-xs text-text-tertiary shrink-0">Triple Whale</span>
           </div>
-          <div className="min-h-[260px]">
-            <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={dailyMetrics}>
+          <div className="min-h-[240px]">
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={dailyMetrics} margin={{ top: 10, right: 20, bottom: 40, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
                   dataKey="date" 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
-                  angle={-45}
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} 
+                  angle={-30}
                   textAnchor="end"
-                  height={60}
-                  interval="preserveStartEnd"
-                  label={{ value: 'Date', position: 'insideBottom', offset: -10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                  height={50}
+                  interval={0}
                 />
                 <YAxis 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  tickFormatter={(v) => formatCurrencyValue(v)} 
-                  label={{ value: `Revenue (${currency}K)`, angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
+                  tickFormatter={(v) => formatCurrencyValue(v)}
+                  width={60}
                 />
-                <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line type="monotone" dataKey="revenue" name="Net Revenue" stroke="#34D399" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="spend" name="Marketing Costs" stroke="#EDBF63" strokeWidth={2} dot={false} />
+                <Tooltip 
+                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11 }}
+                  formatter={(value: any, name: string) => [formatCurrencyValue(value), name]}
+                />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                <Line type="monotone" dataKey="revenue" name="Net Revenue" stroke="#34D399" strokeWidth={2.5} dot={false} />
+                <Line type="monotone" dataKey="spend" name="Marketing Costs" stroke="#EDBF63" strokeWidth={2.5} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+          {/* LTV per Customer - Above Net Orders & New Customers Chart */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-text-primary">LTV per Customer:</span>
+              <span className="text-lg font-bold text-success">{formatCurrencyValue(2520)}</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-success/15 text-success">↑ 12.4%</span>
+            </div>
+            <span className="text-xs text-text-tertiary">Target: {formatCurrencyValue(2800)}</span>
+          </div>
+          
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Net Orders & New Customers</h3>
             <span className="text-xs text-text-tertiary shrink-0">Triple Whale</span>
