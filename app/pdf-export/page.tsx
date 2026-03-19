@@ -18,7 +18,16 @@ const exportSections: ExportSection[] = [
         id: 'daily-overview',
         name: 'Daily Overview',
         children: [
-          { id: 'kpi-cards', name: 'KPI Cards' },
+          { id: 'cac-ltv-ratio', name: 'CAC/LTV Ratio Card' },
+          { id: 'ltv-per-customer', name: 'LTV per Customer Card' },
+          { id: 'net-revenue-card', name: 'Net Revenue KPI' },
+          { id: 'marketing-costs-card', name: 'Marketing Costs KPI' },
+          { id: 'mer-card', name: 'MER KPI' },
+          { id: 'amer-card', name: 'aMER KPI' },
+          { id: 'orders-card', name: 'Orders KPI' },
+          { id: 'nc-orders-card', name: 'NC Orders KPI' },
+          { id: 'cac-card', name: 'CAC KPI' },
+          { id: 'ncac-card', name: 'nCAC KPI' },
           { id: 'revenue-chart', name: 'Revenue & Marketing Costs Chart' },
           { id: 'orders-chart', name: 'Net Orders & New Customers Chart' },
           { id: 'marketing-insights', name: 'Marketing Insights' },
@@ -119,17 +128,49 @@ export default function PDFExportPage() {
   const exportPDF = async () => {
     setIsExporting(true);
     
-    // Simulate PDF generation
-    setTimeout(() => {
-      // Create a dummy PDF download
+    try {
       const selectedItems = Array.from(selectedSections);
-      const filename = `click-man-export-${new Date().toISOString().split('T')[0]}.pdf`;
+      const filename = `click-man-export-${new Date().toISOString().split('T')[0]}.html`;
       
-      // In a real implementation, this would call an API to generate the PDF
-      console.log(`Generating PDF with sections:`, selectedItems);
+      // Create HTML content that can be printed as PDF
+      const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Click-Man Dashboard Export</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        h1 { color: #333; border-bottom: 2px solid #4A6BD6; padding-bottom: 10px; }
+        h2 { color: #666; margin-top: 30px; }
+        .export-info { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 30px; }
+        .section-list { list-style-type: none; padding: 0; }
+        .section-list li { background: #fff; margin: 10px 0; padding: 15px; border: 1px solid #e0e0e0; border-radius: 6px; }
+        .note { color: #666; font-style: italic; margin-top: 30px; }
+        @media print { body { margin: 20px; } }
+    </style>
+</head>
+<body>
+    <h1>Click-Man Dashboard Export</h1>
+    
+    <div class="export-info">
+        <strong>Generated:</strong> ${new Date().toLocaleString()}<br/>
+        <strong>Total Sections:</strong> ${selectedItems.length}<br/>
+        <strong>Export Type:</strong> Dashboard Analytics Report
+    </div>
+    
+    <h2>Selected Sections</h2>
+    <ul class="section-list">
+        ${selectedItems.map(item => `<li>📊 ${item}</li>`).join('')}
+    </ul>
+    
+    <div class="note">
+        <p><strong>Note:</strong> This is a section manifest for the Click-Man dashboard export. In a full implementation, this would contain the actual charts, data tables, and visualizations from each selected section.</p>
+        <p><strong>To save as PDF:</strong> Use your browser's Print function (Ctrl+P / Cmd+P) and select "Save as PDF".</p>
+    </div>
+</body>
+</html>`;
       
-      // Simulate download
-      const blob = new Blob(['PDF content would be here'], { type: 'application/pdf' });
+      const blob = new Blob([htmlContent], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -139,8 +180,15 @@ export default function PDFExportPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
+      // Show success message
+      alert(`Export successful! The HTML file has been downloaded. You can open it in your browser and use "Print to PDF" to create a PDF file.`);
+      
       setIsExporting(false);
-    }, 2000);
+    } catch (error) {
+      console.error('Export failed:', error);
+      setIsExporting(false);
+      alert('Export failed. Please try again.');
+    }
   };
 
   const renderSection = (section: ExportSection, level: number = 0) => {

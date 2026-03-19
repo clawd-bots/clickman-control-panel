@@ -149,19 +149,46 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Revenue & Marketing Chart with CAC/LTV Ratio */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Separate KPI cards for CAC/LTV and LTV per Customer */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
-          {/* CAC/LTV Ratio - Above Revenue & Marketing Costs Chart */}
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-text-secondary">CAC/LTV Ratio</h3>
+            <span className="text-xs text-text-tertiary">Triple Whale</span>
+          </div>
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-text-primary">CAC/LTV Ratio:</span>
-              <span className="text-lg font-bold text-success">1:3.2</span>
+              <span className="text-2xl font-bold text-success">1:3.2</span>
               <span className="text-xs px-2 py-1 rounded-full bg-success/15 text-success">↑ 8.1%</span>
             </div>
-            <span className="text-xs text-text-tertiary">Target: 1:3.5</span>
+            <div className="text-xs text-text-tertiary">
+              Target: 1:3.5<br/>
+              Progress: 91.4%
+            </div>
           </div>
-          
+        </div>
+        
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-medium text-text-secondary">LTV per Customer</h3>
+            <span className="text-xs text-text-tertiary">Triple Whale</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl font-bold text-success">{formatCurrencyValue(2520)}</span>
+              <span className="text-xs px-2 py-1 rounded-full bg-success/15 text-success">↑ 12.4%</span>
+            </div>
+            <div className="text-xs text-text-tertiary">
+              Target: {formatCurrencyValue(2800)}<br/>
+              Progress: 90.0%
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Revenue & Marketing Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue & Marketing Costs</h3>
             <span className="text-xs text-text-tertiary shrink-0">Triple Whale</span>
@@ -196,16 +223,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
-          {/* LTV per Customer - Above Net Orders & New Customers Chart */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-text-primary">LTV per Customer:</span>
-              <span className="text-lg font-bold text-success">{formatCurrencyValue(2520)}</span>
-              <span className="text-xs px-2 py-1 rounded-full bg-success/15 text-success">↑ 12.4%</span>
-            </div>
-            <span className="text-xs text-text-tertiary">Target: {formatCurrencyValue(2800)}</span>
-          </div>
-          
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Net Orders & New Customers</h3>
             <span className="text-xs text-text-tertiary shrink-0">Triple Whale</span>
@@ -493,7 +510,7 @@ export default function DashboardPage() {
       {/* Summary AI Analysis with full controls */}
       <div>
         <AISuggestionsPanel 
-          suggestions={getCrossPageInsights().map((item, i) => `**${item.title}:** ${item.insight}`)}
+          suggestions={getCrossPageInsights().map((item, i) => `${item.title}: ${item.insight}`)}
           title="Daily Summary & Intelligence"
         />
       </div>
