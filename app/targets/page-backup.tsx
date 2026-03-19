@@ -135,7 +135,7 @@ export default function TargetsPage() {
                     </div>
 
                     <div>
-                      <div className="w-full h-1.5 bg-bg-primary rounded-full overflow-hidden mb-2">
+                      <div className="w-full h-3 bg-bg-primary rounded-full overflow-hidden mb-2">
                         <div
                           className={`h-full rounded-full transition-all ${
                             status === 'green' ? 'bg-success' : status === 'yellow' ? 'bg-warm-gold' : 'bg-danger'

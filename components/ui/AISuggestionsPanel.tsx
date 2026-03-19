@@ -182,43 +182,43 @@ export default function AISuggestionsPanel({
 
   return (
     <div className="bg-bg-surface border border-border rounded-lg p-5">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
         <div className="flex items-center gap-2">
           <Sparkles size={18} className="text-warm-gold" />
           <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setShowPromptEdit(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-bg-elevated border border-border text-xs font-medium hover:bg-bg-surface transition-colors"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-bg-elevated border border-border text-xs font-medium hover:bg-bg-surface transition-colors whitespace-nowrap"
           >
             <Settings size={12} />
-            Prompt
+            <span className="hidden sm:inline">Prompt</span>
           </button>
           <button
             onClick={() => setShowPromptHistory(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-bg-elevated border border-border text-xs font-medium hover:bg-bg-surface transition-colors"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-bg-elevated border border-border text-xs font-medium hover:bg-bg-surface transition-colors whitespace-nowrap"
           >
             <History size={12} />
-            History
+            <span className="hidden sm:inline">History</span>
           </button>
           <button
             onClick={() => setShowTemplateSelector(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-brand-blue/15 text-brand-blue text-xs font-medium hover:bg-brand-blue/25 transition-colors"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-brand-blue/15 text-brand-blue text-xs font-medium hover:bg-brand-blue/25 transition-colors whitespace-nowrap"
           >
             <FileText size={12} />
-            Templates
+            <span className="hidden sm:inline">Templates</span>
           </button>
           <button
             onClick={handleRefresh}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-warm-gold/15 text-warm-gold text-xs font-medium hover:bg-warm-gold/25 transition-colors"
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-warm-gold/15 text-warm-gold text-xs font-medium hover:bg-warm-gold/25 transition-colors whitespace-nowrap"
           >
             <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-            Refresh
+            <span className="hidden sm:inline">Refresh</span>
           </button>
           <button
             onClick={() => setVisible(!visible)}
-            className="text-xs text-text-tertiary hover:text-text-secondary"
+            className="text-xs text-text-tertiary hover:text-text-secondary whitespace-nowrap"
           >
             {visible ? 'Hide' : 'Show'}
           </button>

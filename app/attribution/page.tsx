@@ -321,7 +321,7 @@ export default function AttributionPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-text-secondary">
                     <span>Events: {item.events}</span>
-                    <span>Match Rate: {item.matchRate}</span>
+                    <span>Match Quality: {item.matchRate}</span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium self-start sm:self-auto ${
                       item.status === 'healthy' ? 'bg-success/15 text-success' :
                       item.status === 'warning' ? 'bg-warm-gold/15 text-warm-gold' :
@@ -341,15 +341,15 @@ export default function AttributionPage() {
                         <div className="flex items-center gap-3">
                           <span className={`w-2 h-2 rounded-full shrink-0 ${
                             event.matchRate === 'N/A' ? 'bg-text-tertiary' :
-                            parseFloat(event.matchRate.replace('%', '')) >= 90 ? 'bg-success' :
-                            parseFloat(event.matchRate.replace('%', '')) >= 80 ? 'bg-warm-gold' :
-                            'bg-danger'
+                            event.matchRate.includes('/10') && parseFloat(event.matchRate.split('/')[0]) >= 9.0 ? 'bg-success' :
+                            event.matchRate.includes('/10') && parseFloat(event.matchRate.split('/')[0]) >= 8.0 ? 'bg-warm-gold' :
+                            event.matchRate.includes('/10') ? 'bg-danger' : 'bg-text-tertiary'
                           }`} />
                           <span className="text-sm font-medium text-text-primary">{event.event}</span>
                         </div>
                         <div className="flex items-center gap-4 text-xs text-text-secondary">
                           <span>Count: {event.count}/day</span>
-                          <span>Match Rate: {event.matchRate}</span>
+                          <span>Match Quality: {event.matchRate}</span>
                         </div>
                       </div>
                     ))}
@@ -365,7 +365,7 @@ export default function AttributionPage() {
                           </div>
                           <div className="flex items-center gap-4 text-xs text-text-secondary">
                             <span>Events: 0/day</span>
-                            <span>Match Rate: N/A</span>
+                            <span>Match Quality: N/A</span>
                             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-danger/15 text-danger">
                               Not Connected
                             </span>

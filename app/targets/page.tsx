@@ -231,87 +231,104 @@ export default function TargetsPage() {
 
         </div>
         
-        {/* Mobile Card View - Hidden on Desktop */}
-        <div className="block lg:hidden space-y-4">
-          {monthlyTargets.map((row, rowIndex) => (
-            <div key={row.metric} className="bg-white border border-border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="font-semibold text-text-primary">{row.metric}</h4>
-                <span className="text-xs px-2 py-1 bg-bg-elevated rounded text-text-secondary">
-                  {row.unit}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                {monthColumns.map((colKey, colIndex) => {
-                  const cellValue = row[colKey];
-                  const isAutoCalc = isAutoCalculated(row.metric);
-                  const isEditing = editingCell?.row === rowIndex && editingCell?.col === colKey;
-                  
-                  return (
-                    <div key={`${rowIndex}-${colIndex}`} className="space-y-1">
-                      <div className="text-xs font-medium text-text-secondary">
-                        {monthLabels[colIndex]}
+        {/* Mobile Horizontal Scroll Table - Like Desktop */}
+        <div className="block lg:hidden overflow-x-auto -mx-1">
+          <div className="min-w-[800px]">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-3 font-semibold text-text-primary sticky left-0 bg-bg-surface min-w-[140px] z-10 border-r border-border">
+                    Metric
+                  </th>
+                  {monthLabels.slice(0, 1).map((month, i) => (
+                    <th key={month} className="text-center py-3 px-3 font-medium text-text-secondary min-w-[100px]">
+                      {month}
+                    </th>
+                  ))}
+                  <th className="text-center py-3 px-3 font-medium text-text-tertiary min-w-[100px]">
+                    <span className="text-[10px]">← Scroll for more →</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlyTargets.map((row, rowIndex) => (
+                  <tr key={row.metric} className="border-b border-border/30 hover:bg-bg-elevated/30">
+                    <td className="py-2 px-3 font-medium text-text-primary sticky left-0 bg-bg-surface z-10 border-r border-border">
+                      <div className="flex items-center gap-1">
+                        {row.metric}
+                        <InfoTooltip metric={row.metric} />
                       </div>
-                      
-                      {isEditing ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editValue}
-                            onChange={(e) => setEditValue(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') saveEdit();
-                              if (e.key === 'Escape') cancelEdit();
-                            }}
-                            className="flex-1 py-2 px-3 rounded text-center text-text-primary bg-bg-primary border border-warm-gold outline-none text-sm"
-                            autoFocus
-                            placeholder={row.unit}
-                          />
-                          <button onClick={saveEdit} className="text-success hover:text-success/80 p-1">
-                            <Check size={16} />
-                          </button>
-                          <button onClick={cancelEdit} className="text-text-tertiary hover:text-danger p-1">
-                            <X size={16} />
-                          </button>
-                        </div>
-                      ) : isAutoCalc ? (
-                        <div className={`py-2 px-3 rounded text-sm text-center cursor-not-allowed ${
-                          cellValue 
-                            ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                            : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
-                        }`}>
-                          {cellValue ? (
-                            <span className="flex items-center justify-center gap-1">
-                              <span>{cellValue}</span>
-                              <span className="text-blue-500 text-xs">⚙</span>
-                            </span>
+                    </td>
+                    {monthColumns.map((colKey, colIndex) => {
+                      const cellValue = row[colKey];
+                      const isAutoCalc = isAutoCalculated(row.metric);
+                      const isEditing = editingCell?.row === rowIndex && editingCell?.col === colKey;
+
+                      return (
+                        <td key={`${rowIndex}-${colIndex}`} className="py-1.5 px-2 text-center">
+                          {isEditing ? (
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="text"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEdit();
+                                  if (e.key === 'Escape') cancelEdit();
+                                }}
+                                className="w-16 py-1 px-2 rounded text-center text-text-primary bg-bg-primary border border-warm-gold outline-none text-xs"
+                                autoFocus
+                                placeholder={row.unit}
+                              />
+                              <button onClick={saveEdit} className="text-success hover:text-success/80">
+                                <Check size={10} />
+                              </button>
+                              <button onClick={cancelEdit} className="text-text-tertiary hover:text-danger">
+                                <X size={10} />
+                              </button>
+                            </div>
+                          ) : isAutoCalc ? (
+                            <div 
+                              className={`w-full py-1 px-2 rounded text-xs cursor-not-allowed ${
+                                cellValue 
+                                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                                  : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
+                              }`}
+                              title={cellValue 
+                                ? `Auto-calculated: ${cellValue}` 
+                                : `Will be auto-calculated`
+                              }
+                            >
+                              {cellValue ? (
+                                <span className="flex items-center justify-center gap-1">
+                                  <span>{cellValue}</span>
+                                  <span className="text-blue-500 text-[8px]">⚙</span>
+                                </span>
+                              ) : (
+                                <span className="text-text-tertiary">Auto</span>
+                              )}
+                            </div>
                           ) : (
-                            <span>Auto-calc</span>
+                            <button 
+                              className={`w-full py-1 px-2 rounded transition-all text-xs ${
+                                cellValue 
+                                  ? 'text-text-primary hover:bg-bg-primary border border-transparent hover:border-border' 
+                                  : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-primary border border-dashed border-text-tertiary hover:border-text-secondary'
+                              }`}
+                              onClick={() => startEdit(rowIndex, colKey, cellValue)}
+                              title={cellValue || `Set target`}
+                            >
+                              {cellValue || 'Set'}
+                            </button>
                           )}
-                        </div>
-                      ) : (
-                        <button 
-                          className={`w-full py-2 px-3 rounded transition-all text-sm ${
-                            cellValue 
-                              ? 'text-text-primary bg-bg-primary border border-transparent hover:border-border' 
-                              : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary hover:border-text-secondary'
-                          }`}
-                          onClick={() => startEdit(rowIndex, colKey, cellValue)}
-                        >
-                          {cellValue || 'Set target'}
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-              
-              <div className="mt-3 pt-3 border-t border-border text-xs text-text-tertiary">
-                Last updated: {row.lastUpdated}
-              </div>
-            </div>
-          ))}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* Desktop Table View - Hidden on Mobile */}
