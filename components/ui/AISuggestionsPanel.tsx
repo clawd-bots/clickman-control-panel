@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Sparkles, RefreshCw, Settings, History } from 'lucide-react';
+import { Sparkles, RefreshCw, Settings, History, FileText } from 'lucide-react';
 
 interface AISuggestionsPanelProps {
   suggestions: string[];
@@ -16,6 +16,51 @@ const DEFAULT_PROMPTS: Record<string, string> = {
   'Cross-Layer AI Analysis': 'Provide integrated analysis across attribution layers (MER/nCAC, surveys/MMM, MTA/platform data) and recommend strategic decisions for budget allocation and measurement improvements.',
 };
 
+// Load available templates from Prompt Templates page
+const AVAILABLE_TEMPLATES: Record<string, Array<{id: string, name: string, prompt: string}>> = {
+  'Creative Intelligence': [
+    {
+      id: 'creative-performance',
+      name: 'Creative Performance Analysis',
+      prompt: 'Analyze the creative performance data focusing on: 1) Which ad creatives are scaling efficiently (high spend, low CPA), 2) Creative fatigue indicators and refresh recommendations, 3) Platform-specific creative insights (Meta vs TikTok vs Google), 4) Budget reallocation opportunities from underperformers to winners, 5) Creative testing velocity and hit rate analysis.'
+    },
+    {
+      id: 'ad-churn',
+      name: 'Ad Churn & Lifecycle Analysis',
+      prompt: 'Examine ad creative churn patterns by analyzing: 1) Creative age distribution and spend allocation across age brackets, 2) Launch cohort performance over time, 3) Creative lifecycle optimization (when to refresh vs scale), 4) New creative adoption rate and effectiveness, 5) Recommendations for creative pipeline management and testing cadence.'
+    },
+    {
+      id: 'account-control',
+      name: 'Account Control & Zone Analysis',
+      prompt: 'Using the CPA vs Spend scatter plot data, analyze: 1) Ads in each performance zone (scaling, testing, zombies, untapped), 2) Budget allocation efficiency and reallocation opportunities, 3) Scale-up candidates currently in testing phase, 4) Zombie ads wasting budget that should be paused immediately, 5) Untapped potential ads that need creative optimization or increased spend.'
+    },
+    {
+      id: 'production-efficiency',
+      name: 'Creative Production & Hit Rate',
+      prompt: 'Assess creative production effectiveness by examining: 1) Monthly creative launch volume vs scaling success rate, 2) Creative hit rate analysis (what percentage of launched ads actually scale), 3) Production queue optimization based on winning creative patterns, 4) Platform-specific creative preferences and performance differences, 5) Resource allocation recommendations for creative team focus.'
+    },
+    {
+      id: 'demographics-alignment',
+      name: 'Demographics vs Creative Alignment',
+      prompt: 'Compare creative output vs profitable demographics: 1) Which age/gender segments drive highest LTV and conversion rates, 2) Whether current creative style matches top-performing demographic preferences, 3) Creative misalignment risks (producing Gen Z content when profitable customers are older), 4) Demographic-specific creative recommendations, 5) Production pivot opportunities to better serve high-value segments.'
+    }
+  ],
+  'Target Intelligence': [
+    {
+      id: 'target-performance',
+      name: 'Target vs Actual Performance Analysis',
+      prompt: 'Review target vs actual performance metrics and provide strategic recommendations for improving KPI achievement, budget allocation, and goal setting based on current trends and performance gaps.'
+    }
+  ],
+  'Cohort Intelligence': [
+    {
+      id: 'cohort-retention',
+      name: 'Cohort Retention Analysis',
+      prompt: 'Analyze cohort retention patterns, lifetime value trends, and provide recommendations for improving customer retention and maximizing CLV by acquisition channel.'
+    }
+  ]
+};
+
 export default function AISuggestionsPanel({ 
   suggestions, 
   title = 'AI Insights',
@@ -26,8 +71,9 @@ export default function AISuggestionsPanel({
   const [refreshing, setRefreshing] = useState(false);
   const [showPromptEdit, setShowPromptEdit] = useState(false);
   const [showPromptHistory, setShowPromptHistory] = useState(false);
+  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [currentPrompt, setCurrentPrompt] = useState('');
-  const [promptHistory, setPromptHistory] = useState<string[]>([]);
+  const [promptHistory, setPromptHistory] = useState<Array<{prompt: string, timestamp: string, response: string}>>([]);
 
   // Load prompt and history from localStorage on mount
   useEffect(() => {
@@ -85,8 +131,35 @@ export default function AISuggestionsPanel({
 
   const handleRefresh = () => {
     setRefreshing(true);
+    
+    // Save current prompt and response to history
+    const newEntry = {
+      prompt: currentPrompt,
+      timestamp: new Date().toLocaleString(),
+      response: suggestions.join(' ') || 'Analysis generated based on current data.'
+    };
+    
+    const updatedHistory = [newEntry, ...promptHistory.slice(0, 9)]; // Keep last 10
+    setPromptHistory(updatedHistory);
+    
+    // Save to localStorage
+    const historyKey = `ai-prompt-history-${title.toLowerCase().replace(/\s+/g, '-')}`;
+    localStorage.setItem(historyKey, JSON.stringify(updatedHistory));
+    
     setTimeout(() => setRefreshing(false), 1200);
   };
+
+  const handleTemplateSelect = (template: {id: string, name: string, prompt: string}) => {
+    setCurrentPrompt(template.prompt);
+    
+    // Save to localStorage
+    const storageKey = `ai-prompt-${title.toLowerCase().replace(/\s+/g, '-')}`;
+    localStorage.setItem(storageKey, template.prompt);
+    
+    setShowTemplateSelector(false);
+  };
+
+  const availableTemplates = AVAILABLE_TEMPLATES[title] || [];
 
   return (
     <div className="bg-bg-surface border border-border rounded-lg p-5">
@@ -109,6 +182,13 @@ export default function AISuggestionsPanel({
           >
             <History size={12} />
             History
+          </button>
+          <button
+            onClick={() => setShowTemplateSelector(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-brand-blue/15 text-brand-blue text-xs font-medium hover:bg-brand-blue/25 transition-colors"
+          >
+            <FileText size={12} />
+            Templates
           </button>
           <button
             onClick={handleRefresh}
@@ -189,11 +269,19 @@ export default function AISuggestionsPanel({
               {promptHistory.length === 0 ? (
                 <p className="text-sm text-text-secondary text-center py-8">No prompt history available</p>
               ) : (
-                promptHistory.map((prompt, index) => (
+                promptHistory.map((entry, index) => (
                   <div key={index} className="bg-bg-elevated border border-border rounded-md p-3">
-                    <div className="text-sm text-text-primary mb-2 line-clamp-3">{prompt}</div>
+                    <div className="text-xs text-text-tertiary mb-1">{typeof entry === 'string' ? 'Legacy entry' : entry.timestamp}</div>
+                    <div className="text-sm text-text-primary mb-2 line-clamp-3">
+                      {typeof entry === 'string' ? entry : entry.prompt}
+                    </div>
+                    {typeof entry === 'object' && entry.response && (
+                      <div className="text-xs text-text-secondary mb-2 italic line-clamp-2">
+                        Response: {entry.response.substring(0, 150)}...
+                      </div>
+                    )}
                     <button
-                      onClick={() => restoreFromHistory(prompt)}
+                      onClick={() => restoreFromHistory(typeof entry === 'string' ? entry : entry.prompt)}
                       className="text-xs text-brand-blue-light hover:text-brand-blue transition-colors"
                     >
                       Restore this prompt
@@ -205,6 +293,47 @@ export default function AISuggestionsPanel({
             <div className="flex items-center justify-end gap-3 mt-4">
               <button
                 onClick={() => setShowPromptHistory(false)}
+                className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template Selector Modal */}
+      {showTemplateSelector && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-3xl mx-4">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Select AI Analysis Template</h3>
+            <div className="space-y-3 max-h-80 overflow-y-auto">
+              {availableTemplates.length === 0 ? (
+                <p className="text-sm text-text-secondary text-center py-8">
+                  No templates available for {title}. You can create templates in the Prompt Templates page.
+                </p>
+              ) : (
+                availableTemplates.map((template) => (
+                  <div key={template.id} className="bg-bg-elevated border border-border rounded-md p-4 hover:border-brand-blue/50 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-text-primary mb-1">{template.name}</h4>
+                        <p className="text-sm text-text-secondary mb-3 line-clamp-2">{template.prompt.substring(0, 200)}...</p>
+                        <button
+                          onClick={() => handleTemplateSelect(template)}
+                          className="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-md hover:bg-brand-blue/90 transition-colors"
+                        >
+                          Use This Template
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="flex items-center justify-end gap-3 mt-4">
+              <button
+                onClick={() => setShowTemplateSelector(false)}
                 className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
               >
                 Close
