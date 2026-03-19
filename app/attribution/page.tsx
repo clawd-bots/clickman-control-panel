@@ -231,21 +231,12 @@ export default function AttributionPage() {
         </div>
       )}
 
-      {/* AI Insights for MER/nCAC (star layer) */}
+      {/* AI Insights for MER/nCAC (star layer) - Right after overview */}
       {activeLayer === 'star' && (
         <div className="mt-6">
           <AISuggestionsPanel 
-            suggestions={[
-              `**What's Working:** MER at 3.67x is above the 3.5x healthy threshold, marketing is generating strong returns`,
-              `**nCAC trending down 2.6% MoM** from ₱808.00 to ₱787.00, acquisition getting more efficient`,
-              `**Do Next:** Set a max CPA ceiling by channel based on LTV:CAC ratios`,
-              `**Build an automated alert** when MER drops below 3.0x`,
-              `**What's Not:** MER variance across channels is high (Meta 3.91x vs Referral 0.40x)`,
-              `**Stop Doing:** Don't optimize purely on blended MER, it hides channel-level inefficiencies`
-            ]} 
+            suggestions={getDynamicAISuggestions()} 
             title="MER / nCAC , AI Insights"
-            attributionModel={cohortAttrModel}
-            attributionWindow={cohortAttrWindow}
           />
         </div>
       )}
@@ -319,6 +310,16 @@ export default function AttributionPage() {
               </ScatterChart>
             </ResponsiveContainer>
           </div>
+        </div>
+      )}
+
+      {/* AI Insights for MTA & Platform (lower layer) */}
+      {activeLayer === 'lower' && (
+        <div className="mt-6">
+          <AISuggestionsPanel 
+            suggestions={getDynamicAISuggestions()} 
+            title="MTA & Platform , AI Insights"
+          />
         </div>
       )}
 
@@ -515,13 +516,7 @@ export default function AttributionPage() {
         </div>
       )}
 
-      {/* Cross-Layer AI Analysis - Always at bottom */}
-      <div className="mt-6">
-        <AISuggestionsPanel 
-          suggestions={getDynamicAISuggestions()} 
-          title="Cross-Layer AI Analysis"
-        />
-      </div>
+
     </div>
   );
 }
