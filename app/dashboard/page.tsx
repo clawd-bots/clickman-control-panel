@@ -185,7 +185,7 @@ export default function DashboardPage() {
                 />
                 <Tooltip 
                   contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11 }}
-                  formatter={(value: any, name: string) => [formatCurrencyValue(value), name]}
+                  formatter={(value: any, name?: string) => [formatCurrencyValue(value), name || '']}
                 />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
                 <Line type="monotone" dataKey="revenue" name="Net Revenue" stroke="#34D399" strokeWidth={2.5} dot={false} />
