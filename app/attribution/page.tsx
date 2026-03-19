@@ -4,7 +4,6 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { formatCurrency } from '@/lib/utils';
 import { attributionSurvey, trackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
-import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { Star, GitBranch, Activity, Database, Layers, Sparkles, ChevronDown } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ScatterChart, Scatter,
@@ -106,18 +105,7 @@ export default function AttributionPage() {
   const activeInfo = treeLayers.find(l => l.id === activeLayer)!;
   const insights = getLayerInsights()[activeLayer];
 
-  // Dynamic AI suggestions with currency conversion
-  const getDynamicAISuggestions = () => {
-    return [
-      'Overall attribution stack is functioning but incomplete. MER is healthy (3.67x), but flying partially blind with server-side GTM down and no MMM model.',
-      'Meta drives lion\'s share of tracked conversions but survey data suggests TikTok is under-credited by platform reporting. Run geo-lift test to validate.',
-      'nMER of 1.92x means heavy reliance on repeat purchases. Fine if retention holds, but risky if cohort quality drops.',
-      `Brand Search is most efficient channel at ${formatCurrencyValue(420)} CPA. Ensure maxing out impression share before increasing spend elsewhere.`,
-      'Fix server-side GTM before major budget reallocation. Missing ~15% of conversion data, which skews all analysis.',
-      'Consider building simple MMM model using past 6 months of spend + revenue data for second opinion on channel allocation beyond surveys.',
-      `Set channel-specific CPA ceilings: Meta ${formatCurrencyValue(850)}, Google ${formatCurrencyValue(500)}, TikTok ${formatCurrencyValue(600)}. Review weekly and pause anything consistently above ceiling.`,
-    ];
-  };
+
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -231,15 +219,7 @@ export default function AttributionPage() {
         </div>
       )}
 
-      {/* AI Insights for MER/nCAC (star layer) - Right after overview */}
-      {activeLayer === 'star' && (
-        <div className="mt-6">
-          <AISuggestionsPanel 
-            suggestions={getDynamicAISuggestions()} 
-            title="MER / nCAC , AI Insights"
-          />
-        </div>
-      )}
+
 
       {activeLayer === 'upper' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
@@ -313,15 +293,7 @@ export default function AttributionPage() {
         </div>
       )}
 
-      {/* AI Insights for MTA & Platform (lower layer) */}
-      {activeLayer === 'lower' && (
-        <div className="mt-6">
-          <AISuggestionsPanel 
-            suggestions={getDynamicAISuggestions()} 
-            title="MTA & Platform , AI Insights"
-          />
-        </div>
-      )}
+
 
       {activeLayer === 'trunk' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
@@ -470,51 +442,7 @@ export default function AttributionPage() {
         </div>
       )}
 
-      {/* All AI Insights positioned ABOVE Cross-Layer Analysis for attribution tree tabs */}
-      {activeLayer === 'upper' && (
-        <div className="mt-6">
-          <AISuggestionsPanel 
-            suggestions={[
-              `Survey data shows TikTok accounts for 22% of attribution vs 15% in platform reporting, suggesting TikTok is under-credited by ~${formatCurrencyValue(45000)} weekly.`,
-              'Facebook/Instagram dominates survey responses at 35%, aligning with platform data showing healthy tracking coverage.',
-              'Friend/Family referral at 12% represents untapped growth opportunity - consider implementing formal referral program.',
-              'Google Search at 18% confirms brand strength but suggests potential to scale non-brand search campaigns.',
-              'Other sources (6%) indicate attribution gaps - investigate direct traffic patterns and potential dark social influence.'
-            ]} 
-            title="Surveys & MMM Intelligence"
-          />
-        </div>
-      )}
 
-      {activeLayer === 'trunk' && (
-        <div className="mt-6">
-          <AISuggestionsPanel 
-            suggestions={[
-              'Server-side GTM is completely down (0 events/day) - this is losing ~15% of conversion data and skewing all analysis.',
-              `Meta CAPI showing 89% match rate vs 92% pixel - normal variance. Both systems healthy with ${trackingHealth[1].events} daily events.`,
-              'TikTok match rate at 71% below industry standard 85%. Consider implementing cAPI for improved data quality.',
-              'Google Ads tracking strongest at 94% match rate - continue using as benchmark for other platforms.',
-              'Priority: Fix server-side GTM, then implement TikTok cAPI, then optimize TikTok pixel match rate.'
-            ]} 
-            title="Tracking Infrastructure Intelligence"
-          />
-        </div>
-      )}
-
-      {activeLayer === 'roots' && (
-        <div className="mt-6">
-          <AISuggestionsPanel 
-            suggestions={[
-              `Google Brand customers deliver 3.8x LTV:CAC - the gold standard channel with ${formatCurrencyValue(7220)} LTV and fast 2.1-month payback.`,
-              `Meta at 2.1x LTV:CAC is above minimum threshold but TikTok at 1.4x is concerning - ${formatCurrencyValue(4200)} LTV vs ${formatCurrencyValue(3000)} CAC.`,
-              `TikTok's 6.8-month payback period creates cash flow pressure. Cap TikTok CPA at ${formatCurrencyValue(600)} until LTV:CAC improves to 2.0x.`,
-              `GLP-1 product cohorts show highest LTV (${formatCurrencyValue(9200)} at 365d) - focus TikTok spend on this product specifically.`,
-              'Brand Search delivers best unit economics across all cohorts. Ensure 100% impression share before scaling other channels.'
-            ]} 
-            title="Cohort LTV Intelligence"
-          />
-        </div>
-      )}
 
 
     </div>
