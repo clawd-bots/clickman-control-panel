@@ -77,8 +77,24 @@ export default function DashboardPage() {
         <p className="text-sm text-text-secondary mt-0.5">What's happening right now , actuals, trends, and channel performance.</p>
       </div>
 
-      {/* KPI Cards Row 1: Net Revenue, Marketing Costs, MER, aMER */}
+      {/* KPI Cards Row 1: CAC/LTV, LTV per Customer, Net Revenue, Marketing Costs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard 
+          label="CAC/LTV Ratio" 
+          value="1:3.2" 
+          change={8.1} 
+          sparkline={[0.28, 0.31, 0.29, 0.32, 0.30, 0.31, 0.28]}
+          target="1:3.5"
+          targetAchievement={(3.2 / 3.5) * 100}
+        />
+        <KPICard 
+          label="LTV per Customer" 
+          value={formatCurrencyValue(2520)} 
+          change={12.4} 
+          sparkline={[2180, 2240, 2290, 2380, 2420, 2480, 2520]}
+          target={formatCurrencyValue(2800)}
+          targetAchievement={(2520 / 2800) * 100}
+        />
         <KPICard 
           label="Net Revenue" 
           value={formatCurrencyValue(kpiCards.netRevenue.value)} 
@@ -95,6 +111,10 @@ export default function DashboardPage() {
           target={formatCurrencyValue(kpiCards.marketingCosts.target)}
           targetAchievement={(kpiCards.marketingCosts.value / kpiCards.marketingCosts.target) * 100}
         />
+      </div>
+
+      {/* KPI Cards Row 2: MER, aMER, Orders, New Customers */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard 
           label="MER" 
           value={`${kpiCards.mer.value}x`} 
@@ -111,10 +131,6 @@ export default function DashboardPage() {
           target={`${kpiCards.nmer.target}x`}
           targetAchievement={(kpiCards.nmer.value / kpiCards.nmer.target) * 100}
         />
-      </div>
-
-      {/* KPI Cards Row 2: Orders, New Customers, CAC, nCAC */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard 
           label="Orders" 
           value={formatNumber(kpiCards.netOrders.value)} 
@@ -131,6 +147,10 @@ export default function DashboardPage() {
           target={formatNumber(kpiCards.newCustomers.target)}
           targetAchievement={(kpiCards.newCustomers.value / kpiCards.newCustomers.target) * 100}
         />
+      </div>
+
+      {/* KPI Cards Row 3: CAC, nCAC, Net Revenue, Marketing Costs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard 
           label="CAC" 
           value={formatCurrencyValue(kpiCards.cac.value)} 
@@ -146,6 +166,22 @@ export default function DashboardPage() {
           sparkline={kpiCards.ncac.sparkline}
           target={formatCurrencyValue(kpiCards.ncac.target)}
           targetAchievement={(kpiCards.ncac.target / kpiCards.ncac.value) * 100}
+        />
+        <KPICard 
+          label="Net Revenue" 
+          value={formatCurrencyValue(kpiCards.netRevenue.value)} 
+          change={pctChange(kpiCards.netRevenue.value, kpiCards.netRevenue.prev)} 
+          sparkline={kpiCards.netRevenue.sparkline}
+          target={formatCurrencyValue(kpiCards.netRevenue.target)}
+          targetAchievement={(kpiCards.netRevenue.value / kpiCards.netRevenue.target) * 100}
+        />
+        <KPICard 
+          label="Marketing Costs" 
+          value={formatCurrencyValue(kpiCards.marketingCosts.value)} 
+          change={pctChange(kpiCards.marketingCosts.value, kpiCards.marketingCosts.prev)} 
+          sparkline={kpiCards.marketingCosts.sparkline}
+          target={formatCurrencyValue(kpiCards.marketingCosts.target)}
+          targetAchievement={(kpiCards.marketingCosts.value / kpiCards.marketingCosts.target) * 100}
         />
       </div>
 

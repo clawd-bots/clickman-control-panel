@@ -11,6 +11,7 @@ import {
   Users,
   Target,
   FileText,
+  Download,
   ChevronLeft,
   ChevronRight,
   X,
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/creative', label: 'Creative & MTA', icon: Palette },
   { href: '/cohorts', label: 'Cohort Analysis', icon: Users },
   { href: '/targets', label: 'Targets & Goals', icon: Target },
+  { href: '/pdf-export', label: 'PDF Export', icon: Download },
   { href: '/prompt-templates', label: 'Prompt Templates', icon: FileText },
   { href: '/final-items', label: 'Final Items', icon: ChevronRight },
 ];

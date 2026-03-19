@@ -14,67 +14,67 @@ interface PromptTemplate {
 const sampleTemplates: PromptTemplate[] = [
   {
     id: '1',
-    name: 'Performance Analysis',
-    description: 'Analyzes ad creative performance and provides actionable insights',
-    prompt: 'Analyze the performance data for these ad creatives. Focus on identifying: 1) Top performing ads and why they work, 2) Underperforming ads that need optimization, 3) Specific recommendations for scaling winners, 4) Creative fatigue indicators, 5) Budget reallocation suggestions.',
-    category: 'Creative Analysis',
-    lastModified: '2026-03-16'
+    name: 'Linear Attribution Analysis',
+    description: 'Analyzes performance using linear attribution model across all touchpoints',
+    prompt: 'Using Linear Attribution model, analyze the customer journey data. Focus on: 1) Multi-touch conversion paths and how credit is distributed equally, 2) Channel interaction effects and assist rates, 3) True incrementality of each touchpoint, 4) Budget allocation recommendations based on linear attribution, 5) Comparison with last-click to understand attribution differences.',
+    category: 'Attribution Models',
+    lastModified: '2026-03-19'
   },
   {
     id: '2',
-    name: 'Attribution Analysis',
-    description: 'Cross-channel attribution insights and recommendations',
-    prompt: 'Based on the attribution data across all layers (MER/nCAC, surveys, platform data, tracking health, cohort LTV), provide: 1) Channel allocation recommendations, 2) Attribution discrepancies to investigate, 3) Budget reallocation opportunities, 4) Tracking infrastructure priorities, 5) Cross-layer validation insights.',
-    category: 'Attribution',
-    lastModified: '2026-03-16'
+    name: 'First Click Attribution Analysis', 
+    description: 'Evaluates performance through first click attribution lens',
+    prompt: 'Apply First Click Attribution model to assess: 1) Which channels drive initial awareness most effectively, 2) Top-of-funnel performance and reach optimization, 3) Brand building vs performance channel effectiveness, 4) Customer acquisition source quality, 5) Budget allocation for awareness vs conversion campaigns.',
+    category: 'Attribution Models',
+    lastModified: '2026-03-19'
   },
   {
     id: '3',
-    name: 'Account Control Analysis',
-    description: 'CPA vs Spend quadrant analysis for ad optimization',
-    prompt: 'Analyze the CPA vs Spend scatter plot data. Categorize ads into quadrants and provide: 1) Scaling opportunities (low CPA, high spend), 2) Zombie ads to pause (high CPA, high spend), 3) Testing prospects to scale (low CPA, low spend), 4) Learning phase ads needing attention, 5) Specific CPA targets and budget recommendations.',
-    category: 'Account Management',
-    lastModified: '2026-03-16'
+    name: 'Last Click Attribution Analysis',
+    description: 'Focuses on conversion-driving touchpoints using last click model',
+    prompt: 'Using Last Click Attribution model, analyze: 1) Direct conversion drivers and closing channels, 2) Bottom-funnel performance optimization, 3) Channels getting full conversion credit accuracy, 4) Short-term ROAS and immediate performance, 5) Scaling recommendations for conversion-focused campaigns.',
+    category: 'Attribution Models', 
+    lastModified: '2026-03-19'
   },
   {
     id: '4',
-    name: 'ROAS Performance Optimization',
-    description: 'Evaluates campaign performance metrics and identifies optimization opportunities',
-    prompt: 'Review the performance metrics including ROAS, CTR, CPC, and conversion rates across campaigns. Provide: 1) ROAS optimization opportunities by campaign and ad set, 2) Budget reallocation recommendations, 3) Underperforming campaigns to pause or restructure, 4) Scaling opportunities for high-performers, 5) Platform-specific optimization strategies.',
-    category: 'Performance',
-    lastModified: '2026-03-16'
+    name: 'Time Decay Attribution Analysis',
+    description: 'Weighted attribution giving more credit to recent touchpoints',
+    prompt: 'Apply Time Decay Attribution model to evaluate: 1) Recency bias in conversion paths and its impact, 2) Which channels perform better as customers near conversion, 3) Optimal timing for retargeting and remarketing, 4) Budget allocation based on proximity to conversion, 5) Customer journey velocity insights.',
+    category: 'Attribution Models',
+    lastModified: '2026-03-19'
   },
   {
     id: '5',
-    name: 'Channel Performance Analysis',
-    description: 'Cross-platform performance comparison and budget allocation guidance',
-    prompt: 'Compare performance across Meta, Google, TikTok, and other channels. Analyze: 1) Cost efficiency by platform (CPA, CPC trends), 2) Audience quality differences, 3) Optimal budget distribution recommendations, 4) Channel-specific creative performance patterns, 5) Scaling vs testing budget allocation per platform.',
-    category: 'Performance',
-    lastModified: '2026-03-16'
+    name: 'Position Based Attribution Analysis',
+    description: 'U-shaped attribution crediting first and last touchpoints equally',
+    prompt: 'Using Position Based (U-shaped) Attribution model, analyze: 1) First touch awareness vs last touch conversion effectiveness, 2) Middle funnel touchpoint optimization opportunities, 3) Channel role clarity in customer journey (awareness vs conversion), 4) Budget split between top and bottom funnel activities, 5) Creative strategy aligned with channel position in journey.',
+    category: 'Attribution Models',
+    lastModified: '2026-03-19'
   },
   {
     id: '6',
-    name: 'Cohort LTV Analysis',
-    description: 'Customer lifetime value analysis by acquisition cohort',
-    prompt: 'Analyze cohort performance data to identify LTV patterns. Focus on: 1) Monthly cohort LTV progression and retention rates, 2) CAC vs LTV trends by cohort, 3) High-value customer segment identification, 4) Retention improvement opportunities, 5) Cohort-based budget allocation recommendations for maximum LTV.',
-    category: 'Cohort Analysis',
-    lastModified: '2026-03-16'
+    name: 'Data-Driven Attribution Analysis',
+    description: 'Machine learning based attribution model insights',
+    prompt: 'Apply Data-Driven Attribution model to analyze: 1) AI-determined attribution weights vs rule-based models, 2) Unique customer journey patterns and micro-conversions, 3) True incremental value of each channel interaction, 4) Dynamic attribution based on user behavior, 5) Budget optimization using machine learning insights.',
+    category: 'Attribution Models',
+    lastModified: '2026-03-19'
   },
   {
     id: '7',
-    name: 'Retention & Repeat Purchase',
-    description: 'Cohort retention analysis and repeat purchase behavior insights',
-    prompt: 'Examine cohort retention data and repeat purchase patterns. Provide insights on: 1) Retention rate trends by acquisition month, 2) Product/channel impact on retention, 3) Critical retention drop-off points, 4) Strategies to improve M1, M3, and M6 retention rates, 5) Subscription vs one-time purchase performance by cohort.',
-    category: 'Cohort Analysis',
-    lastModified: '2026-03-16'
+    name: 'Cross-Attribution Model Comparison',
+    description: 'Compares performance across multiple attribution models',
+    prompt: 'Compare Linear, First Click, Last Click, Time Decay, and Position Based attribution models. Analyze: 1) Channel performance variations across attribution models, 2) Which model best represents true business impact, 3) Attribution model selection for different campaign objectives, 4) Budget allocation differences between models, 5) Hybrid attribution approach recommendations.',
+    category: 'Attribution Models',
+    lastModified: '2026-03-19'
   },
   {
     id: '8',
-    name: 'Cohort Quality Assessment',
-    description: 'Evaluates cohort quality based on acquisition source and timing',
-    prompt: 'Assess the quality of customer cohorts based on acquisition data. Analyze: 1) Cohort quality by traffic source and campaign, 2) Seasonal vs evergreen cohort performance, 3) First-purchase behavior impact on LTV, 4) Cohort CAC efficiency over time, 5) Recommendations for improving future cohort quality.',
-    category: 'Cohort Analysis',
-    lastModified: '2026-03-16'
+    name: 'Attribution Window Analysis',
+    description: 'Evaluates optimal attribution windows for different models',
+    prompt: 'Analyze attribution windows (1-day, 7-day, 28-day click and view-through). Focus on: 1) Optimal attribution window by customer journey length, 2) Click vs view-through attribution impact, 3) Channel performance changes across different windows, 4) Customer consideration period insights, 5) Window selection recommendations by campaign type.',
+    category: 'Attribution Models',
+    lastModified: '2026-03-19'
   }
 ];
 
