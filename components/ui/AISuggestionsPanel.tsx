@@ -90,7 +90,23 @@ export default function AISuggestionsPanel({
     }
     
     if (savedHistory) {
-      setPromptHistory(JSON.parse(savedHistory));
+      try {
+        const parsed = JSON.parse(savedHistory);
+        // Convert legacy string format to new object format
+        const normalizedHistory = parsed.map((item: any) => {
+          if (typeof item === 'string') {
+            return {
+              prompt: item,
+              timestamp: 'Legacy entry',
+              response: ''
+            };
+          }
+          return item;
+        });
+        setPromptHistory(normalizedHistory);
+      } catch (e) {
+        console.warn('Failed to parse prompt history:', e);
+      }
     }
   }, [title]);
 
@@ -100,10 +116,13 @@ export default function AISuggestionsPanel({
     
     // Always add to history when saving (create new version)
     if (prompt.trim() !== '' && prompt !== currentPrompt) {
-      const timestamp = new Date().toLocaleString();
-      const versionedPrompt = `${prompt} (Saved: ${timestamp})`;
+      const newEntry = {
+        prompt: currentPrompt,
+        timestamp: new Date().toLocaleString(),
+        response: 'Manual save'
+      };
       
-      const newHistory = [currentPrompt, ...promptHistory].slice(0, 10); // Keep last 10, add current before saving new
+      const newHistory = [newEntry, ...promptHistory].slice(0, 10); // Keep last 10
       setPromptHistory(newHistory);
       localStorage.setItem(historyKey, JSON.stringify(newHistory));
     }
@@ -271,17 +290,17 @@ export default function AISuggestionsPanel({
               ) : (
                 promptHistory.map((entry, index) => (
                   <div key={index} className="bg-bg-elevated border border-border rounded-md p-3">
-                    <div className="text-xs text-text-tertiary mb-1">{typeof entry === 'string' ? 'Legacy entry' : entry.timestamp}</div>
+                    <div className="text-xs text-text-tertiary mb-1">{entry.timestamp}</div>
                     <div className="text-sm text-text-primary mb-2 line-clamp-3">
-                      {typeof entry === 'string' ? entry : entry.prompt}
+                      {entry.prompt}
                     </div>
-                    {typeof entry === 'object' && entry.response && (
+                    {entry.response && (
                       <div className="text-xs text-text-secondary mb-2 italic line-clamp-2">
                         Response: {entry.response.substring(0, 150)}...
                       </div>
                     )}
                     <button
-                      onClick={() => restoreFromHistory(typeof entry === 'string' ? entry : entry.prompt)}
+                      onClick={() => restoreFromHistory(entry.prompt)}
                       className="text-xs text-brand-blue-light hover:text-brand-blue transition-colors"
                     >
                       Restore this prompt
