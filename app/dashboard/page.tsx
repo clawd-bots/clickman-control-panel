@@ -149,41 +149,24 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Separate KPI cards for CAC/LTV and LTV per Customer */}
+      {/* CAC/LTV and LTV per Customer KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-text-secondary">CAC/LTV Ratio</h3>
-            <span className="text-xs text-text-tertiary">Triple Whale</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-success">1:3.2</span>
-              <span className="text-xs px-2 py-1 rounded-full bg-success/15 text-success">↑ 8.1%</span>
-            </div>
-            <div className="text-xs text-text-tertiary">
-              Target: 1:3.5<br/>
-              Progress: 91.4%
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-text-secondary">LTV per Customer</h3>
-            <span className="text-xs text-text-tertiary">Triple Whale</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-bold text-success">{formatCurrencyValue(2520)}</span>
-              <span className="text-xs px-2 py-1 rounded-full bg-success/15 text-success">↑ 12.4%</span>
-            </div>
-            <div className="text-xs text-text-tertiary">
-              Target: {formatCurrencyValue(2800)}<br/>
-              Progress: 90.0%
-            </div>
-          </div>
-        </div>
+        <KPICard 
+          label="CAC/LTV Ratio" 
+          value="1:3.2" 
+          change={8.1} 
+          sparkline={[3.0, 3.1, 2.9, 3.2, 3.4, 3.1, 3.2]}
+          target="1:3.5"
+          targetAchievement={91.4}
+        />
+        <KPICard 
+          label="LTV per Customer" 
+          value={formatCurrencyValue(2520)} 
+          change={12.4} 
+          sparkline={[2300, 2350, 2400, 2480, 2520, 2510, 2520]}
+          target={formatCurrencyValue(2800)}
+          targetAchievement={90.0}
+        />
       </div>
 
       {/* Revenue & Marketing Chart */}
