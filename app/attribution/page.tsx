@@ -462,6 +462,21 @@ export default function AttributionPage() {
         </div>
       )}
 
+      {activeLayer === 'roots' && (
+        <div className="mt-6">
+          <AISuggestionsPanel 
+            suggestions={[
+              `Google Brand customers deliver 3.8x LTV:CAC - the gold standard channel with ${formatCurrencyValue(7220)} LTV and fast 2.1-month payback.`,
+              `Meta at 2.1x LTV:CAC is above minimum threshold but TikTok at 1.4x is concerning - ${formatCurrencyValue(4200)} LTV vs ${formatCurrencyValue(3000)} CAC.`,
+              `TikTok's 6.8-month payback period creates cash flow pressure. Cap TikTok CPA at ${formatCurrencyValue(600)} until LTV:CAC improves to 2.0x.`,
+              `GLP-1 product cohorts show highest LTV (${formatCurrencyValue(9200)} at 365d) - focus TikTok spend on this product specifically.`,
+              'Brand Search delivers best unit economics across all cohorts. Ensure 100% impression share before scaling other channels.'
+            ]} 
+            title="Cohort LTV Intelligence"
+          />
+        </div>
+      )}
+
       {/* Cross-Layer AI Analysis - Always at bottom */}
       <div className="mt-6">
         <AISuggestionsPanel 
