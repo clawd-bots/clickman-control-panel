@@ -228,24 +228,7 @@ export default function TargetsPage() {
             <span>Monthly Target Entry Table</span>
             <InfoTooltip metric="Monthly Targets" />
           </h3>
-          <p className="text-xs text-text-secondary">
-            Targets start from April 2026 as projection baseline. Click any cell to edit. Values automatically save.
-          </p>
-          
-          {/* Auto-calculation notice */}
-          <div className="mt-3 p-2.5 bg-blue-50 border border-blue-200 rounded text-xs">
-            <div className="flex items-start gap-1.5">
-              <div className="text-blue-500 mt-0.5 text-sm">⚙</div>
-              <div className="text-blue-800">
-                <strong>Auto-calculated targets:</strong> AOV, MER, and aMER are automatically calculated and cannot be edited directly.
-                <div className="mt-1 text-[11px] text-blue-700">
-                  • AOV = Net Revenue ÷ NC Orders
-                  • MER = Net Revenue ÷ (CAC × NC Orders)  
-                  • aMER = Net Revenue ÷ (nCAC × NC Orders)
-                </div>
-              </div>
-            </div>
-          </div>
+
         </div>
         
         {/* Mobile Card View - Hidden on Desktop */}
