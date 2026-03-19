@@ -79,74 +79,90 @@ export default function DashboardPage() {
 
       {/* KPI Cards Row 1: Net Revenue, Marketing Costs, MER, aMER */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard 
-          label="Net Revenue" 
-          value={formatCurrencyValue(kpiCards.netRevenue.value)} 
-          change={pctChange(kpiCards.netRevenue.value, kpiCards.netRevenue.prev)} 
-          sparkline={kpiCards.netRevenue.sparkline}
-          target={formatCurrencyValue(kpiCards.netRevenue.target)}
-          targetAchievement={(kpiCards.netRevenue.value / kpiCards.netRevenue.target) * 100}
-        />
-        <KPICard 
-          label="Marketing Costs" 
-          value={formatCurrencyValue(kpiCards.marketingCosts.value)} 
-          change={pctChange(kpiCards.marketingCosts.value, kpiCards.marketingCosts.prev)} 
-          sparkline={kpiCards.marketingCosts.sparkline}
-          target={formatCurrencyValue(kpiCards.marketingCosts.target)}
-          targetAchievement={(kpiCards.marketingCosts.value / kpiCards.marketingCosts.target) * 100}
-        />
-        <KPICard 
-          label="MER" 
-          value={`${kpiCards.mer.value}x`} 
-          change={pctChange(kpiCards.mer.value, kpiCards.mer.prev)} 
-          sparkline={kpiCards.mer.sparkline}
-          target={`${kpiCards.mer.target}x`}
-          targetAchievement={(kpiCards.mer.value / kpiCards.mer.target) * 100}
-        />
-        <KPICard 
-          label="aMER" 
-          value={`${kpiCards.nmer.value}x`} 
-          change={pctChange(kpiCards.nmer.value, kpiCards.nmer.prev)} 
-          sparkline={kpiCards.nmer.sparkline}
-          target={`${kpiCards.nmer.target}x`}
-          targetAchievement={(kpiCards.nmer.value / kpiCards.nmer.target) * 100}
-        />
+        <div data-testid="kpi-net-revenue">
+          <KPICard 
+            label="Net Revenue" 
+            value={formatCurrencyValue(kpiCards.netRevenue.value)} 
+            change={pctChange(kpiCards.netRevenue.value, kpiCards.netRevenue.prev)} 
+            sparkline={kpiCards.netRevenue.sparkline}
+            target={formatCurrencyValue(kpiCards.netRevenue.target)}
+            targetAchievement={(kpiCards.netRevenue.value / kpiCards.netRevenue.target) * 100}
+          />
+        </div>
+        <div data-testid="kpi-marketing-costs">
+          <KPICard 
+            label="Marketing Costs" 
+            value={formatCurrencyValue(kpiCards.marketingCosts.value)} 
+            change={pctChange(kpiCards.marketingCosts.value, kpiCards.marketingCosts.prev)} 
+            sparkline={kpiCards.marketingCosts.sparkline}
+            target={formatCurrencyValue(kpiCards.marketingCosts.target)}
+            targetAchievement={(kpiCards.marketingCosts.value / kpiCards.marketingCosts.target) * 100}
+          />
+        </div>
+        <div data-testid="kpi-mer">
+          <KPICard 
+            label="MER" 
+            value={`${kpiCards.mer.value}x`} 
+            change={pctChange(kpiCards.mer.value, kpiCards.mer.prev)} 
+            sparkline={kpiCards.mer.sparkline}
+            target={`${kpiCards.mer.target}x`}
+            targetAchievement={(kpiCards.mer.value / kpiCards.mer.target) * 100}
+          />
+        </div>
+        <div data-testid="kpi-amer">
+          <KPICard 
+            label="aMER" 
+            value={`${kpiCards.nmer.value}x`} 
+            change={pctChange(kpiCards.nmer.value, kpiCards.nmer.prev)} 
+            sparkline={kpiCards.nmer.sparkline}
+            target={`${kpiCards.nmer.target}x`}
+            targetAchievement={(kpiCards.nmer.value / kpiCards.nmer.target) * 100}
+          />
+        </div>
       </div>
 
       {/* KPI Cards Row 2: Orders, New Customers, CAC, nCAC */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard 
-          label="Orders" 
-          value={formatNumber(kpiCards.netOrders.value)} 
-          change={pctChange(kpiCards.netOrders.value, kpiCards.netOrders.prev)} 
-          sparkline={kpiCards.netOrders.sparkline}
-          target={formatNumber(kpiCards.netOrders.target)}
-          targetAchievement={(kpiCards.netOrders.value / kpiCards.netOrders.target) * 100}
-        />
-        <KPICard 
-          label="NC Orders" 
-          value={formatNumber(kpiCards.newCustomers.value)} 
-          change={pctChange(kpiCards.newCustomers.value, kpiCards.newCustomers.prev)} 
-          sparkline={kpiCards.newCustomers.sparkline}
-          target={formatNumber(kpiCards.newCustomers.target)}
-          targetAchievement={(kpiCards.newCustomers.value / kpiCards.newCustomers.target) * 100}
-        />
-        <KPICard 
-          label="CAC" 
-          value={formatCurrencyValue(kpiCards.cac.value)} 
-          change={pctChange(kpiCards.cac.value, kpiCards.cac.prev)} 
-          sparkline={kpiCards.cac.sparkline}
-          target={formatCurrencyValue(kpiCards.cac.target)}
-          targetAchievement={(kpiCards.cac.target / kpiCards.cac.value) * 100}
-        />
-        <KPICard 
-          label="ncCAC" 
-          value={formatCurrencyValue(kpiCards.ncac.value)} 
-          change={pctChange(kpiCards.ncac.value, kpiCards.ncac.prev)} 
-          sparkline={kpiCards.ncac.sparkline}
-          target={formatCurrencyValue(kpiCards.ncac.target)}
-          targetAchievement={(kpiCards.ncac.target / kpiCards.ncac.value) * 100}
-        />
+        <div data-testid="kpi-orders">
+          <KPICard 
+            label="Orders" 
+            value={formatNumber(kpiCards.netOrders.value)} 
+            change={pctChange(kpiCards.netOrders.value, kpiCards.netOrders.prev)} 
+            sparkline={kpiCards.netOrders.sparkline}
+            target={formatNumber(kpiCards.netOrders.target)}
+            targetAchievement={(kpiCards.netOrders.value / kpiCards.netOrders.target) * 100}
+          />
+        </div>
+        <div data-testid="kpi-nc-orders">
+          <KPICard 
+            label="NC Orders" 
+            value={formatNumber(kpiCards.newCustomers.value)} 
+            change={pctChange(kpiCards.newCustomers.value, kpiCards.newCustomers.prev)} 
+            sparkline={kpiCards.newCustomers.sparkline}
+            target={formatNumber(kpiCards.newCustomers.target)}
+            targetAchievement={(kpiCards.newCustomers.value / kpiCards.newCustomers.target) * 100}
+          />
+        </div>
+        <div data-testid="kpi-cac">
+          <KPICard 
+            label="CAC" 
+            value={formatCurrencyValue(kpiCards.cac.value)} 
+            change={pctChange(kpiCards.cac.value, kpiCards.cac.prev)} 
+            sparkline={kpiCards.cac.sparkline}
+            target={formatCurrencyValue(kpiCards.cac.target)}
+            targetAchievement={(kpiCards.cac.target / kpiCards.cac.value) * 100}
+          />
+        </div>
+        <div data-testid="kpi-ncac">
+          <KPICard 
+            label="ncCAC" 
+            value={formatCurrencyValue(kpiCards.ncac.value)} 
+            change={pctChange(kpiCards.ncac.value, kpiCards.ncac.prev)} 
+            sparkline={kpiCards.ncac.sparkline}
+            target={formatCurrencyValue(kpiCards.ncac.target)}
+            targetAchievement={(kpiCards.ncac.target / kpiCards.ncac.value) * 100}
+          />
+        </div>
       </div>
 
       {/* CAC/LTV and LTV per Customer KPI Cards */}
@@ -171,7 +187,7 @@ export default function DashboardPage() {
 
       {/* Revenue & Marketing Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="revenue-chart">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue & Marketing Costs</h3>
             <span className="text-xs text-text-tertiary shrink-0">Triple Whale</span>
@@ -297,7 +313,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Channel Attribution Table */}
-      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="attribution-table">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
           <div>
             <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>

@@ -130,64 +130,116 @@ export default function PDFExportPage() {
     
     try {
       const selectedItems = Array.from(selectedSections);
-      const filename = `click-man-export-${new Date().toISOString().split('T')[0]}.html`;
       
-      // Create HTML content that can be printed as PDF
-      const htmlContent = `
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Click-Man Dashboard Export</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
-        h1 { color: #333; border-bottom: 2px solid #4A6BD6; padding-bottom: 10px; }
-        h2 { color: #666; margin-top: 30px; }
-        .export-info { background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 30px; }
-        .section-list { list-style-type: none; padding: 0; }
-        .section-list li { background: #fff; margin: 10px 0; padding: 15px; border: 1px solid #e0e0e0; border-radius: 6px; }
-        .note { color: #666; font-style: italic; margin-top: 30px; }
-        @media print { body { margin: 20px; } }
-    </style>
-</head>
-<body>
-    <h1>Click-Man Dashboard Export</h1>
-    
-    <div class="export-info">
-        <strong>Generated:</strong> ${new Date().toLocaleString()}<br/>
-        <strong>Total Sections:</strong> ${selectedItems.length}<br/>
-        <strong>Export Type:</strong> Dashboard Analytics Report
-    </div>
-    
-    <h2>Selected Sections</h2>
-    <ul class="section-list">
-        ${selectedItems.map(item => `<li>📊 ${item}</li>`).join('')}
-    </ul>
-    
-    <div class="note">
-        <p><strong>Note:</strong> This is a section manifest for the Click-Man dashboard export. In a full implementation, this would contain the actual charts, data tables, and visualizations from each selected section.</p>
-        <p><strong>To save as PDF:</strong> Use your browser's Print function (Ctrl+P / Cmd+P) and select "Save as PDF".</p>
-    </div>
-</body>
-</html>`;
+      // Show progress message
+      const progressDiv = document.createElement('div');
+      progressDiv.id = 'pdf-progress';
+      progressDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.8);
+        color: white;
+        padding: 20px 40px;
+        border-radius: 8px;
+        z-index: 9999;
+        text-align: center;
+        font-family: Arial, sans-serif;
+      `;
+      progressDiv.innerHTML = `
+        <div>📊 Generating PDF Export...</div>
+        <div style="margin-top: 10px; font-size: 14px;">
+          Generating report with live dashboard data
+        </div>
+        <div style="margin-top: 10px; font-size: 12px; opacity: 0.8;">
+          Including KPIs, channel attribution, and tracking health
+        </div>
+      `;
+      document.body.appendChild(progressDiv);
+
+      // Try the advanced DOM capture method first, fallback to data-only PDF
+      try {
+        // Dynamic import for DOM capture
+        const { generateComprehensivePDF } = await import('@/lib/pdf-generator');
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Wait for content to settle
+        await generateComprehensivePDF(selectedItems);
+      } catch (domError) {
+        console.warn('DOM capture failed, falling back to data-only PDF:', domError);
+        
+        // Fallback to data-focused PDF
+        const { generateDataPDF } = await import('@/lib/data-pdf-generator');
+        await generateDataPDF();
+      }
       
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Remove progress indicator
+      const progress = document.getElementById('pdf-progress');
+      if (progress) progress.remove();
       
       // Show success message
-      alert(`Export successful! The HTML file has been downloaded. You can open it in your browser and use "Print to PDF" to create a PDF file.`);
+      const successDiv = document.createElement('div');
+      successDiv.style.cssText = progressDiv.style.cssText;
+      successDiv.style.background = 'rgba(16, 185, 129, 0.9)'; // Green background
+      successDiv.innerHTML = `
+        <div>✅ PDF Export Complete!</div>
+        <div style="margin-top: 10px; font-size: 14px;">
+          Your Click-Man dashboard report has been downloaded
+        </div>
+        <div style="margin-top: 10px; font-size: 12px; opacity: 0.9;">
+          Contains real KPI values, channel data, and tracking metrics
+        </div>
+        <div style="margin-top: 15px;">
+          <button onclick="this.parentElement.parentElement.remove()" 
+                  style="padding: 8px 16px; background: rgba(0,0,0,0.2); color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Close
+          </button>
+        </div>
+      `;
+      document.body.appendChild(successDiv);
+      setTimeout(() => successDiv.remove(), 5000);
       
       setIsExporting(false);
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('PDF generation failed:', error);
+      
+      // Remove progress indicator
+      const progress = document.getElementById('pdf-progress');
+      if (progress) progress.remove();
+      
+      // Show error message
+      const errorDiv = document.createElement('div');
+      errorDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(239, 68, 68, 0.9);
+        color: white;
+        padding: 20px 40px;
+        border-radius: 8px;
+        z-index: 9999;
+        text-align: center;
+        font-family: Arial, sans-serif;
+      `;
+      errorDiv.innerHTML = `
+        <div>❌ PDF Export Failed</div>
+        <div style="margin-top: 10px; font-size: 14px;">
+          ${error instanceof Error ? error.message : 'Unable to generate PDF export'}
+        </div>
+        <div style="margin-top: 10px; font-size: 12px; opacity: 0.8;">
+          Please try again or contact support if the issue persists
+        </div>
+        <div style="margin-top: 15px;">
+          <button onclick="this.parentElement.remove()" 
+                  style="padding: 8px 16px; background: rgba(0,0,0,0.3); color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Close
+          </button>
+        </div>
+      `;
+      document.body.appendChild(errorDiv);
+      setTimeout(() => errorDiv.remove(), 10000);
+      
       setIsExporting(false);
-      alert('Export failed. Please try again.');
     }
   };
 
