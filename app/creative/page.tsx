@@ -70,6 +70,7 @@ export default function CreativePage() {
   const [platform, setPlatform] = useState('Meta');
   const [attrModel, setAttrModel] = useState('Linear All');
   const [attrWindow, setAttrWindow] = useState('7-day click / 1-day view');
+  const [accountControlFilter, setAccountControlFilter] = useState('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [genderFilter, setGenderFilter] = useState('all');
 
@@ -335,23 +336,26 @@ export default function CreativePage() {
               </div>
             ))}
           </div>
-          <div className="min-h-[320px] sm:min-h-[420px]" style={{ width: '100%', height: '420px' }}>
+          <div className="min-h-[320px] sm:min-h-[450px]" style={{ width: '100%', height: '450px' }}>
             <ResponsiveContainer width="100%" height="100%">
-            <ScatterChart margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
+            <ScatterChart margin={{ top: 20, right: 50, bottom: 60, left: 60 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis
                 type="number" dataKey="spend" name="Spend"
-                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
-                tickFormatter={(v) => formatCurrencyValue(v)}
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }}
+                tickFormatter={(v) => formatCurrencyValue(v).replace('$', '$').replace(',', '')}
                 domain={[0, 60000]}
-                label={{ value: 'Total Spend', position: 'insideBottom', offset: -10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }}
+                interval={0}
+                tickCount={6}
+                label={{ value: 'Total Spend', position: 'insideBottom', offset: -15, style: { fill: 'var(--color-text-tertiary)', fontSize: 11, textAnchor: 'middle' } }}
               />
               <YAxis
                 type="number" dataKey="cpa" name="CPA"
-                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
-                tickFormatter={(v) => formatCurrencyValue(v)}
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }}
+                tickFormatter={(v) => formatCurrencyValue(v).replace('$', '$').replace(',', '')}
                 domain={[200, 1500]}
-                label={{ value: 'CPA', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }}
+                tickCount={7}
+                label={{ value: 'CPA', angle: -90, position: 'insideLeft', offset: 10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11, textAnchor: 'middle' } }}
               />
               <ZAxis type="number" range={[80, 200]} />
               <ReferenceLine y={787} stroke="#EF4444" strokeDasharray="6 4" strokeWidth={2} label={{ value: `CPA Target ${formatCurrencyValue(787)}`, position: 'right', style: { fill: '#EF4444', fontSize: 10, fontWeight: 600 } }} />
@@ -452,12 +456,66 @@ export default function CreativePage() {
           
           {/* Creative Listings Table */}
           <div className="mt-6">
-            <h4 className="text-sm font-medium text-text-primary mb-3">
-              Account Control Creative Legend
-              <span className="text-xs text-text-secondary ml-2 font-normal">
-                (Colors match chart bubbles above)
-              </span>
-            </h4>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+              <h4 className="text-sm font-medium text-text-primary">
+                Account Control Creative Legend
+                <span className="text-xs text-text-secondary ml-2 font-normal">
+                  (Colors match chart bubbles above)
+                </span>
+              </h4>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => setAccountControlFilter('all')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    accountControlFilter === 'all'
+                      ? 'bg-brand-blue text-white'
+                      : 'bg-bg-elevated text-text-secondary hover:text-text-primary hover:bg-bg-surface'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setAccountControlFilter('scaling')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    accountControlFilter === 'scaling'
+                      ? 'bg-success text-white'
+                      : 'bg-bg-elevated text-text-secondary hover:text-text-primary hover:bg-bg-surface'
+                  }`}
+                >
+                  Scale
+                </button>
+                <button
+                  onClick={() => setAccountControlFilter('testing')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    accountControlFilter === 'testing'
+                      ? 'bg-brand-blue text-white'
+                      : 'bg-bg-elevated text-text-secondary hover:text-text-primary hover:bg-bg-surface'
+                  }`}
+                >
+                  Testing
+                </button>
+                <button
+                  onClick={() => setAccountControlFilter('zombie')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    accountControlFilter === 'zombie'
+                      ? 'bg-danger text-white'
+                      : 'bg-bg-elevated text-text-secondary hover:text-text-primary hover:bg-bg-surface'
+                  }`}
+                >
+                  Zombies
+                </button>
+                <button
+                  onClick={() => setAccountControlFilter('untapped')}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    accountControlFilter === 'untapped'
+                      ? 'bg-warm-gold text-white'
+                      : 'bg-bg-elevated text-text-secondary hover:text-text-primary hover:bg-bg-surface'
+                  }`}
+                >
+                  Untapped/Learning
+                </button>
+              </div>
+            </div>
             <div className="overflow-x-auto -mx-1 sm:mx-0">
               <div className="min-w-[700px]">
                 <table className="w-full text-xs">
@@ -474,6 +532,7 @@ export default function CreativePage() {
                   <tbody>
                     {accountControlData
                       .filter(ad => ad.platform === platform)
+                      .filter(ad => accountControlFilter === 'all' || ad.zone === accountControlFilter)
                       .sort((a, b) => b.spend - a.spend)
                       .map((ad) => (
                       <tr key={ad.name} className="border-b border-border/30 hover:bg-bg-elevated/50 transition-colors">

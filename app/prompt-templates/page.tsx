@@ -12,6 +12,47 @@ interface PromptTemplate {
 }
 
 const sampleTemplates: PromptTemplate[] = [
+  // Creative Analysis Templates
+  {
+    id: 'creative-1',
+    name: 'Creative Performance Analysis',
+    description: 'Analyzes ad creative performance, identifies winners and losers',
+    prompt: 'Analyze the creative performance data focusing on: 1) Which ad creatives are scaling efficiently (high spend, low CPA), 2) Creative fatigue indicators and refresh recommendations, 3) Platform-specific creative insights (Meta vs TikTok vs Google), 4) Budget reallocation opportunities from underperformers to winners, 5) Creative testing velocity and hit rate analysis.',
+    category: 'Creative Analysis',
+    lastModified: '2026-03-19'
+  },
+  {
+    id: 'creative-2', 
+    name: 'Ad Churn & Lifecycle Analysis',
+    description: 'Evaluates creative aging and churn patterns across launch cohorts',
+    prompt: 'Examine ad creative churn patterns by analyzing: 1) Creative age distribution and spend allocation across age brackets, 2) Launch cohort performance over time, 3) Creative lifecycle optimization (when to refresh vs scale), 4) New creative adoption rate and effectiveness, 5) Recommendations for creative pipeline management and testing cadence.',
+    category: 'Creative Analysis',
+    lastModified: '2026-03-19'
+  },
+  {
+    id: 'creative-3',
+    name: 'Account Control & Zone Analysis', 
+    description: 'CPA vs Spend scatter analysis identifying scaling opportunities',
+    prompt: 'Using the CPA vs Spend scatter plot data, analyze: 1) Ads in each performance zone (scaling, testing, zombies, untapped), 2) Budget allocation efficiency and reallocation opportunities, 3) Scale-up candidates currently in testing phase, 4) Zombie ads wasting budget that should be paused immediately, 5) Untapped potential ads that need creative optimization or increased spend.',
+    category: 'Creative Analysis', 
+    lastModified: '2026-03-19'
+  },
+  {
+    id: 'creative-4',
+    name: 'Creative Production & Hit Rate',
+    description: 'Evaluates creative production efficiency and scaling success rate',
+    prompt: 'Assess creative production effectiveness by examining: 1) Monthly creative launch volume vs scaling success rate, 2) Creative hit rate analysis (what percentage of launched ads actually scale), 3) Production queue optimization based on winning creative patterns, 4) Platform-specific creative preferences and performance differences, 5) Resource allocation recommendations for creative team focus.',
+    category: 'Creative Analysis',
+    lastModified: '2026-03-19'
+  },
+  {
+    id: 'creative-5',
+    name: 'Demographics vs Creative Alignment',
+    description: 'Analyzes if creative production aligns with profitable audience segments', 
+    prompt: 'Compare creative output vs profitable demographics: 1) Which age/gender segments drive highest LTV and conversion rates, 2) Whether current creative style matches top-performing demographic preferences, 3) Creative misalignment risks (producing Gen Z content when profitable customers are older), 4) Demographic-specific creative recommendations, 5) Production pivot opportunities to better serve high-value segments.',
+    category: 'Creative Analysis',
+    lastModified: '2026-03-19'
+  },
   {
     id: '1',
     name: 'Linear Attribution Analysis',
