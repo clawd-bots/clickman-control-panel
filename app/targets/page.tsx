@@ -248,25 +248,108 @@ export default function TargetsPage() {
           </div>
         </div>
         
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs border-collapse">
+        {/* Mobile Card View - Hidden on Desktop */}
+        <div className="block lg:hidden space-y-4">
+          {monthlyTargets.map((row, rowIndex) => (
+            <div key={row.metric} className="bg-white border border-border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-semibold text-text-primary">{row.metric}</h4>
+                <span className="text-xs px-2 py-1 bg-bg-elevated rounded text-text-secondary">
+                  {row.unit}
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3">
+                {monthColumns.map((colKey, colIndex) => {
+                  const cellValue = row[colKey];
+                  const isAutoCalc = isAutoCalculated(row.metric);
+                  const isEditing = editingCell?.row === rowIndex && editingCell?.col === colKey;
+                  
+                  return (
+                    <div key={`${rowIndex}-${colIndex}`} className="space-y-1">
+                      <div className="text-xs font-medium text-text-secondary">
+                        {monthLabels[colIndex]}
+                      </div>
+                      
+                      {isEditing ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editValue}
+                            onChange={(e) => setEditValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') saveEdit();
+                              if (e.key === 'Escape') cancelEdit();
+                            }}
+                            className="flex-1 py-2 px-3 rounded text-center text-text-primary bg-bg-primary border border-warm-gold outline-none text-sm"
+                            autoFocus
+                            placeholder={row.unit}
+                          />
+                          <button onClick={saveEdit} className="text-success hover:text-success/80 p-1">
+                            <Check size={16} />
+                          </button>
+                          <button onClick={cancelEdit} className="text-text-tertiary hover:text-danger p-1">
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : isAutoCalc ? (
+                        <div className={`py-2 px-3 rounded text-sm text-center cursor-not-allowed ${
+                          cellValue 
+                            ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                            : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
+                        }`}>
+                          {cellValue ? (
+                            <span className="flex items-center justify-center gap-1">
+                              <span>{cellValue}</span>
+                              <span className="text-blue-500 text-xs">⚙</span>
+                            </span>
+                          ) : (
+                            <span>Auto-calc</span>
+                          )}
+                        </div>
+                      ) : (
+                        <button 
+                          className={`w-full py-2 px-3 rounded transition-all text-sm ${
+                            cellValue 
+                              ? 'text-text-primary bg-bg-primary border border-transparent hover:border-border' 
+                              : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary hover:border-text-secondary'
+                          }`}
+                          onClick={() => startEdit(rowIndex, colKey, cellValue)}
+                        >
+                          {cellValue || 'Set target'}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              <div className="mt-3 pt-3 border-t border-border text-xs text-text-tertiary">
+                Last updated: {row.lastUpdated}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop Table View - Hidden on Mobile */}
+        <div className="hidden lg:block overflow-x-auto">
+          <table className="w-full text-xs border-collapse min-w-[1200px]">
             <thead>
               <tr className="border-b border-border">
                 <th className="text-left py-3 px-3 font-semibold text-text-primary sticky left-0 bg-bg-surface min-w-[140px]">
                   Metric
                 </th>
                 {monthLabels.map((month, i) => (
-                  <th key={month} className="text-center py-3 px-2 font-medium text-text-secondary min-w-[90px]">
+                  <th key={month} className="text-center py-3 px-3 font-medium text-text-secondary min-w-[100px]">
                     {month}
                   </th>
                 ))}
-
               </tr>
             </thead>
             <tbody>
               {monthlyTargets.map((row, rowIndex) => (
                 <tr key={row.metric} className="border-b border-border/30 hover:bg-bg-elevated/30">
-                  <td className="py-1.5 px-3 font-medium text-text-primary sticky left-0 bg-bg-surface">
+                  <td className="py-2 px-3 font-medium text-text-primary sticky left-0 bg-bg-surface">
                     <div className="flex items-center gap-1">
                       {row.metric}
                       <InfoTooltip metric={row.metric} />
@@ -278,7 +361,7 @@ export default function TargetsPage() {
                     const isAutoCalc = isAutoCalculated(row.metric);
                     
                     return (
-                      <td key={`${rowIndex}-${colIndex}`} className="py-1.5 px-2 text-center">
+                      <td key={`${rowIndex}-${colIndex}`} className="py-2 px-3 text-center">
                         {isEditing ? (
                           <div className="flex items-center justify-center gap-1">
                             <input
@@ -289,7 +372,7 @@ export default function TargetsPage() {
                                 if (e.key === 'Enter') saveEdit();
                                 if (e.key === 'Escape') cancelEdit();
                               }}
-                              className="w-16 py-1 px-2 rounded text-center text-text-primary bg-bg-primary border border-warm-gold outline-none text-xs"
+                              className="w-20 py-1.5 px-2 rounded text-center text-text-primary bg-bg-primary border border-warm-gold outline-none text-xs"
                               autoFocus
                               placeholder={row.unit}
                             />
@@ -303,7 +386,7 @@ export default function TargetsPage() {
                         ) : isAutoCalc ? (
                           // Auto-calculated cell - disabled from editing
                           <div 
-                            className={`w-full py-1.5 px-2 rounded text-xs cursor-not-allowed ${
+                            className={`w-full py-1.5 px-3 rounded text-xs cursor-not-allowed ${
                               cellValue 
                                 ? 'text-blue-600 bg-blue-50 border border-blue-200' 
                                 : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
@@ -325,7 +408,7 @@ export default function TargetsPage() {
                         ) : (
                           // Editable cell
                           <button 
-                            className={`w-full py-1.5 px-2 rounded transition-all text-xs ${
+                            className={`w-full py-1.5 px-3 rounded transition-all text-xs ${
                               cellValue 
                                 ? 'text-text-primary hover:bg-bg-primary border border-transparent hover:border-border' 
                                 : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-primary border border-dashed border-text-tertiary hover:border-text-secondary'
@@ -342,9 +425,9 @@ export default function TargetsPage() {
 
                 </tr>
               ))}
-              {/* Column Save Buttons Row */}
+              {/* Column Save Buttons Row - Desktop Only */}
               <tr className="border-t border-border bg-bg-elevated/30">
-                <td className="py-2.5 px-3 font-medium text-text-secondary sticky left-0 bg-bg-elevated/30">
+                <td className="py-3 px-3 font-medium text-text-secondary sticky left-0 bg-bg-elevated/30">
                   Save Column
                 </td>
                 {monthColumns.map((colKey) => {
