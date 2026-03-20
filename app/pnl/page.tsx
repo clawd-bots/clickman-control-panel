@@ -37,6 +37,15 @@ export default function PnLPage() {
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
 
+  // Convert absolute values to margin percentages for the chart
+  const marginTrendData = pnlTrend.map(item => ({
+    month: item.month,
+    netRevenue: 100, // Net Revenue is always 100% baseline
+    cm1: ((item.cm1 / item.netRevenue) * 100), // CM1 as % of Net Revenue
+    cm2: ((item.cm2 / item.netRevenue) * 100), // CM2 as % of Net Revenue 
+    cm3: ((item.cm3 / item.netRevenue) * 100), // CM3 as % of Net Revenue
+  }));
+
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
     return formatCurrency(convertValue(value), currency);
@@ -185,7 +194,7 @@ export default function PnLPage() {
         </div>
         <div className="min-h-[300px]">
           <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={pnlTrend}>
+          <LineChart data={marginTrendData}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
             <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} interval={0} />
             <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${v.toFixed(0)}%`} />

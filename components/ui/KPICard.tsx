@@ -53,13 +53,24 @@ export default function KPICard({ label, value, change, sparkline, target, targe
           <span className="text-xs text-text-secondary">vs prior period</span>
         </div>
         {target && targetAchievement !== undefined && (
-          <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-              targetAchievement >= 100 ? 'bg-success/15 text-success' : targetAchievement >= 80 ? 'bg-warm-gold/15 text-warm-gold' : 'bg-danger/15 text-danger'
-            }`}>
-              {targetAchievement.toFixed(0)}% of target
-            </span>
-            <span className="text-xs text-text-secondary">Target: {target}</span>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                targetAchievement >= 100 ? 'bg-success/15 text-success' : targetAchievement >= 80 ? 'bg-warm-gold/15 text-warm-gold' : 'bg-danger/15 text-danger'
+              }`}>
+                {targetAchievement.toFixed(0)}% of target
+              </span>
+              <span className="text-xs text-text-secondary">Target: {target}</span>
+            </div>
+            {/* Progress Bar */}
+            <div className="w-full bg-bg-elevated rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  targetAchievement >= 100 ? 'bg-success' : targetAchievement >= 80 ? 'bg-warm-gold' : 'bg-danger'
+                }`}
+                style={{ width: `${Math.min(targetAchievement, 100)}%` }}
+              />
+            </div>
           </div>
         )}
       </div>
