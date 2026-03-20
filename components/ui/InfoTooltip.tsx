@@ -19,10 +19,10 @@ export default function InfoTooltip({ metric }: { metric: string }) {
         <Info size={14} />
       </button>
       {show && (
-        <div className="absolute z-[100] top-full right-0 mt-2 w-72 p-3 rounded-lg bg-bg-elevated border border-border text-xs text-text-secondary leading-relaxed shadow-xl">
+        <div className="absolute z-[200] top-full left-1/2 transform -translate-x-1/2 mt-2 w-72 p-3 rounded-lg bg-bg-elevated border border-border text-xs text-text-secondary leading-relaxed shadow-xl">
           <div className="font-medium text-text-primary mb-1">{metric}</div>
           {text}
-          <div className="absolute bottom-full right-4 border-4 border-transparent border-b-bg-elevated z-[101]" />
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-bg-elevated" />
         </div>
       )}
     </span>

@@ -142,7 +142,12 @@ export default function TopBar() {
             {/* Date Range Picker */}
             <div ref={dateRef} className="relative">
               <button
-                onClick={() => { setShowDateDropdown(!showDateDropdown); setShowCompDropdown(false); }}
+                onClick={(e) => { 
+                  e.preventDefault(); 
+                  e.stopPropagation(); 
+                  setShowDateDropdown(!showDateDropdown); 
+                  setShowCompDropdown(false); 
+                }}
                 className="flex items-center gap-1 md:gap-2 bg-bg-elevated border border-border rounded-md px-2 md:px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-text-tertiary transition-colors"
               >
                 <Calendar size={13} />

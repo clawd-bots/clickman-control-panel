@@ -237,12 +237,13 @@ export default function PnLPage() {
 
   // Generate margin chart data with proper date aggregation
   const marginTrendData = useMemo(() => {
-    const rangeDays = getDateRangeDays();
+    // Calculate date range in days
+    const rangeDays = Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24));
     
     if (rangeDays <= 14) {
       // Daily data - expand existing monthly data into daily points
       const dailyData = [];
-      for (let i = 0; i < 14; i++) {
+      for (let i = 0; i < Math.min(14, rangeDays); i++) {
         const baseData = pnlTrend[i % pnlTrend.length];
         dailyData.push({
           period: `Day ${i + 1}`,
@@ -269,26 +270,9 @@ export default function PnLPage() {
         cm3: ((item.cm3 / item.netRevenue) * 100),
       }));
     }
-  }, [timePeriod, customDateRange]);
+  }, [dateRange]);
 
-  // Calculate date range in days for chart aggregation
-  function getDateRangeDays(): number {
-    if (timePeriod === 'Custom' && customDateRange.start && customDateRange.end) {
-      const start = new Date(customDateRange.start);
-      const end = new Date(customDateRange.end);
-      return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    }
-    
-    const rangeDaysMap = {
-      'Day': 1,
-      'Week': 7,
-      'Month': 30,
-      'Quarter': 90,
-      'Total': 365
-    };
-    
-    return rangeDaysMap[timePeriod as keyof typeof rangeDaysMap] || 365;
-  }
+
 
   const toggle = (label: string) => setExpanded(prev => ({ ...prev, [label]: !prev[label] }));
 
