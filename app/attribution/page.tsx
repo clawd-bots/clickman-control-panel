@@ -19,8 +19,8 @@ const treeLayers = [
   { id: 'star', label: 'MER / nCAC', icon: Star, description: 'Top-level efficiency metrics, your north star for marketing health', color: '#EDBF63' },
   { id: 'upper', label: 'Surveys & MMM', icon: GitBranch, description: 'Directional measurement, budget allocation layer using survey data and modeling', color: '#4A6BD6' },
   { id: 'lower', label: 'MTA & Platform', icon: Activity, description: 'Ad-level optimization, tactical decisions based on multi-touch and platform data', color: '#334FB4' },
-  { id: 'trunk', label: 'Tracking Infra', icon: Database, description: 'The foundation , GA4, CAPI, and server-side tracking health', color: '#34D399' },
-  { id: 'roots', label: 'Cohort LTV', icon: Layers, description: 'Long-term value , measuring customer quality by acquisition source', color: '#A855F7' },
+  { id: 'trunk', label: 'Tracking Infra', icon: Database, description: 'The foundation, GA4, CAPI, and server-side tracking health', color: '#34D399' },
+  { id: 'roots', label: 'Cohort LTV', icon: Layers, description: 'Long-term value, measuring customer quality by acquisition source', color: '#A855F7' },
 ];
 
 interface LayerInsights {
@@ -60,31 +60,31 @@ export default function AttributionPage() {
   // Dynamic layer insights with currency conversion
   const getLayerInsights = (): Record<string, LayerInsights> => ({
     star: {
-      working: ['MER at 3.67x is above the 3.5x healthy threshold , marketing is generating strong returns', `nCAC trending down 2.6% MoM from ${formatCurrencyValue(808)} to ${formatCurrencyValue(787)} , acquisition getting more efficient`],
-      notWorking: ['nMER at 1.92x means new customer revenue alone doesn\'t cover spend , reliant on repeats', 'MER variance across channels is high (Meta 3.91x vs Referral 0.40x)'],
+      working: ['MER at 3.67x is above the 3.5x healthy threshold, marketing is generating strong returns', `nCAC trending down 2.6% MoM from ${formatCurrencyValue(808)} to ${formatCurrencyValue(787)}, acquisition getting more efficient`],
+      notWorking: ['nMER at 1.92x means new customer revenue alone doesn\'t cover spend, reliant on repeats', 'MER variance across channels is high (Meta 3.91x vs Referral 0.40x)'],
       doNext: ['Set a max CPA ceiling by channel based on LTV:CAC ratios', 'Build an automated alert when MER drops below 3.0x'],
-      stopDoing: ['Don\'t optimize purely on blended MER , it hides channel-level inefficiencies'],
+      stopDoing: ['Don\'t optimize purely on blended MER, it hides channel-level inefficiencies'],
     },
     upper: {
-      working: ['Post-purchase survey captures 1,240 responses/month , statistically significant sample', 'TikTok shows 22% survey attribution, validating its top-of-funnel role beyond click tracking'],
-      notWorking: ['No MMM model built yet , relying solely on survey data for channel allocation', 'No geo-lift tests run to validate incrementality of any channel'],
-      doNext: ['Commission an MMM study , even a simple one using 6 months of data', 'Run a geo-lift test on TikTok to prove incremental value vs. organic discovery'],
+      working: ['Post-purchase survey captures 1,240 responses/month, statistically significant sample', 'TikTok shows 22% survey attribution, validating its top-of-funnel role beyond click tracking'],
+      notWorking: ['No MMM model built yet, relying solely on survey data for channel allocation', 'No geo-lift tests run to validate incrementality of any channel'],
+      doNext: ['Commission an MMM study, even a simple one using 6 months of data', 'Run a geo-lift test on TikTok to prove incremental value vs. organic discovery'],
       stopDoing: ['Stop treating survey data as ground truth for budget decisions without cross-validation'],
     },
     lower: {
-      working: [`Brand Search at ${formatCurrencyValue(420)} CPA and 4.76x ROAS , the most efficient channel by far`, `Hair Before/After creative achieves ${formatCurrencyValue(577)} CPA , well below target`],
+      working: [`Brand Search at ${formatCurrencyValue(420)} CPA and 4.76x ROAS, the most efficient channel by far`, `Hair Before/After creative achieves ${formatCurrencyValue(577)} CPA, well below target`],
       notWorking: [`Competitor Keywords at ${formatCurrencyValue(880)} CPA is 12% above target and losing money`, 'Platform reporting overlap inflates total attributed conversions by ~30%'],
       doNext: ['Deduplicate conversions across platforms before making budget decisions', 'Test moving top Meta creatives to TikTok format for potentially lower CPCs'],
-      stopDoing: ['Stop trusting individual platform ROAS numbers at face value , always cross-reference with MER'],
+      stopDoing: ['Stop trusting individual platform ROAS numbers at face value, always cross-reference with MER'],
     },
     trunk: {
       working: ['Meta Pixel + CAPI dual setup achieving 89-92% match rates', 'GA4 processing 22,400 events/day with stable tracking'],
-      notWorking: ['Server-side GTM is completely down (0 events/day) , losing ~15% of conversion data', 'TikTok Pixel match rate at 71% , significant data loss'],
-      doNext: ['Fix Server-side GTM immediately , this is the #1 priority before any budget decisions', 'Improve TikTok tracking with enhanced match keys (email, phone hashing)'],
+      notWorking: ['Server-side GTM is completely down (0 events/day), losing ~15% of conversion data', 'TikTok Pixel match rate at 71%, significant data loss'],
+      doNext: ['Fix Server-side GTM immediately, this is the #1 priority before any budget decisions', 'Improve TikTok tracking with enhanced match keys (email, phone hashing)'],
       stopDoing: ['Stop making budget allocation decisions while server-side GTM is broken'],
     },
     roots: {
-      working: ['Google Brand customers have 3.8x LTV:CAC , excellent unit economics', `GLP-1 product has highest LTV (${formatCurrencyValue(9200)} at 365d) driving overall retention`],
+      working: ['Google Brand customers have 3.8x LTV:CAC, excellent unit economics', `GLP-1 product has highest LTV (${formatCurrencyValue(9200)} at 365d) driving overall retention`],
       notWorking: ['TikTok LTV:CAC at 1.4x is below the 2.0x minimum threshold', 'TikTok payback period of 6.8 months creates cash flow pressure'],
       doNext: [`Cap TikTok CPA at ${formatCurrencyValue(600)} until LTV:CAC improves above 2.0x`, 'Segment TikTok cohorts by product to see if specific products have better TikTok LTV'],
       stopDoing: ['Stop scaling TikTok spend without addressing the LTV:CAC gap first'],
@@ -148,7 +148,7 @@ export default function AttributionPage() {
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
         <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
           <Sparkles size={16} className="text-warm-gold shrink-0" />
-          <span className="truncate">{activeInfo.label} , AI Insights</span>
+          <span className="truncate">{activeInfo.label}, AI Insights</span>
         </h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <div className="space-y-3">
@@ -226,7 +226,7 @@ export default function AttributionPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
               <GitBranch size={16} className="text-brand-blue-light shrink-0" />
-              <span className="truncate">Channel Allocation , Survey Results</span>
+              <span className="truncate">Channel Allocation, Survey Results</span>
             </h3>
             <span className="text-xs text-text-tertiary shrink-0">Post-Purchase Survey</span>
           </div>
@@ -244,7 +244,7 @@ export default function AttributionPage() {
               </ResponsiveContainer>
             </div>
             <div className="space-y-3">
-              <p className="text-xs text-text-secondary leading-relaxed">"How did you first hear about AndYou?" , Post-purchase survey results (last 30 days, n=1,240)</p>
+              <p className="text-xs text-text-secondary leading-relaxed">"How did you first hear about AndYou?", Post-purchase survey results (last 30 days, n=1,240)</p>
               {attributionSurvey.map((s, i) => (
                 <div key={s.source} className="flex items-center gap-3">
                   <span className="w-3 h-3 rounded-sm shrink-0" style={{ background: COLORS[i] }} />
@@ -267,7 +267,7 @@ export default function AttributionPage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
               <Activity size={16} className="text-brand-blue shrink-0" />
-              <span className="truncate">Account Control Chart , CPA vs Spend</span>
+              <span className="truncate">Account Control Chart, CPA vs Spend</span>
             </h3>
             <span className="text-xs text-text-tertiary shrink-0">Platform Data</span>
           </div>

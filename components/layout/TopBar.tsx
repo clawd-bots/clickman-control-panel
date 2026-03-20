@@ -60,12 +60,48 @@ export default function TopBar() {
   const { currency, setCurrency } = useCurrency();
   const [datePreset, setDatePreset] = useState('7d');
   const [comparison, setComparison] = useState('prev-period');
+  const [comparisonEnabled, setComparisonEnabled] = useState(true);
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [showCompDropdown, setShowCompDropdown] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const dateRef = useRef<HTMLDivElement>(null);
   const compRef = useRef<HTMLDivElement>(null);
 
   const showDatePicker = !hideDatePickerPages.includes(pathname);
+
+  // Load comparison preference from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('clickman-comparison-enabled');
+    if (stored !== null) {
+      setComparisonEnabled(stored === 'true');
+    }
+  }, []);
+
+  // Save comparison preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('clickman-comparison-enabled', comparisonEnabled.toString());
+  }, [comparisonEnabled]);
+
+  // Global refresh function
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Simulate API refresh - in real app this would refresh all data sources
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setLastRefreshed(new Date());
+      
+      // Show success notification (you could use a toast library here)
+      const event = new CustomEvent('refresh-success', { 
+        detail: { message: 'Data refreshed successfully', timestamp: new Date() }
+      });
+      window.dispatchEvent(event);
+    } catch (error) {
+      console.error('Refresh failed:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -129,38 +165,51 @@ export default function TopBar() {
                       {p.label}
                     </button>
                   ))}
+                  <div className="border-t border-border mt-1 pt-1">
+                    <button
+                      onClick={() => setComparisonEnabled(!comparisonEnabled)}
+                      className="w-full flex items-center justify-between px-3 py-2 text-xs text-text-secondary hover:bg-bg-surface hover:text-text-primary transition-colors"
+                    >
+                      <span>Compare to previous period</span>
+                      <div className={`w-8 h-4 rounded-full transition-colors ${comparisonEnabled ? 'bg-brand-blue' : 'bg-border'}`}>
+                        <div className={`w-3 h-3 bg-bg-surface rounded-full shadow transition-transform mt-0.5 ${comparisonEnabled ? 'translate-x-4 ml-0.5' : 'translate-x-0.5'}`} />
+                      </div>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* Comparison Period - hidden on small screens */}
-            <div ref={compRef} className="relative hidden sm:block">
-              <button
-                onClick={() => { setShowCompDropdown(!showCompDropdown); setShowDateDropdown(false); }}
-                className="flex items-center gap-1.5 bg-bg-elevated border border-border rounded-md px-2.5 py-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors"
-              >
-                <span className="text-text-tertiary">vs</span>
-                <span className="text-text-secondary">{comparisonOptions.find(o => o.value === comparison)?.label}</span>
-                <ChevronDown size={12} />
-              </button>
-              {showCompDropdown && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-bg-elevated border border-border rounded-lg shadow-xl z-50 py-1">
-                  {comparisonOptions.map((o) => (
-                    <button
-                      key={o.value}
-                      onClick={() => { setComparison(o.value); setShowCompDropdown(false); }}
-                      className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                        comparison === o.value
-                          ? 'bg-brand-blue/15 text-brand-blue-light'
-                          : 'text-text-secondary hover:bg-bg-surface hover:text-text-primary'
-                      }`}
-                    >
-                      {o.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* Comparison Period - hidden on small screens and when comparison is disabled */}
+            {comparisonEnabled && (
+              <div ref={compRef} className="relative hidden sm:block">
+                <button
+                  onClick={() => { setShowCompDropdown(!showCompDropdown); setShowDateDropdown(false); }}
+                  className="flex items-center gap-1.5 bg-bg-elevated border border-border rounded-md px-2.5 py-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors"
+                >
+                  <span className="text-text-tertiary">vs</span>
+                  <span className="text-text-secondary">{comparisonOptions.find(o => o.value === comparison)?.label}</span>
+                  <ChevronDown size={12} />
+                </button>
+                {showCompDropdown && (
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-bg-elevated border border-border rounded-lg shadow-xl z-50 py-1">
+                    {comparisonOptions.map((o) => (
+                      <button
+                        key={o.value}
+                        onClick={() => { setComparison(o.value); setShowCompDropdown(false); }}
+                        className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                          comparison === o.value
+                            ? 'bg-brand-blue/15 text-brand-blue-light'
+                            : 'text-text-secondary hover:bg-bg-surface hover:text-text-primary'
+                        }`}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -183,8 +232,13 @@ export default function TopBar() {
           {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
         </button>
 
-        <button className="hidden sm:block p-2 rounded-md hover:bg-bg-elevated text-text-tertiary hover:text-text-secondary transition-colors shrink-0">
-          <RefreshCw size={14} />
+        <button 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="hidden sm:block p-2 rounded-md hover:bg-bg-elevated text-text-tertiary hover:text-text-secondary transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed relative"
+          title={`Refresh all data from connected sources (Triple Whale, Google Sheets, GA4)${lastRefreshed ? `\nLast refreshed: ${lastRefreshed.toLocaleTimeString()}` : ''}`}
+        >
+          <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
         </button>
       </div>
     </header>

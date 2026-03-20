@@ -371,7 +371,7 @@ export default function CashFlowPage() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mx-1">
-        {/* Revenue Composition , now with 3 streams */}
+        {/* Revenue Composition, now with 3 streams */}
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h3 className="text-sm font-medium text-text-secondary">Revenue Composition</h3>

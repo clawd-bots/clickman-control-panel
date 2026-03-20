@@ -93,7 +93,7 @@ export default function FinalItemsPage() {
                   isExpanded ? 'border-danger/40' : 'border-border/50 hover:border-border'
                 }`}
               >
-                {/* Header row , always visible */}
+                {/* Header row, always visible */}
                 <button
                   onClick={() => toggleExpand(item.id)}
                   className="w-full flex items-center gap-3 p-4 text-left"

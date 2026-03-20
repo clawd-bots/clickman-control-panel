@@ -74,7 +74,7 @@ export default function DashboardPage() {
     <div className="space-y-4 sm:space-y-6">
       <div>
         <h2 className="text-lg sm:text-xl font-semibold">Daily Overview</h2>
-        <p className="text-sm text-text-secondary mt-0.5">What's happening right now , actuals, trends, and channel performance.</p>
+        <p className="text-sm text-text-secondary mt-0.5">What's happening right now, actuals, trends, and channel performance.</p>
       </div>
 
       {/* KPI Cards Row 1: Net Revenue, Marketing Costs, MER, aMER */}
