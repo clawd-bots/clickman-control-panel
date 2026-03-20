@@ -129,10 +129,13 @@ export default function TopBar() {
           height={24}
           className="h-6 w-auto shrink-0" 
         />
-        <h1 className="text-sm md:text-base font-bold tracking-wide text-text-primary truncate">
-          <span className="text-warm-gold">Click-Man</span>{' '}
-          <span className="text-text-primary hidden sm:inline">Control Panel</span>
-        </h1>
+        <Image
+          src={theme === 'light' ? '/clickman-logo-black.png' : '/clickman-logo-white.png'}
+          alt="Click-Man Control Panel"
+          width={120}
+          height={32}
+          className="h-8 w-auto shrink-0"
+        />
       </div>
 
       {/* Right - Date picker & controls */}
