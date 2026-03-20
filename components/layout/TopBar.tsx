@@ -155,7 +155,15 @@ export default function TopBar() {
                   {datePresets.map((p) => (
                     <button
                       key={p.value}
-                      onClick={() => { setDatePreset(p.value); setShowDateDropdown(false); }}
+                      onClick={() => { 
+                        setDatePreset(p.value); 
+                        setShowDateDropdown(false);
+                        // Dispatch date change event for global consumption
+                        const event = new CustomEvent('dateRangeChanged', { 
+                          detail: { preset: p.value, comparison, comparisonEnabled }
+                        });
+                        window.dispatchEvent(event);
+                      }}
                       className={`w-full text-left px-3 py-2 text-xs transition-colors ${
                         datePreset === p.value
                           ? 'bg-brand-blue/15 text-brand-blue-light'
@@ -167,7 +175,15 @@ export default function TopBar() {
                   ))}
                   <div className="border-t border-border mt-1 pt-1">
                     <button
-                      onClick={() => setComparisonEnabled(!comparisonEnabled)}
+                      onClick={() => {
+                        const newEnabled = !comparisonEnabled;
+                        setComparisonEnabled(newEnabled);
+                        // Dispatch date change event for global consumption
+                        const event = new CustomEvent('dateRangeChanged', { 
+                          detail: { preset: datePreset, comparison, comparisonEnabled: newEnabled }
+                        });
+                        window.dispatchEvent(event);
+                      }}
                       className="w-full flex items-center justify-between px-3 py-2 text-xs text-text-secondary hover:bg-bg-surface hover:text-text-primary transition-colors"
                     >
                       <span>Compare to previous period</span>
@@ -196,7 +212,15 @@ export default function TopBar() {
                     {comparisonOptions.map((o) => (
                       <button
                         key={o.value}
-                        onClick={() => { setComparison(o.value); setShowCompDropdown(false); }}
+                        onClick={() => { 
+                          setComparison(o.value); 
+                          setShowCompDropdown(false);
+                          // Dispatch date change event for global consumption
+                          const event = new CustomEvent('dateRangeChanged', { 
+                            detail: { preset: datePreset, comparison: o.value, comparisonEnabled }
+                          });
+                          window.dispatchEvent(event);
+                        }}
                         className={`w-full text-left px-3 py-2 text-xs transition-colors ${
                           comparison === o.value
                             ? 'bg-brand-blue/15 text-brand-blue-light'

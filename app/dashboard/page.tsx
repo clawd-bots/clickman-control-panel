@@ -1,10 +1,11 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import KPICard from '@/components/ui/KPICard';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import DataSource from '@/components/ui/DataSource';
 import { useCurrency } from '@/components/CurrencyProvider';
+import { useDateRange } from '@/components/DateProvider';
 
 import { kpiCards, dailyMetrics, channelAttribution, productKPIs, revenueInsights } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
@@ -22,12 +23,47 @@ function pctChange(curr: number, prev: number) {
 
 export default function DashboardPage() {
   const { currency, convertValue } = useCurrency();
+  const { dateRange } = useDateRange();
   const [activeAttributionTab, setActiveAttributionTab] = useState('Last Click');
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
     return formatCurrency(convertValue(value), currency);
   };
+
+  // Generate chart data based on selected date range
+  const chartData = useMemo(() => {
+    const { startDate, endDate } = dateRange;
+    const data = [];
+    const current = new Date(startDate);
+    
+    while (current <= endDate) {
+      const dateStr = current.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      
+      // Generate realistic sample data based on the date
+      const baseRevenue = 350000 + Math.sin(current.getTime() / (1000 * 60 * 60 * 24)) * 50000;
+      const baseCosts = 80000 + Math.cos(current.getTime() / (1000 * 60 * 60 * 24)) * 20000;
+      const baseOrders = 140 + Math.floor(Math.sin(current.getTime() / (1000 * 60 * 60 * 24 * 2)) * 30);
+      const baseNewCustomers = Math.floor(baseOrders * 0.7);
+      
+      data.push({
+        date: dateStr,
+        revenue: Math.round(baseRevenue),
+        costs: Math.round(baseCosts),
+        orders: baseOrders,
+        newCustomers: baseNewCustomers,
+        // Adding some variance
+        profit: Math.round(baseRevenue - baseCosts),
+      });
+      
+      current.setDate(current.getDate() + 1);
+    }
+    
+    return data;
+  }, [dateRange]);
 
   // Different data for Last Click vs Linear attribution  
   const channelAttributionLastClick = [
@@ -195,7 +231,7 @@ export default function DashboardPage() {
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={dailyMetrics} margin={{ top: 10, right: 20, bottom: 40, left: 20 }}>
+              <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 40, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
                   dataKey="date" 
@@ -229,7 +265,7 @@ export default function DashboardPage() {
           </div>
           <div className="min-h-[260px]">
             <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={dailyMetrics}>
+              <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
                   dataKey="date" 
@@ -290,7 +326,7 @@ export default function DashboardPage() {
           </div>
           <div className="min-h-[180px]">
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={dailyMetrics}>
+              <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
                   dataKey="date" 

@@ -72,9 +72,10 @@ function getDatesFromPreset(preset: string): { startDate: Date; endDate: Date } 
 
 export function DateProvider({ children }: { children: ReactNode }) {
   const [dateRange, setDateRangeState] = useState<DateRange>(() => {
-    // Initialize with saved comparison preference
-    const savedComparison = localStorage?.getItem('clickman-comparison-enabled');
-    const comparisonEnabled = savedComparison ? savedComparison === 'true' : true;
+    // Initialize with saved comparison preference (SSR safe)
+    const comparisonEnabled = typeof window !== 'undefined' 
+      ? localStorage.getItem('clickman-comparison-enabled') === 'true' 
+      : true;
     
     const { startDate, endDate } = getDatesFromPreset('7d');
     
@@ -86,6 +87,19 @@ export function DateProvider({ children }: { children: ReactNode }) {
       comparisonEnabled,
     };
   });
+
+  // Hydrate from localStorage after mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedComparison = localStorage.getItem('clickman-comparison-enabled');
+      if (savedComparison !== null) {
+        setDateRangeState(prev => ({
+          ...prev,
+          comparisonEnabled: savedComparison === 'true'
+        }));
+      }
+    }
+  }, []);
 
   const updatePreset = (preset: string) => {
     const { startDate, endDate } = getDatesFromPreset(preset);

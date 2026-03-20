@@ -7,6 +7,7 @@ import TopBar from '@/components/layout/TopBar';
 import ThemeProvider from '@/components/ThemeProvider';
 import { SidebarProvider } from '@/components/layout/SidebarContext';
 import { CurrencyProvider } from '@/components/CurrencyProvider';
+import { DateProvider } from '@/components/DateProvider';
 import ActivityLogger from '@/components/ActivityLogger';
 
 export const metadata: Metadata = {
@@ -20,7 +21,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="antialiased">
         <ThemeProvider>
           <CurrencyProvider>
-            <SidebarProvider>
+            <DateProvider>
+              <SidebarProvider>
               <div className="flex min-h-screen">
                 <Sidebar />
                 <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -34,7 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
 
               <ActivityLogger />
-            </SidebarProvider>
+              </SidebarProvider>
+            </DateProvider>
           </CurrencyProvider>
         </ThemeProvider>
       </body>
