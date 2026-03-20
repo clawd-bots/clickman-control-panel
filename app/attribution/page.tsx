@@ -148,7 +148,7 @@ export default function AttributionPage() {
 
       {/* Layer Detail Section - Moved ABOVE AI Intelligence */}
       {activeLayer === 'star' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1" data-testid="mer-overview">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
               <Star size={16} className="text-warm-gold shrink-0" />
@@ -230,7 +230,7 @@ export default function AttributionPage() {
       )}
 
       {activeLayer === 'upper' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1" data-testid="attribution-chart">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
               <GitBranch size={16} className="text-brand-blue-light shrink-0" />
@@ -384,7 +384,7 @@ export default function AttributionPage() {
       )}
 
       {activeLayer === 'trunk' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1" data-testid="tracking-health">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
               <Database size={16} className="text-success shrink-0" />

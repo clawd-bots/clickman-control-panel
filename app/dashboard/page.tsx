@@ -306,7 +306,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="orders-chart">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Net Orders & New Customers</h3>
             <DataSource source="Triple Whale" className="shrink-0" />
@@ -481,7 +481,7 @@ export default function DashboardPage() {
 
       {/* Revenue Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="revenue-composition">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue Composition (NC vs RC)</h3>
             <DataSource source="Triple Whale" className="shrink-0" />
@@ -563,7 +563,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Product KPIs */}
-      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="product-kpis">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-primary">Product KPIs</h3>
         </div>

@@ -1,17 +1,10 @@
 'use client';
-import { useState } from 'react';
-import { FileText, Edit3, Save, Plus, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { FileText, Edit3, Save, Plus, History, X } from 'lucide-react';
+import { getAllPrompts, updatePrompt, syncPromptChanges, type PromptTemplate } from '@/lib/prompt-registry';
 
-interface PromptTemplate {
-  id: string;
-  name: string;
-  description: string;
-  prompt: string;
-  category: string;
-  lastModified: string;
-}
-
-const sampleTemplates: PromptTemplate[] = [
+// Remove local interface and sample data - now using centralized registry
+const legacySampleTemplates: PromptTemplate[] = [
   // Creative Analysis Templates
   {
     id: 'creative-1',
@@ -119,33 +112,104 @@ const sampleTemplates: PromptTemplate[] = [
   }
 ];
 
-const categories = ['All', 'Creative Analysis', 'Attribution', 'Account Management', 'Cohort Analysis', 'Performance'];
+// Get dynamic categories from registry
+const getDynamicCategories = (templates: PromptTemplate[]) => {
+  const categories = ['All', ...new Set(templates.map(t => t.category))];
+  return categories;
+};
+
+// Mock history data - in real implementation this would come from a database
+const getTemplateHistory = (templateId: string) => [
+  {
+    version: 3,
+    date: '2026-03-20 12:40 GMT+8',
+    prompt: 'Current version of the prompt...',
+    isCurrent: true
+  },
+  {
+    version: 2,
+    date: '2026-03-19 15:22 GMT+8', 
+    prompt: 'Previous version with different focus...',
+    isCurrent: false
+  },
+  {
+    version: 1,
+    date: '2026-03-18 09:15 GMT+8',
+    prompt: 'Original version created...',
+    isCurrent: false
+  }
+];
 
 export default function PromptTemplatesPage() {
-  const [templates, setTemplates] = useState<PromptTemplate[]>(sampleTemplates);
+  const [templates, setTemplates] = useState<PromptTemplate[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [editingTemplate, setEditingTemplate] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<PromptTemplate>>({});
+  const [showHistory, setShowHistory] = useState<string | null>(null);
+
+  // Load prompts from centralized registry on mount
+  useEffect(() => {
+    const registryPrompts = getAllPrompts();
+    // Merge with any legacy templates for backwards compatibility
+    const mergedTemplates = [...registryPrompts, ...legacySampleTemplates.filter(
+      legacy => !registryPrompts.find(reg => reg.id === legacy.id)
+    )];
+    setTemplates(mergedTemplates);
+  }, []);
 
   const filteredTemplates = selectedCategory === 'All' 
     ? templates 
     : templates.filter(t => t.category === selectedCategory);
+  
+  const categories = getDynamicCategories(templates);
 
   const startEdit = (template: PromptTemplate) => {
     setEditingTemplate(template.id);
-    setEditForm(template);
+    // Only allow editing prompt text, not name/description
+    setEditForm({ prompt: template.prompt });
   };
 
   const saveEdit = () => {
-    if (editingTemplate && editForm.name && editForm.prompt) {
+    if (editingTemplate && editForm.prompt) {
+      const originalTemplate = templates.find(t => t.id === editingTemplate)!;
+      const updatedTemplate = { 
+        ...originalTemplate,
+        prompt: editForm.prompt, 
+        lastModified: new Date().toISOString().split('T')[0] 
+      };
+      
+      // Update in centralized registry and trigger sync
+      updatePrompt(editingTemplate, updatedTemplate);
+      syncPromptChanges(editingTemplate, updatedTemplate.prompt);
+      
+      // Update local state
       setTemplates(templates.map(t => 
-        t.id === editingTemplate 
-          ? { ...t, ...editForm, lastModified: new Date().toISOString().split('T')[0] }
-          : t
+        t.id === editingTemplate ? updatedTemplate : t
       ));
+      
       setEditingTemplate(null);
       setEditForm({});
     }
+  };
+
+  const restoreFromHistory = (templateId: string, historicalPrompt: string) => {
+    const originalTemplate = templates.find(t => t.id === templateId)!;
+    const restoredTemplate = {
+      ...originalTemplate,
+      prompt: historicalPrompt,
+      lastModified: new Date().toISOString().split('T')[0]
+    };
+
+    // Update in centralized registry and trigger sync
+    updatePrompt(templateId, restoredTemplate);
+    syncPromptChanges(templateId, restoredTemplate.prompt);
+
+    // Update local state
+    setTemplates(templates.map(t => 
+      t.id === templateId ? restoredTemplate : t
+    ));
+
+    setShowHistory(null);
   };
 
   const cancelEdit = () => {
@@ -163,7 +227,7 @@ export default function PromptTemplatesPage() {
       name: 'New Template',
       description: 'Describe what this prompt template does',
       prompt: 'Enter your prompt template here...',
-      category: 'Creative Analysis',
+      category: 'Custom',
       lastModified: new Date().toISOString().split('T')[0]
     };
     setTemplates([newTemplate, ...templates]);
@@ -216,45 +280,40 @@ export default function PromptTemplatesPage() {
             className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4"
           >
             {editingTemplate === template.id ? (
-              // Edit Mode
+              // Edit Mode - Only allow prompt text editing
               <div className="space-y-4">
-                <input
-                  type="text"
-                  value={editForm.name || ''}
-                  onChange={e => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-md text-sm text-text-primary outline-none focus:border-brand-blue transition-colors"
-                  placeholder="Template name"
-                />
-                <input
-                  type="text"
-                  value={editForm.description || ''}
-                  onChange={e => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-md text-sm text-text-secondary outline-none focus:border-brand-blue transition-colors"
-                  placeholder="Template description"
-                />
-                <select
-                  value={editForm.category || ''}
-                  onChange={e => setEditForm(prev => ({ ...prev, category: e.target.value }))}
-                  className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-md text-sm text-text-primary outline-none focus:border-brand-blue transition-colors"
-                >
-                  {categories.slice(1).map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                <textarea
-                  value={editForm.prompt || ''}
-                  onChange={e => setEditForm(prev => ({ ...prev, prompt: e.target.value }))}
-                  rows={8}
-                  className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-md text-sm text-text-primary outline-none focus:border-brand-blue transition-colors resize-none"
-                  placeholder="Enter your prompt template..."
-                />
+                <div className="bg-bg-elevated rounded-md p-3 text-xs text-text-secondary">
+                  <strong>Note:</strong> Only prompt text can be edited. Name and description are managed by the system.
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-text-secondary mb-2 block">Template Name (Read-only)</label>
+                  <div className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-md text-sm text-text-primary opacity-50">
+                    {template.name}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-text-secondary mb-2 block">Description (Read-only)</label>
+                  <div className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-md text-sm text-text-secondary opacity-50">
+                    {template.description}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-text-secondary mb-2 block">Prompt Text (Editable)</label>
+                  <textarea
+                    value={editForm.prompt || ''}
+                    onChange={e => setEditForm(prev => ({ ...prev, prompt: e.target.value }))}
+                    rows={8}
+                    className="w-full px-3 py-2 bg-bg-elevated border border-border rounded-md text-sm text-text-primary outline-none focus:border-brand-blue transition-colors resize-none"
+                    placeholder="Enter your prompt template..."
+                  />
+                </div>
                 <div className="flex gap-2">
                   <button
                     onClick={saveEdit}
                     className="flex items-center gap-1 px-3 py-1.5 bg-success text-white rounded-md text-sm font-medium hover:bg-success/80 transition-colors"
                   >
                     <Save className="w-3 h-3" />
-                    Save
+                    Save Changes
                   </button>
                   <button
                     onClick={cancelEdit}
@@ -278,13 +337,19 @@ export default function PromptTemplatesPage() {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
+                      onClick={() => setShowHistory(template.id)}
+                      className="p-1 text-text-tertiary hover:text-brand-blue transition-colors"
+                      title="View history"
+                    >
+                      <History className="w-3 h-3" />
+                    </button>
+                    <button
                       onClick={() => startEdit(template)}
                       className="p-1 text-text-tertiary hover:text-brand-blue transition-colors"
-                      title="Edit template"
+                      title="Edit prompt text only"
                     >
                       <Edit3 className="w-3 h-3" />
                     </button>
-
                   </div>
                 </div>
 
@@ -306,15 +371,7 @@ export default function PromptTemplatesPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 pt-2">
-                  <button className="flex items-center gap-1 px-3 py-1.5 bg-bg-elevated text-text-secondary border border-border rounded-md text-xs font-medium hover:bg-bg-surface hover:text-text-primary transition-colors">
-                    <RefreshCw className="w-3 h-3" />
-                    Test Prompt
-                  </button>
-                  <button className="px-3 py-1.5 bg-bg-elevated text-text-secondary border border-border rounded-md text-xs font-medium hover:bg-bg-surface hover:text-text-primary transition-colors">
-                    Copy
-                  </button>
-                </div>
+
               </>
             )}
           </div>
@@ -337,6 +394,75 @@ export default function PromptTemplatesPage() {
           >
             Create Template
           </button>
+        </div>
+      )}
+
+      {/* History Dialog */}
+      {showHistory && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-bg-surface border border-border rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h3 className="text-lg font-semibold text-text-primary">
+                Prompt History: {templates.find(t => t.id === showHistory)?.name}
+              </h3>
+              <button
+                onClick={() => setShowHistory(null)}
+                className="p-2 text-text-tertiary hover:text-text-primary transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-auto p-6">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-xs text-text-secondary uppercase">
+                      <th className="text-left py-3 px-3 font-medium">Version</th>
+                      <th className="text-left py-3 px-3 font-medium">Date</th>
+                      <th className="text-left py-3 px-3 font-medium">Prompt</th>
+                      <th className="text-center py-3 px-3 font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getTemplateHistory(showHistory).map((historyItem) => (
+                      <tr key={historyItem.version} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
+                        <td className="py-3 px-3 text-text-primary font-medium">
+                          v{historyItem.version}
+                          {historyItem.isCurrent && (
+                            <span className="ml-2 px-2 py-0.5 bg-success/15 text-success rounded-full text-xs font-medium">
+                              Current
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3 text-text-secondary">
+                          {historyItem.date}
+                        </td>
+                        <td className="py-3 px-3 text-text-primary max-w-md">
+                          <div className="truncate">
+                            {historyItem.prompt}
+                          </div>
+                          <div className="text-xs text-text-tertiary mt-1">
+                            {historyItem.prompt.length} characters
+                          </div>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          {!historyItem.isCurrent && (
+                            <button
+                              onClick={() => restoreFromHistory(showHistory, historyItem.prompt)}
+                              className="px-3 py-1.5 bg-brand-blue text-white rounded-md text-xs font-medium hover:bg-brand-blue-light transition-colors"
+                            >
+                              Restore
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

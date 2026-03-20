@@ -219,6 +219,49 @@ export const finalItems: FinalItem[] = [
       },
     ],
   },
+  {
+    id: 'fi-10',
+    title: 'Inventory API Key Request',
+    why: 'Product KPIs table currently shows "Pending API" for inventory data. We need API access to display real-time inventory levels for each product.',
+    owner: 'jordan',
+    status: 'pending',
+    category: 'integration', 
+    pages: ['Dashboard'],
+    actions: [
+      {
+        label: 'Provide inventory system API access',
+        steps: [
+          'Identify which system manages product inventory (Shopify, WooCommerce, custom system, etc.)',
+          'Generate API key/token with read-only access to inventory data',
+          'Provide API endpoint URLs for product inventory queries',
+          'Send API credentials and documentation to Alfred via WhatsApp',
+          'Include product SKU mapping if different from dashboard product names',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'fi-11',
+    title: 'Anthropic API Key Request',
+    why: 'AI Intelligence sections throughout the dashboard need Anthropic Claude API access to generate insights, analyze data, and provide strategic recommendations.',
+    owner: 'jordan',
+    status: 'pending',
+    category: 'integration',
+    pages: ['All Intelligence sections'],
+    actions: [
+      {
+        label: 'Provide Anthropic Claude API key',
+        steps: [
+          'Go to console.anthropic.com and create an account if needed',
+          'Navigate to API Keys section',
+          'Generate a new API key for Claude access',
+          'Set appropriate usage limits for the dashboard',
+          'Send the API key to Alfred via WhatsApp',
+          'This will enable AI-powered insights across all dashboard sections',
+        ],
+      },
+    ],
+  },
 
 
 ];
