@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import { useDateRange } from '@/components/DateProvider';
 
 import { cashFlowDefaults, cohortWaterfall, monthlySummary, sensitivityCards } from '@/lib/sample-data';
 import { formatCurrency } from '@/lib/utils';
@@ -13,6 +14,7 @@ import { Check } from 'lucide-react';
 
 export default function CashFlowPage() {
   const { currency, convertValue } = useCurrency();
+  const { dateRange } = useDateRange();
   const [inputs, setInputs] = useState({
     ...cashFlowDefaults,
     subAttachRate: 0,
@@ -29,6 +31,27 @@ export default function CashFlowPage() {
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
     return formatCurrency(convertValue(value), currency);
+  };
+
+  // Helper function to determine if date range is in forecast period
+  const isInForecastPeriod = () => {
+    const today = new Date();
+    return dateRange.startDate > today || dateRange.endDate > today;
+  };
+
+  // Helper function to get months to display based on date range
+  const getMonthsToDisplay = () => {
+    if (isInForecastPeriod()) {
+      // Show forecast data - all 12 months
+      return months.length;
+    } else {
+      // Show historical data - limit based on date range
+      const daysDiff = Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysDiff <= 31) return 1; // 1 month
+      if (daysDiff <= 93) return 3; // 3 months
+      if (daysDiff <= 186) return 6; // 6 months
+      return 12; // Show all 12 months for longer ranges
+    }
   };
 
   // Use real months instead of M1/M2 (Apr '26, May '26, etc.)
@@ -298,7 +321,7 @@ export default function CashFlowPage() {
             </div>
           </div>
           <p className="text-xs text-text-secondary mt-2">
-            Currently {inputs.subAttachRate}% subscription attach rate. {inputs.subAttachRate === 0 ? 'Projected subscription launch in 1-2 months.' : ''}
+            Current subscription attach rate: {inputs.subAttachRate}%
           </p>
         </div>
       </div>
@@ -375,7 +398,7 @@ export default function CashFlowPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h3 className="text-sm font-medium text-text-secondary">Revenue Composition</h3>
-            <span className="text-xs text-text-tertiary">Forecast Model</span>
+            <span className="text-xs text-text-tertiary">{isInForecastPeriod() ? 'Forecast Model' : 'Historical Data'}</span>
           </div>
           <div className="flex flex-wrap gap-4 text-xs text-text-secondary mb-3">
             <div className="flex items-center gap-2">
@@ -393,7 +416,7 @@ export default function CashFlowPage() {
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={monthlySummary.map((m, i) => ({
+            <AreaChart data={monthlySummary.slice(0, getMonthsToDisplay()).map((m, i) => ({
               month: months[i],
               new: m.newCust * inputs.aov * (1 - inputs.subAttachRate / 100),
               repeat: m.repeatOrders * inputs.aov * 0.7,
@@ -430,7 +453,7 @@ export default function CashFlowPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h3 className="text-sm font-medium text-text-secondary">Cumulative Cash Flow</h3>
-            <span className="text-xs text-text-tertiary">Forecast Model</span>
+            <span className="text-xs text-text-tertiary">{isInForecastPeriod() ? 'Forecast Model' : 'Historical Data'}</span>
           </div>
           <div className="flex items-center gap-2 text-xs text-text-secondary mb-3">
             <span className="w-2.5 h-2.5 rounded-full bg-[#34D399]" />
@@ -438,7 +461,7 @@ export default function CashFlowPage() {
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={monthlySummary.map((m, i) => ({ ...m, month: months[i] }))}>
+            <BarChart data={monthlySummary.slice(0, getMonthsToDisplay()).map((m, i) => ({ ...m, month: months[i] }))}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis 
                 dataKey="month" 

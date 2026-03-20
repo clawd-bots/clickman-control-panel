@@ -51,7 +51,7 @@ function getShortDisplayDate(preset: string): string {
 }
 
 // Pages where date picker should NOT show
-const hideDatePickerPages = ['/cashflow', '/cohorts'];
+const hideDatePickerPages = ['/cohorts'];
 
 export default function TopBar() {
   const pathname = usePathname();
