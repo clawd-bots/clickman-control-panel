@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
@@ -79,8 +79,8 @@ export default function CreativePage() {
     return formatCurrency(convertValue(value), currency);
   };
 
-  // Dynamic AI suggestions with currency conversion - tab specific
-  const getDynamicAISuggestions = () => {
+  // Memoized AI suggestions with currency conversion - tab specific
+  const getDynamicAISuggestions = useCallback(() => {
     const suggestions: Record<string, string[]> = {
       'Performance': [
         `Hair Before/After Carousel has the best ROAS at 3.47x with a low CPA of ${formatCurrencyValue(577)}. Scale spend by 30% this week.`,
@@ -127,13 +127,16 @@ export default function CreativePage() {
     };
     
     return suggestions[activeTab] || suggestions['Performance'];
-  };
+  }, [activeTab, platform, campaignFilter, formatCurrencyValue]);
 
-  const filtered = creativePerformance.filter(c => {
-    const platformMatch = c.platform === platform;
-    const campaignMatch = campaignFilter === 'all' || c.campaign === campaignFilter;
-    return platformMatch && campaignMatch;
-  });
+  // Memoized filtering for better performance
+  const filtered = useMemo(() => {
+    return creativePerformance.filter(c => {
+      const platformMatch = c.platform === platform;
+      const campaignMatch = campaignFilter === 'all' || c.campaign === campaignFilter;
+      return platformMatch && campaignMatch;
+    });
+  }, [platform, campaignFilter]);
 
   const paretoData = [...creativePerformance]
     .filter(c => c.platform === platform) // Apply platform filter

@@ -1,8 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import DataSource from '@/components/ui/DataSource';
 import { useCurrency } from '@/components/CurrencyProvider';
+import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { cohortRetention, clvExtension, productComparison, cohortAISuggestions } from '@/lib/sample-data';
@@ -13,6 +14,7 @@ import {
 
 export default function CohortsPage() {
   const { currency, convertValue } = useCurrency();
+  const { dateRange } = useDateRange();
   const [activeTab, setActiveTab] = useState<'analysis' | 'comparison'>('analysis');
   const [metric, setMetric] = useState('Net Revenue');
   const [format, setFormat] = useState<'%' | '#'>('%');
@@ -129,7 +131,8 @@ export default function CohortsPage() {
               </h3>
               <DataSource source="TripleWhale" className="shrink-0" />
             </div>
-            <div className="overflow-x-auto -mx-1 sm:mx-0">
+            {/* Desktop Table */}
+            <div className="hidden lg:block overflow-x-auto -mx-1 sm:mx-0">
               <div className="min-w-[900px]">
                 <table className="w-full text-xs">
                 <thead>
@@ -182,6 +185,42 @@ export default function CohortsPage() {
               </table>
               </div>
             </div>
+
+            {/* Mobile Card Layout */}
+            <div className="lg:hidden space-y-3">
+              {getTransformedData().map((cohort) => (
+                <div key={cohort.cohort} className="bg-bg-elevated border border-border rounded-lg p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <div>
+                      <h4 className="text-sm font-medium text-text-primary">{cohort.cohort}</h4>
+                      <p className="text-xs text-text-secondary">
+                        {cohort.customers.toLocaleString()} customers • {formatCurrencyValue(cohort.cac)} CAC
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div className="text-center">
+                      <div className="text-text-secondary">M1</div>
+                      <div className={`font-medium ${heatmap ? getHeatmapClass(cohort.periods[0], 100) : ''}`}>
+                        {format === '%' ? `${cohort.periods[0].toFixed(1)}%` : cohort.periods[0].toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-text-secondary">M3</div>
+                      <div className={`font-medium ${heatmap ? getHeatmapClass(cohort.periods[2], 100) : ''}`}>
+                        {format === '%' ? `${cohort.periods[2].toFixed(1)}%` : cohort.periods[2].toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-text-secondary">M6</div>
+                      <div className={`font-medium ${heatmap ? getHeatmapClass(cohort.periods[5], 100) : ''}`}>
+                        {format === '%' ? `${cohort.periods[5].toFixed(1)}%` : cohort.periods[5].toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* AI Suggestions */}
@@ -233,7 +272,8 @@ export default function CohortsPage() {
               </h3>
               <DataSource source="TripleWhale" className="shrink-0" />
             </div>
-            <div className="overflow-x-auto -mx-1 sm:mx-0">
+            {/* Desktop Table */}
+            <div className="hidden lg:block overflow-x-auto -mx-1 sm:mx-0">
               <div className="min-w-[1000px]">
                 <table className="w-full text-xs">
                 <thead>
@@ -277,6 +317,54 @@ export default function CohortsPage() {
                 </tbody>
               </table>
               </div>
+            </div>
+
+            {/* Mobile Card Layout */}
+            <div className="lg:hidden space-y-3">
+              {productComparison.map((product, i) => (
+                <div key={i} className="bg-bg-elevated border border-border rounded-lg p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h4 className="text-sm font-medium text-text-primary">{product.product}</h4>
+                      <p className="text-xs text-text-secondary">
+                        {product.customers.toLocaleString()} customers • {product.lag2nd} days avg
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-medium text-text-primary">
+                        {product.r90.toFixed(1)}%
+                      </div>
+                      <div className="text-xs text-text-secondary">90d repeat</div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2 text-xs">
+                    <div className="text-center">
+                      <div className="text-text-secondary">30d</div>
+                      <div className="font-medium text-text-primary">
+                        {product.r30.toFixed(1)}%
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-text-secondary">60d</div>
+                      <div className="font-medium text-text-primary">
+                        {product.r60.toFixed(1)}%
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-text-secondary">90d</div>
+                      <div className="font-medium text-text-primary">
+                        {product.r90.toFixed(1)}%
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-text-secondary">Orders</div>
+                      <div className="font-medium text-text-primary">
+                        {product.avgOrders.toFixed(1)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </>
