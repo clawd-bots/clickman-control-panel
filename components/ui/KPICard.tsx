@@ -63,12 +63,15 @@ export default function KPICard({ label, value, change, sparkline, target, targe
               <span className="text-xs text-text-secondary">Target: {target}</span>
             </div>
             {/* Progress Bar */}
-            <div className="w-full bg-bg-elevated rounded-full h-2">
+            <div className="w-full bg-bg-elevated rounded-full h-3">
               <div 
-                className={`h-2 rounded-full transition-all duration-300 ${
+                className={`h-3 rounded-full transition-all duration-300 ${
                   targetAchievement >= 100 ? 'bg-success' : targetAchievement >= 80 ? 'bg-warm-gold' : 'bg-danger'
                 }`}
-                style={{ width: `${Math.min(targetAchievement, 100)}%` }}
+                style={{ 
+                  width: `${Math.min(targetAchievement, 100)}%`,
+                  backgroundColor: targetAchievement >= 100 ? '#22C55E' : targetAchievement >= 80 ? 'var(--color-warm-gold)' : 'var(--color-danger)'
+                }}
               />
             </div>
           </div>

@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import DataSource from '@/components/ui/DataSource';
+import AIIntelligenceControls from '@/components/ui/AIIntelligenceControls';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { formatCurrency } from '@/lib/utils';
 import { attributionSurvey, trackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
@@ -145,41 +146,7 @@ export default function AttributionPage() {
       {/* Layer Description */}
       <div className="text-sm text-text-secondary px-1">{activeInfo.description}</div>
 
-      {/* Per-Layer AI Insights */}
-      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-        <h3 className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
-          <Sparkles size={16} className="text-warm-gold shrink-0" />
-          <span className="truncate">{activeInfo.label}, AI Insights</span>
-        </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          <div className="space-y-3">
-            <div className="text-xs font-semibold text-success flex items-center gap-1.5">✅ What's Working</div>
-            {insights.working.map((item, i) => (
-              <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            <div className="text-xs font-semibold text-danger flex items-center gap-1.5">⚠️ What's Not</div>
-            {insights.notWorking.map((item, i) => (
-              <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            <div className="text-xs font-semibold text-brand-blue-light flex items-center gap-1.5">🎯 Do Next</div>
-            {insights.doNext.map((item, i) => (
-              <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
-            ))}
-          </div>
-          <div className="space-y-3">
-            <div className="text-xs font-semibold text-warm-gold flex items-center gap-1.5">🛑 Stop Doing</div>
-            {insights.stopDoing.map((item, i) => (
-              <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Layer Detail Section */}
+      {/* Layer Detail Section - Moved ABOVE AI Intelligence */}
       {activeLayer === 'star' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex items-center justify-between mb-4">
@@ -220,7 +187,47 @@ export default function AttributionPage() {
         </div>
       )}
 
-
+      {/* AI Intelligence Section for MER/nCAC */}
+      {activeLayer === 'star' && (
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Sparkles size={16} className="text-warm-gold shrink-0" />
+              <span className="truncate">{activeInfo.label} AI Intelligence</span>
+            </h3>
+            <AIIntelligenceControls 
+              intelligenceId="mer-ncac-intelligence"
+              title={`${activeInfo.label} AI Intelligence`}
+            />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-success flex items-center gap-1.5">✅ What's Working</div>
+              {insights.working.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-danger flex items-center gap-1.5">⚠️ What's Not</div>
+              {insights.notWorking.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-brand-blue-light flex items-center gap-1.5">🎯 Do Next</div>
+              {insights.doNext.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-warm-gold flex items-center gap-1.5">🛑 Stop Doing</div>
+              {insights.stopDoing.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeLayer === 'upper' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
@@ -229,7 +236,7 @@ export default function AttributionPage() {
               <GitBranch size={16} className="text-brand-blue-light shrink-0" />
               <span className="truncate">Channel Allocation, Survey Results</span>
             </h3>
-            <span className="text-xs text-text-tertiary shrink-0">Post-Purchase Survey</span>
+            <DataSource source="TripleWhale" className="shrink-0" />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="min-h-[280px]">
@@ -258,8 +265,48 @@ export default function AttributionPage() {
               ))}
             </div>
           </div>
-          
+        </div>
+      )}
 
+      {/* AI Intelligence Section for Surveys & MMM */}
+      {activeLayer === 'upper' && (
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Sparkles size={16} className="text-warm-gold shrink-0" />
+              <span className="truncate">{activeInfo.label} AI Intelligence</span>
+            </h3>
+            <AIIntelligenceControls 
+              intelligenceId="surveys-mmm-intelligence"
+              title={`${activeInfo.label} AI Intelligence`}
+            />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-success flex items-center gap-1.5">✅ What's Working</div>
+              {insights.working.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-danger flex items-center gap-1.5">⚠️ What's Not</div>
+              {insights.notWorking.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-brand-blue-light flex items-center gap-1.5">🎯 Do Next</div>
+              {insights.doNext.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-warm-gold flex items-center gap-1.5">🛑 Stop Doing</div>
+              {insights.stopDoing.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -294,7 +341,47 @@ export default function AttributionPage() {
         </div>
       )}
 
-
+      {/* AI Intelligence Section for MTA & Platform */}
+      {activeLayer === 'lower' && (
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Sparkles size={16} className="text-warm-gold shrink-0" />
+              <span className="truncate">{activeInfo.label} AI Intelligence</span>
+            </h3>
+            <AIIntelligenceControls 
+              intelligenceId="mta-platform-intelligence"
+              title={`${activeInfo.label} AI Intelligence`}
+            />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-success flex items-center gap-1.5">✅ What's Working</div>
+              {insights.working.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-danger flex items-center gap-1.5">⚠️ What's Not</div>
+              {insights.notWorking.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-brand-blue-light flex items-center gap-1.5">🎯 Do Next</div>
+              {insights.doNext.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-warm-gold flex items-center gap-1.5">🛑 Stop Doing</div>
+              {insights.stopDoing.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {activeLayer === 'trunk' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
@@ -347,6 +434,17 @@ export default function AttributionPage() {
                             event.matchRate.includes('/10') ? 'bg-danger' : 'bg-text-tertiary'
                           }`} />
                           <span className="text-sm font-medium text-text-primary">{event.event}</span>
+                          {/* @ts-ignore - event.type is added to sample data */}
+                          {event.type && (
+                            <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                              event.type === 'Browser' ? 'bg-blue-500/15 text-blue-500' :
+                              event.type === 'Server' ? 'bg-purple-500/15 text-purple-500' :
+                              event.type === 'Multiple' ? 'bg-orange-500/15 text-orange-500' :
+                              'bg-text-tertiary/15 text-text-tertiary'
+                            }`}>
+                              {event.type}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-4 text-xs text-text-secondary">
                           <span>Count: {event.count}/day</span>
@@ -379,20 +477,59 @@ export default function AttributionPage() {
               </div>
             ))}
           </div>
-          
+        </div>
+      )}
 
+      {/* AI Intelligence Section for Tracking Infrastructure */}
+      {activeLayer === 'trunk' && (
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Sparkles size={16} className="text-warm-gold shrink-0" />
+              <span className="truncate">{activeInfo.label} AI Intelligence</span>
+            </h3>
+            <AIIntelligenceControls 
+              intelligenceId="tracking-infra-intelligence"
+              title={`${activeInfo.label} AI Intelligence`}
+            />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-success flex items-center gap-1.5">✅ What's Working</div>
+              {insights.working.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-danger flex items-center gap-1.5">⚠️ What's Not</div>
+              {insights.notWorking.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-brand-blue-light flex items-center gap-1.5">🎯 Do Next</div>
+              {insights.doNext.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-warm-gold flex items-center gap-1.5">🛑 Stop Doing</div>
+              {insights.stopDoing.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
       {activeLayer === 'roots' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
-            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
-              <Layers size={16} className="text-purple-400 shrink-0" />
-              <span className="truncate">Cohort-based LTV by Channel</span>
-            </h3>
-            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+              <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+                <Layers size={16} className="text-purple-400 shrink-0" />
+                <span className="truncate">Cohort-based LTV by Channel</span>
+              </h3>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-secondary font-medium">Model:</span>
                 <div className="relative">
@@ -420,6 +557,7 @@ export default function AttributionPage() {
                 </div>
               </div>
             </div>
+            <DataSource source="TripleWhale" className="shrink-0" />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {[
@@ -443,8 +581,47 @@ export default function AttributionPage() {
         </div>
       )}
 
-
-
+      {/* AI Intelligence Section for Cohort LTV */}
+      {activeLayer === 'roots' && (
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <Sparkles size={16} className="text-warm-gold shrink-0" />
+              <span className="truncate">{activeInfo.label} AI Intelligence</span>
+            </h3>
+            <AIIntelligenceControls 
+              intelligenceId="cohort-ltv-intelligence"
+              title={`${activeInfo.label} AI Intelligence`}
+            />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-success flex items-center gap-1.5">✅ What's Working</div>
+              {insights.working.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-danger flex items-center gap-1.5">⚠️ What's Not</div>
+              {insights.notWorking.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-brand-blue-light flex items-center gap-1.5">🎯 Do Next</div>
+              {insights.doNext.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+            <div className="space-y-3">
+              <div className="text-xs font-semibold text-warm-gold flex items-center gap-1.5">🛑 Stop Doing</div>
+              {insights.stopDoing.map((item, i) => (
+                <div key={i} className="text-sm text-text-secondary leading-relaxed pl-5">• {item}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

@@ -25,6 +25,7 @@ export default function DashboardPage() {
   const { currency, convertValue } = useCurrency();
   const { dateRange } = useDateRange();
   const [activeAttributionTab, setActiveAttributionTab] = useState('Last Click');
+  const [attributionWindow, setAttributionWindow] = useState('7-day/1-day');
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -48,6 +49,7 @@ export default function DashboardPage() {
       const baseCosts = 80000 + Math.cos(current.getTime() / (1000 * 60 * 60 * 24)) * 20000;
       const baseOrders = 140 + Math.floor(Math.sin(current.getTime() / (1000 * 60 * 60 * 24 * 2)) * 30);
       const baseNewCustomers = Math.floor(baseOrders * 0.7);
+      const baseSessions = 4800 + Math.floor(Math.sin(current.getTime() / (1000 * 60 * 60 * 24 * 1.5)) * 800);
       
       data.push({
         date: dateStr,
@@ -55,6 +57,7 @@ export default function DashboardPage() {
         costs: Math.round(baseCosts),
         orders: baseOrders,
         newCustomers: baseNewCustomers,
+        sessions: baseSessions,
         // Adding some variance
         profit: Math.round(baseRevenue - baseCosts),
       });
@@ -65,20 +68,65 @@ export default function DashboardPage() {
     return data;
   }, [dateRange]);
 
-  // Different data for Last Click vs Linear attribution  
-  const channelAttributionLastClick = [
-    { channel: 'Meta Ads', costs: 320000, revenue: 1180000, roas: 3.69, orders: 545, cpo: 587, newCustomers: 380, ncPct: 69.7 },
-    { channel: 'Google Ads', costs: 165000, revenue: 620000, roas: 3.76, orders: 315, cpo: 524, newCustomers: 200, ncPct: 63.5 },
-    { channel: 'TikTok Ads', costs: 88000, revenue: 295000, roas: 3.35, orders: 165, cpo: 533, newCustomers: 130, ncPct: 78.8 },
-    { channel: 'Organic Search', costs: 0, revenue: 95000, roas: 0, orders: 58, cpo: 0, newCustomers: 40, ncPct: 69.0 },
-    { channel: 'Direct', costs: 0, revenue: 48000, roas: 0, orders: 35, cpo: 0, newCustomers: 20, ncPct: 57.1 },
-    { channel: 'Referral', costs: 40000, revenue: 15000, roas: 0.38, orders: 8, cpo: 5000, newCustomers: 9, ncPct: 112.5 },
-  ];
+  // Calculate aggregated values from date-filtered data
+  const aggregatedData = useMemo(() => {
+    const totalRevenue = chartData.reduce((sum, day) => sum + day.revenue, 0);
+    const totalCosts = chartData.reduce((sum, day) => sum + day.costs, 0);
+    const totalOrders = chartData.reduce((sum, day) => sum + day.orders, 0);
+    const totalNewCustomers = chartData.reduce((sum, day) => sum + day.newCustomers, 0);
+    const totalSessions = chartData.reduce((sum, day) => sum + day.sessions, 0);
+    
+    return {
+      totalRevenue,
+      totalCosts,
+      totalOrders,
+      totalNewCustomers,
+      totalSessions,
+      mer: totalRevenue / totalCosts,
+      cac: totalCosts / totalOrders,
+      ncac: totalCosts / totalNewCustomers,
+    };
+  }, [chartData]);
 
-  const channelAttributionLinear = channelAttribution; // Use existing data as Linear
+  // Different attribution data sets  
+  const channelAttributionData = {
+    'Last Click': [
+      { channel: 'Meta Ads', costs: 320000, revenue: 1180000, roas: 3.69, orders: 545, cpo: 587, newCustomers: 380, ncPct: 69.7 },
+      { channel: 'Google Ads', costs: 165000, revenue: 620000, roas: 3.76, orders: 315, cpo: 524, newCustomers: 200, ncPct: 63.5 },
+      { channel: 'TikTok Ads', costs: 88000, revenue: 295000, roas: 3.35, orders: 165, cpo: 533, newCustomers: 130, ncPct: 78.8 },
+      { channel: 'Organic Search', costs: 0, revenue: 95000, roas: 0, orders: 58, cpo: 0, newCustomers: 40, ncPct: 69.0 },
+      { channel: 'Direct', costs: 0, revenue: 48000, roas: 0, orders: 35, cpo: 0, newCustomers: 20, ncPct: 57.1 },
+      { channel: 'Referral', costs: 40000, revenue: 15000, roas: 0.38, orders: 8, cpo: 5000, newCustomers: 9, ncPct: 112.5 },
+    ],
+    'Linear': channelAttribution,
+    'First Click': [
+      { channel: 'Meta Ads', costs: 320000, revenue: 950000, roas: 2.97, orders: 465, cpo: 688, newCustomers: 420, ncPct: 90.3 },
+      { channel: 'Google Ads', costs: 165000, revenue: 720000, roas: 4.36, orders: 385, cpo: 429, newCustomers: 285, ncPct: 74.0 },
+      { channel: 'TikTok Ads', costs: 88000, revenue: 380000, roas: 4.32, orders: 185, cpo: 476, newCustomers: 165, ncPct: 89.2 },
+      { channel: 'Organic Search', costs: 0, revenue: 125000, roas: 0, orders: 72, cpo: 0, newCustomers: 58, ncPct: 80.6 },
+      { channel: 'Direct', costs: 0, revenue: 35000, roas: 0, orders: 22, cpo: 0, newCustomers: 15, ncPct: 68.2 },
+      { channel: 'Referral', costs: 40000, revenue: 28000, roas: 0.70, orders: 18, cpo: 2222, newCustomers: 16, ncPct: 88.9 },
+    ],
+    'Linear Paid': [
+      { channel: 'Meta Ads', costs: 320000, revenue: 1050000, roas: 3.28, orders: 485, cpo: 660, newCustomers: 340, ncPct: 70.1 },
+      { channel: 'Google Ads', costs: 165000, revenue: 580000, roas: 3.52, orders: 295, cpo: 559, newCustomers: 190, ncPct: 64.4 },
+      { channel: 'TikTok Ads', costs: 88000, revenue: 320000, roas: 3.64, orders: 175, cpo: 503, newCustomers: 145, ncPct: 82.9 },
+      { channel: 'Organic Search', costs: 0, revenue: 95000, roas: 0, orders: 58, cpo: 0, newCustomers: 40, ncPct: 69.0 },
+      { channel: 'Direct', costs: 0, revenue: 48000, roas: 0, orders: 35, cpo: 0, newCustomers: 20, ncPct: 57.1 },
+      { channel: 'Referral', costs: 40000, revenue: 15000, roas: 0.38, orders: 8, cpo: 5000, newCustomers: 9, ncPct: 112.5 },
+    ],
+    'Triple': [
+      { channel: 'Meta Ads', costs: 320000, revenue: 1120000, roas: 3.50, orders: 520, cpo: 615, newCustomers: 365, ncPct: 70.2 },
+      { channel: 'Google Ads', costs: 165000, revenue: 650000, roas: 3.94, orders: 325, cpo: 508, newCustomers: 210, ncPct: 64.6 },
+      { channel: 'TikTok Ads', costs: 88000, revenue: 310000, roas: 3.52, orders: 175, cpo: 503, newCustomers: 140, ncPct: 80.0 },
+      { channel: 'Organic Search', costs: 0, revenue: 95000, roas: 0, orders: 58, cpo: 0, newCustomers: 40, ncPct: 69.0 },
+      { channel: 'Direct', costs: 0, revenue: 48000, roas: 0, orders: 35, cpo: 0, newCustomers: 20, ncPct: 57.1 },
+      { channel: 'Referral', costs: 40000, revenue: 15000, roas: 0.38, orders: 8, cpo: 5000, newCustomers: 9, ncPct: 112.5 },
+    ],
+  };
   
   const getCurrentChannelData = () => {
-    return activeAttributionTab === 'Last Click' ? channelAttributionLastClick : channelAttributionLinear;
+    return channelAttributionData[activeAttributionTab as keyof typeof channelAttributionData];
   };
 
   // Comprehensive cross-page AI analysis
@@ -119,31 +167,31 @@ export default function DashboardPage() {
         <div data-testid="kpi-net-revenue">
           <KPICard 
             label="Net Revenue" 
-            value={formatCurrencyValue(kpiCards.netRevenue.value)} 
-            change={pctChange(kpiCards.netRevenue.value, kpiCards.netRevenue.prev)} 
-            sparkline={kpiCards.netRevenue.sparkline}
+            value={formatCurrencyValue(aggregatedData.totalRevenue)} 
+            change={pctChange(aggregatedData.totalRevenue, kpiCards.netRevenue.prev)} 
+            sparkline={chartData.map(d => d.revenue)}
             target={formatCurrencyValue(kpiCards.netRevenue.target)}
-            targetAchievement={(kpiCards.netRevenue.value / kpiCards.netRevenue.target) * 100}
+            targetAchievement={(aggregatedData.totalRevenue / kpiCards.netRevenue.target) * 100}
           />
         </div>
         <div data-testid="kpi-marketing-costs">
           <KPICard 
             label="Marketing Costs" 
-            value={formatCurrencyValue(kpiCards.marketingCosts.value)} 
-            change={pctChange(kpiCards.marketingCosts.value, kpiCards.marketingCosts.prev)} 
-            sparkline={kpiCards.marketingCosts.sparkline}
+            value={formatCurrencyValue(aggregatedData.totalCosts)} 
+            change={pctChange(aggregatedData.totalCosts, kpiCards.marketingCosts.prev)} 
+            sparkline={chartData.map(d => d.costs)}
             target={formatCurrencyValue(kpiCards.marketingCosts.target)}
-            targetAchievement={(kpiCards.marketingCosts.value / kpiCards.marketingCosts.target) * 100}
+            targetAchievement={(aggregatedData.totalCosts / kpiCards.marketingCosts.target) * 100}
           />
         </div>
         <div data-testid="kpi-mer">
           <KPICard 
             label="MER" 
-            value={`${kpiCards.mer.value}x`} 
-            change={pctChange(kpiCards.mer.value, kpiCards.mer.prev)} 
-            sparkline={kpiCards.mer.sparkline}
+            value={`${aggregatedData.mer.toFixed(2)}x`} 
+            change={pctChange(aggregatedData.mer, kpiCards.mer.prev)} 
+            sparkline={chartData.map(d => d.revenue / d.costs)}
             target={`${kpiCards.mer.target}x`}
-            targetAchievement={(kpiCards.mer.value / kpiCards.mer.target) * 100}
+            targetAchievement={(aggregatedData.mer / kpiCards.mer.target) * 100}
           />
         </div>
         <div data-testid="kpi-amer">
@@ -163,41 +211,41 @@ export default function DashboardPage() {
         <div data-testid="kpi-orders">
           <KPICard 
             label="Orders" 
-            value={formatNumber(kpiCards.netOrders.value)} 
-            change={pctChange(kpiCards.netOrders.value, kpiCards.netOrders.prev)} 
-            sparkline={kpiCards.netOrders.sparkline}
+            value={formatNumber(aggregatedData.totalOrders)} 
+            change={pctChange(aggregatedData.totalOrders, kpiCards.netOrders.prev)} 
+            sparkline={chartData.map(d => d.orders)}
             target={formatNumber(kpiCards.netOrders.target)}
-            targetAchievement={(kpiCards.netOrders.value / kpiCards.netOrders.target) * 100}
+            targetAchievement={(aggregatedData.totalOrders / kpiCards.netOrders.target) * 100}
           />
         </div>
         <div data-testid="kpi-nc-orders">
           <KPICard 
             label="NC Orders" 
-            value={formatNumber(kpiCards.newCustomers.value)} 
-            change={pctChange(kpiCards.newCustomers.value, kpiCards.newCustomers.prev)} 
-            sparkline={kpiCards.newCustomers.sparkline}
+            value={formatNumber(aggregatedData.totalNewCustomers)} 
+            change={pctChange(aggregatedData.totalNewCustomers, kpiCards.newCustomers.prev)} 
+            sparkline={chartData.map(d => d.newCustomers)}
             target={formatNumber(kpiCards.newCustomers.target)}
-            targetAchievement={(kpiCards.newCustomers.value / kpiCards.newCustomers.target) * 100}
+            targetAchievement={(aggregatedData.totalNewCustomers / kpiCards.newCustomers.target) * 100}
           />
         </div>
         <div data-testid="kpi-cac">
           <KPICard 
             label="CAC" 
-            value={formatCurrencyValue(kpiCards.cac.value)} 
-            change={pctChange(kpiCards.cac.value, kpiCards.cac.prev)} 
-            sparkline={kpiCards.cac.sparkline}
+            value={formatCurrencyValue(aggregatedData.cac)} 
+            change={pctChange(aggregatedData.cac, kpiCards.cac.prev)} 
+            sparkline={chartData.map(d => d.costs / d.orders)}
             target={formatCurrencyValue(kpiCards.cac.target)}
-            targetAchievement={(kpiCards.cac.target / kpiCards.cac.value) * 100}
+            targetAchievement={(kpiCards.cac.target / aggregatedData.cac) * 100}
           />
         </div>
         <div data-testid="kpi-ncac">
           <KPICard 
             label="ncCAC" 
-            value={formatCurrencyValue(kpiCards.ncac.value)} 
-            change={pctChange(kpiCards.ncac.value, kpiCards.ncac.prev)} 
-            sparkline={kpiCards.ncac.sparkline}
+            value={formatCurrencyValue(aggregatedData.ncac)} 
+            change={pctChange(aggregatedData.ncac, kpiCards.ncac.prev)} 
+            sparkline={chartData.map(d => d.costs / d.newCustomers)}
             target={formatCurrencyValue(kpiCards.ncac.target)}
-            targetAchievement={(kpiCards.ncac.target / kpiCards.ncac.value) * 100}
+            targetAchievement={(kpiCards.ncac.target / aggregatedData.ncac) * 100}
           />
         </div>
       </div>
@@ -252,7 +300,7 @@ export default function DashboardPage() {
                 />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
                 <Line type="monotone" dataKey="revenue" name="Net Revenue" stroke="#34D399" strokeWidth={2.5} dot={false} />
-                <Line type="monotone" dataKey="spend" name="Marketing Costs" stroke="#EDBF63" strokeWidth={2.5} dot={false} />
+                <Line type="monotone" dataKey="costs" name="Marketing Costs" stroke="#EDBF63" strokeWidth={2.5} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -351,11 +399,11 @@ export default function DashboardPage() {
 
       {/* Channel Attribution Table */}
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="attribution-table">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
           <div>
             <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
             <div className="flex gap-2 sm:gap-3 mt-2 flex-wrap">
-              {['Last Click', 'Linear'].map((tab) => (
+              {['Last Click', 'Linear', 'First Click', 'Linear Paid', 'Triple'].map((tab) => (
                 <button 
                   key={tab} 
                   onClick={() => setActiveAttributionTab(tab)}
@@ -365,6 +413,19 @@ export default function DashboardPage() {
                 </button>
               ))}
             </div>
+          </div>
+          <div>
+            <div className="text-xs text-text-secondary mb-2">Attribution Window</div>
+            <select
+              value={attributionWindow}
+              onChange={(e) => setAttributionWindow(e.target.value)}
+              className="text-xs px-2 py-1 rounded border border-border bg-bg-surface text-text-primary min-w-[140px]"
+            >
+              <option value="1-day">1-day</option>
+              <option value="7-day/1-day">7-day/1-day</option>
+              <option value="28-day/1-day">28-day/1-day</option>
+              <option value="28-day/28-day">28-day/28-day</option>
+            </select>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -404,11 +465,11 @@ export default function DashboardPage() {
                     <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{formatCurrencyValue(row.revenue)}</td>
                     <td className="py-3 px-2 sm:px-3 text-right">
                       <span className={row.roas >= 3.5 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>
-                        {row.roas > 0 ? `${row.roas.toFixed(2)}x` : ','}
+                        {row.roas > 0 ? `${row.roas.toFixed(2)}x` : '0'}
                       </span>
                     </td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.orders}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cpo > 0 ? formatCurrencyValue(row.cpo) : ','}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cpo > 0 ? formatCurrencyValue(row.cpo) : '0'}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.newCustomers}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncPct.toFixed(1)}%</td>
                   </tr>
@@ -427,16 +488,15 @@ export default function DashboardPage() {
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={revenueInsights.monthly}>
+              <BarChart data={revenueInsights.monthly} margin={{ top: 10, right: 20, bottom: 60, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
                   dataKey="month" 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
                   angle={-45}
                   textAnchor="end"
-                  height={60}
+                  height={50}
                   interval={0}
-                  label={{ value: 'Month', position: 'insideBottom', offset: -10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
@@ -508,7 +568,7 @@ export default function DashboardPage() {
           <h3 className="text-sm font-medium text-text-primary">Product KPIs</h3>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[700px]">
+          <table className="w-full text-sm min-w-[500px]">
               <thead>
                 <tr className="border-b border-border text-xs text-text-secondary uppercase">
                   <th className="text-left py-3 px-2 sm:px-3 font-medium min-w-[120px]">Product</th>
@@ -516,14 +576,8 @@ export default function DashboardPage() {
                   <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[80px]">Units Sold</th>
                   <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[120px]">
                     <div className="flex items-center justify-end gap-1">
-                      <span>Price Reduction %</span>
-                      <InfoTooltip metric="Price Reductions" />
-                    </div>
-                  </th>
-                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[120px]">
-                    <div className="flex items-center justify-end gap-1">
-                      <span>Discount Code %</span>
-                      <InfoTooltip metric="Discount Codes" />
+                      <span>Inventory Remaining</span>
+                      <InfoTooltip metric="Inventory" />
                     </div>
                   </th>
                 </tr>
@@ -534,8 +588,7 @@ export default function DashboardPage() {
                     <td className="py-3 px-2 sm:px-3 font-medium text-text-primary">{row.product}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{formatCurrencyValue(row.revenue)}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.units}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.priceReduction > 0 ? `${row.priceReduction}%` : ','}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.discountCode > 0 ? `${row.discountCode}%` : ','}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary italic">Pending API</td>
                   </tr>
                 ))}
               </tbody>

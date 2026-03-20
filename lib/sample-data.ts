@@ -163,10 +163,10 @@ export const trackingHealth = [
     events: '14,230/day', 
     matchRate: '9.2/10',
     eventBreakdown: [
-      { event: 'PageView', count: '8,450', matchRate: '9.5/10' },
-      { event: 'AddToCart', count: '3,210', matchRate: '9.1/10' },
-      { event: 'InitiateCheckout', count: '1,820', matchRate: '8.9/10' },
-      { event: 'Purchase', count: '750', matchRate: '9.4/10' }
+      { event: 'PageView', count: '8,450', matchRate: '9.5/10', type: 'Browser' },
+      { event: 'AddToCart', count: '3,210', matchRate: '9.1/10', type: 'Browser' },
+      { event: 'InitiateCheckout', count: '1,820', matchRate: '8.9/10', type: 'Browser' },
+      { event: 'Purchase', count: '750', matchRate: '9.4/10', type: 'Browser' }
     ]
   },
   { 
@@ -175,10 +175,10 @@ export const trackingHealth = [
     events: '13,850/day', 
     matchRate: '8.9/10',
     eventBreakdown: [
-      { event: 'PageView', count: '8,100', matchRate: '9.2/10' },
-      { event: 'AddToCart', count: '3,050', matchRate: '8.7/10' },
-      { event: 'InitiateCheckout', count: '1,750', matchRate: '8.5/10' },
-      { event: 'Purchase', count: '950', matchRate: '9.1/10' }
+      { event: 'PageView', count: '8,100', matchRate: '9.2/10', type: 'Server' },
+      { event: 'AddToCart', count: '3,050', matchRate: '8.7/10', type: 'Server' },
+      { event: 'InitiateCheckout', count: '1,750', matchRate: '8.5/10', type: 'Server' },
+      { event: 'Purchase', count: '950', matchRate: '9.1/10', type: 'Server' }
     ]
   },
   { 
@@ -187,10 +187,10 @@ export const trackingHealth = [
     events: '8,920/day', 
     matchRate: '9.4/10',
     eventBreakdown: [
-      { event: 'page_view', count: '5,200', matchRate: '9.6/10' },
-      { event: 'add_to_cart', count: '1,870', matchRate: '9.3/10' },
-      { event: 'begin_checkout', count: '1,120', matchRate: '9.2/10' },
-      { event: 'purchase', count: '730', matchRate: '9.7/10' }
+      { event: 'page_view', count: '5,200', matchRate: '9.6/10', type: 'Multiple' },
+      { event: 'add_to_cart', count: '1,870', matchRate: '9.3/10', type: 'Multiple' },
+      { event: 'begin_checkout', count: '1,120', matchRate: '9.2/10', type: 'Multiple' },
+      { event: 'purchase', count: '730', matchRate: '9.7/10', type: 'Multiple' }
     ]
   },
   { 
@@ -199,10 +199,10 @@ export const trackingHealth = [
     events: '5,100/day', 
     matchRate: '7.1/10',
     eventBreakdown: [
-      { event: 'ViewContent', count: '3,200', matchRate: '7.3/10' },
-      { event: 'AddToCart', count: '1,250', matchRate: '6.8/10' },
-      { event: 'InitiateCheckout', count: '520', matchRate: '6.9/10' },
-      { event: 'CompletePayment', count: '130', matchRate: '7.5/10' }
+      { event: 'ViewContent', count: '3,200', matchRate: '7.3/10', type: 'Browser' },
+      { event: 'AddToCart', count: '1,250', matchRate: '6.8/10', type: 'Browser' },
+      { event: 'InitiateCheckout', count: '520', matchRate: '6.9/10', type: 'Browser' },
+      { event: 'CompletePayment', count: '130', matchRate: '7.5/10', type: 'Browser' }
     ]
   },
   { 
@@ -211,10 +211,10 @@ export const trackingHealth = [
     events: '22,400/day', 
     matchRate: 'N/A',
     eventBreakdown: [
-      { event: 'page_view', count: '15,400', matchRate: 'N/A' },
-      { event: 'add_to_cart', count: '3,800', matchRate: 'N/A' },
-      { event: 'begin_checkout', count: '2,200', matchRate: 'N/A' },
-      { event: 'purchase', count: '1,000', matchRate: 'N/A' }
+      { event: 'page_view', count: '15,400', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'add_to_cart', count: '3,800', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'begin_checkout', count: '2,200', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'purchase', count: '1,000', matchRate: 'N/A', type: 'Multiple' }
     ]
   },
   { 
@@ -223,10 +223,10 @@ export const trackingHealth = [
     events: '0/day', 
     matchRate: '0/10',
     eventBreakdown: [
-      { event: 'page_view', count: '0', matchRate: '0/10' },
-      { event: 'add_to_cart', count: '0', matchRate: '0/10' },
-      { event: 'begin_checkout', count: '0', matchRate: '0/10' },
-      { event: 'purchase', count: '0', matchRate: '0/10' }
+      { event: 'page_view', count: '0', matchRate: '0/10', type: 'Server' },
+      { event: 'add_to_cart', count: '0', matchRate: '0/10', type: 'Server' },
+      { event: 'begin_checkout', count: '0', matchRate: '0/10', type: 'Server' },
+      { event: 'purchase', count: '0', matchRate: '0/10', type: 'Server' }
     ]
   },
 ];

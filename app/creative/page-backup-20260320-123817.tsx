@@ -17,14 +17,14 @@ import {
   AreaChart, Area, LineChart, Line, ComposedChart,
 } from 'recharts';
 
-const tabs = ['Performance', 'Ad Churn', 'Account Control', 'Slugging Rate', 'Pareto', 'Demographics'];
-const platforms = ['Meta', 'TikTok', 'Reddit', 'Google'];
+const tabs = ['Performance', 'Ad Churn', 'Account Control', 'Top Creatives', 'Pareto', 'Demographics'];
+const platforms = ['Meta', 'TikTok', 'Reddit'];
 
 const tabDescriptions: Record<string, string> = {
   'Performance': 'Overview of all active ad creatives with spend, engagement, and conversion metrics. Use this to monitor your live ads and spot issues quickly.',
   'Ad Churn': 'Shows how ad spend is distributed across creative age brackets and launch cohorts. Dark = newest ads/cohorts, lighter = older. A healthy account has a steady flow of new creative taking over spend from older creative.',
   'Account Control': 'Scatter plot of CPA vs Spend per ad. Bottom-right = winners scaling efficiently. Top-right = "zombies" burning budget. The horizontal line is your CPA target. The vertical line separates testing from scaled ads.',
-  'Slugging Rate': 'Production & Slugging Rate, tracks your "at bats" vs "hits." Bars show ads launched per month. Dark sections show how many actually scaled. If you launch many ads and none scale, you have a creative strategy problem, not a media buying problem.',
+  'Top Creatives': 'Production & Slugging Rate, tracks your "at bats" vs "hits." Bars show ads launched per month. Dark sections show how many actually scaled. If you launch many ads and none scale, you have a creative strategy problem, not a media buying problem.',
 
   'Pareto': 'The 80/20 principle applied to ad creatives. Usually 20% of creatives drive 80% of results. Use this to identify your winners and stop spreading budget too thin.',
   'Demographics': 'Are you producing for the audience that is actually buying? If women 25-34 drive your profit but you keep producing TikTok-style ads for Gen Z, you\'re burning cash. Align your production queue with your paying demographic.',
@@ -54,11 +54,11 @@ const demoColors = ['#fca5a5', '#ef4444', '#dc2626', '#b91c1c', '#7f1d1d', '#93c
 function getAITitle(tab: string): string {
   const aiTitles: Record<string, string> = {
     'Performance': 'Performance Intelligence',
-    'Ad Churn': 'Ad Churn Intelligence',
-    'Account Control': 'Account Control Intelligence', 
-    'Slugging Rate': 'Slugging Rate Intelligence',
+    'Ad Churn': 'Ad Churn Analysis',
+    'Account Control': 'Account Control Analysis', 
+    'Top Creatives': 'Production Analysis',
     'Creative Launches': 'Creative Launch Analysis',
-    'Pareto': 'Pareto Analysis Intelligence',
+    'Pareto': 'Pareto Analysis',
     'Demographics': 'Demographics Intelligence',
   };
   return aiTitles[tab] || 'Creative Intelligence';
@@ -103,7 +103,7 @@ export default function CreativePage() {
         'Account Control Chart requires ad identification. Bubble colors should map to specific creative names below.',
         `Horizontal line at ${formatCurrencyValue(787)} is your CPA target. Vertical line at ${formatCurrencyValue(20000)} separates testing from scale.`,
       ],
-      'Slugging Rate': [
+      'Top Creatives': [
         'Production rate tracking shows creative "at bats" vs "hits" - launches vs successful scaling.',
         'Overall slugging rate should target 30% according to Curtis Howland methodology.',
         'Dark sections show scaled creatives (>$10K spend at profitable CPA). Light sections show failed tests.',
@@ -190,7 +190,7 @@ export default function CreativePage() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mx-1">
         {/* Platform controls - hide for Production & Slugging and Ad Churn */}
-        {!['Slugging Rate', 'Ad Churn'].includes(activeTab) && (
+        {!['Top Creatives', 'Ad Churn'].includes(activeTab) && (
           <div className="flex items-center gap-2">
             <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
             <div className="flex gap-1 flex-wrap">
@@ -222,7 +222,7 @@ export default function CreativePage() {
           </div>
         )}
         {/* Attribution controls - hide for Production & Slugging and Ad Churn */}
-        {!['Slugging Rate', 'Ad Churn'].includes(activeTab) && (
+        {!['Top Creatives', 'Ad Churn'].includes(activeTab) && (
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <div className="flex items-center gap-2">
               <span className="text-xs text-text-secondary font-medium shrink-0">Model:</span>
@@ -251,11 +251,7 @@ export default function CreativePage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary">Creative Performance</h3>
-            <div className="flex items-center gap-2 text-xs text-text-tertiary">
-              <span>[TripleWhale]</span>
-              <span>+</span>
-              <span>[{platform}]</span>
-            </div>
+            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
           </div>
           {/* Desktop Table */}
           <div className="hidden lg:block overflow-x-auto -mx-1 sm:mx-0">
@@ -265,6 +261,7 @@ export default function CreativePage() {
                   <tr className="border-b border-border text-text-secondary uppercase">
                     <th className="text-left py-2 px-2 font-medium min-w-[150px]">Ad Name</th>
                     <th className="text-center py-2 px-2 font-medium min-w-[90px]">Creative</th>
+                    <th className="text-left py-2 px-2 font-medium min-w-[70px]">Platform</th>
                     <th className="text-right py-2 px-2 font-medium min-w-[70px]">Spend</th>
                     <th className="text-right py-2 px-2 font-medium min-w-[60px]">Impr.</th>
                     <th className="text-right py-2 px-2 font-medium min-w-[50px]">CTR</th>
@@ -282,11 +279,8 @@ export default function CreativePage() {
                         <InfoTooltip metric="ROAS" />
                       </div>
                     </th>
-                    <th className="text-right py-2 px-2 font-medium min-w-[60px]">Frequency</th>
-                    <th className="text-right py-2 px-2 font-medium min-w-[70px]">NCROAS</th>
-                    <th className="text-right py-2 px-2 font-medium min-w-[60px]">AOV</th>
-                    <th className="text-right py-2 px-2 font-medium min-w-[70px]">NCCPA</th>
                     <th className="text-center py-2 px-2 font-medium min-w-[60px]">Status</th>
+                    <th className="text-center py-2 px-2 font-medium min-w-[60px]">Strategy</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -327,6 +321,9 @@ export default function CreativePage() {
                           </div>
                         </div>
                       </td>
+                      <td className="py-2.5 px-2">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.platform === 'Meta' ? 'bg-brand-blue/15 text-brand-blue-light' : row.platform === 'Google' ? 'bg-warm-gold/15 text-warm-gold' : 'bg-success/15 text-success'}`}>{row.platform}</span>
+                      </td>
                       <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.spend)}</td>
                       <td className="py-2.5 px-2 text-right text-text-secondary">{(row.impressions / 1000).toFixed(0)}K</td>
                       <td className="py-2.5 px-2 text-right text-text-secondary">{row.ctr.toFixed(2)}%</td>
@@ -334,11 +331,13 @@ export default function CreativePage() {
                       <td className="py-2.5 px-2 text-right text-text-primary font-medium">{row.conversions}</td>
                       <td className="py-2.5 px-2 text-right"><span className={row.cpa <= 700 ? 'text-success' : row.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>{formatCurrencyValue(row.cpa)}</span></td>
                       <td className="py-2.5 px-2 text-right"><span className={row.roas >= 3.0 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>{row.roas.toFixed(2)}x</span></td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{(row.frequency || 1.2).toFixed(1)}</td>
-                      <td className="py-2.5 px-2 text-right"><span className={(row.ncroas || row.roas * 0.8) >= 2.4 ? 'text-success' : (row.ncroas || row.roas * 0.8) >= 2.0 ? 'text-warm-gold' : 'text-danger'}>{(row.ncroas || row.roas * 0.8).toFixed(2)}x</span></td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.aov || 2150)}</td>
-                      <td className="py-2.5 px-2 text-right"><span className={(row.nccpa || row.cpa * 0.75) <= 525 ? 'text-success' : (row.nccpa || row.cpa * 0.75) <= 638 ? 'text-warm-gold' : 'text-danger'}>{formatCurrencyValue(row.nccpa || row.cpa * 0.75)}</span></td>
                       <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.status === 'Active' ? 'bg-success/15 text-success' : 'bg-warm-gold/15 text-warm-gold'}`}>{row.status}</span></td>
+                      <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                        row.campaign === 'scale' ? 'bg-success/15 text-success' :
+                        row.campaign === 'kill' ? 'bg-danger/15 text-danger' :
+                        row.campaign === 'test' ? 'bg-brand-blue/15 text-brand-blue-light' :
+                        'bg-warm-gold/15 text-warm-gold'
+                      }`}>{row.campaign}</span></td>
                     </tr>
                   ))}
                 </tbody>
@@ -496,7 +495,9 @@ export default function CreativePage() {
                             </span>
                           </div>
                         </div>
-
+                        <div className="text-xs text-text-tertiary mt-2 pt-2 border-t border-border">
+                          Click to view ad preview
+                        </div>
                       </div>
                     );
                   }
@@ -618,9 +619,6 @@ export default function CreativePage() {
                       <th className="text-center py-2 px-2 font-medium min-w-[80px]">Platform</th>
                       <th className="text-right py-2 px-2 font-medium min-w-[80px]">Spend</th>
                       <th className="text-right py-2 px-2 font-medium min-w-[80px]">CPA</th>
-                      <th className="text-right py-2 px-2 font-medium min-w-[70px]">NCCPA</th>
-                      <th className="text-right py-2 px-2 font-medium min-w-[60px]">ROAS</th>
-                      <th className="text-right py-2 px-2 font-medium min-w-[70px]">NCROAS</th>
                       <th className="text-center py-2 px-2 font-medium min-w-[70px]">Preview</th>
                     </tr>
                   </thead>
@@ -658,21 +656,6 @@ export default function CreativePage() {
                         <td className="py-2.5 px-2 text-right">
                           <span className={ad.cpa <= 700 ? 'text-success' : ad.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>
                             {formatCurrencyValue(ad.cpa)}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-2 text-right">
-                          <span className={(ad.nccpa || ad.cpa * 0.75) <= 525 ? 'text-success' : (ad.nccpa || ad.cpa * 0.75) <= 638 ? 'text-warm-gold' : 'text-danger'}>
-                            {formatCurrencyValue(ad.nccpa || ad.cpa * 0.75)}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-2 text-right">
-                          <span className={(ad.roas || 2.8) >= 3.0 ? 'text-success' : (ad.roas || 2.8) >= 2.5 ? 'text-warm-gold' : 'text-danger'}>
-                            {(ad.roas || 2.8).toFixed(2)}x
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-2 text-right">
-                          <span className={(ad.ncroas || (ad.roas || 2.8) * 0.8) >= 2.4 ? 'text-success' : (ad.ncroas || (ad.roas || 2.8) * 0.8) >= 2.0 ? 'text-warm-gold' : 'text-danger'}>
-                            {(ad.ncroas || (ad.roas || 2.8) * 0.8).toFixed(2)}x
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-center">
@@ -715,7 +698,7 @@ export default function CreativePage() {
             ))}
           </div>
           <div className="min-h-[320px] sm:min-h-[380px]" style={{ width: '100%', height: '380px' }}>
-            <ResponsiveContainer width="100%" height={380}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={adChurnData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
@@ -792,8 +775,8 @@ export default function CreativePage() {
 
 
 
-      {/* ═══════════════════════ SLUGGING RATE (Production & Slugging Rate) ═══════════════════════ */}
-      {activeTab === 'Slugging Rate' && (
+      {/* ═══════════════════════ TOP CREATIVES (Production & Slugging Rate) ═══════════════════════ */}
+      {activeTab === 'Top Creatives' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
             <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
@@ -850,7 +833,7 @@ export default function CreativePage() {
               <div className="text-xs text-text-secondary mb-1">Overall Slugging Rate</div>
               <div className="text-xl font-bold text-warm-gold">{((totalSlugging.hits / totalSlugging.launched) * 100).toFixed(1)}%</div>
               <div className="text-xs text-text-tertiary mt-1">
-                Target: 30% (Target CPA: {formatCurrencyValue(750)})
+                Target: 30% (Curtis)
                 <span className={`ml-2 ${
                   ((totalSlugging.hits / totalSlugging.launched) * 100) >= 30 
                     ? 'text-success' 
@@ -962,14 +945,8 @@ export default function CreativePage() {
                 <span className="text-xs text-text-tertiary shrink-0">{platform} Ads</span>
               </div>
             </div>
-            {platform === 'Google' ? (
-              <div className="text-center py-8 text-text-secondary">
-                <div className="text-sm font-medium mb-2">Google Ads Demographics Data</div>
-                <div className="text-xs">Demographic data not available for Google Ads platform.<br />This feature requires Google Ads demographic API integration.</div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {getFilteredDemographicsAge().map((row) => (
+            <div className="space-y-3">
+              {getFilteredDemographicsAge().map((row) => (
                 <div key={row.group} className="flex items-center gap-2 sm:gap-3">
                   <div className="w-12 text-xs text-text-secondary font-medium shrink-0">{row.group}</div>
                   <div className="flex-1 h-8 bg-bg-elevated rounded-md overflow-hidden relative min-w-0">
