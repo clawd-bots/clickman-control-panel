@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import DataSource from '@/components/ui/DataSource';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { formatCurrency } from '@/lib/utils';
 import { attributionSurvey, trackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
@@ -186,7 +187,7 @@ export default function AttributionPage() {
               <Star size={16} className="text-warm-gold shrink-0" />
               <span>MER / nCAC Overview</span>
             </h3>
-            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+            <DataSource source="TripleWhale" className="shrink-0" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">

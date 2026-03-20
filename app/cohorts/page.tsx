@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import DataSource from '@/components/ui/DataSource';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { formatCurrency } from '@/lib/utils';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
@@ -126,7 +127,7 @@ export default function CohortsPage() {
                 <span>Retention by Cohort</span>
                 <InfoTooltip metric="Cohort" />
               </h3>
-              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+              <DataSource source="TripleWhale" className="shrink-0" />
             </div>
             <div className="overflow-x-auto -mx-1 sm:mx-0">
               <div className="min-w-[900px]">
@@ -202,7 +203,7 @@ export default function CohortsPage() {
                 <span>Customer Lifetime Value Extension</span>
                 <InfoTooltip metric="CLV" />
               </h3>
-              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+              <DataSource source="TripleWhale" className="shrink-0" />
             </div>
             <div className="min-h-[300px]">
               <ResponsiveContainer width="100%" height={300}>
@@ -230,7 +231,7 @@ export default function CohortsPage() {
                 <span>Product Comparison</span>
                 <InfoTooltip metric="Repeat Rate" />
               </h3>
-              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+              <DataSource source="TripleWhale" className="shrink-0" />
             </div>
             <div className="overflow-x-auto -mx-1 sm:mx-0">
               <div className="min-w-[1000px]">
