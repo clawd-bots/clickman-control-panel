@@ -660,19 +660,22 @@ export default function CreativePage() {
                             {formatCurrencyValue(ad.cpa)}
                           </span>
                         </td>
+                        <td className="py-2.5 px-2 text-right text-text-secondary">
+                          {((ad as any).frequency || 1.3).toFixed(1)}
+                        </td>
                         <td className="py-2.5 px-2 text-right">
-                          <span className={(ad.cpa * 0.75) <= 525 ? 'text-success' : (ad.cpa * 0.75) <= 638 ? 'text-warm-gold' : 'text-danger'}>
-                            {formatCurrencyValue(ad.cpa * 0.75)}
+                          <span className={((ad as any).nccpa || ad.cpa * 0.75) <= 525 ? 'text-success' : ((ad as any).nccpa || ad.cpa * 0.75) <= 638 ? 'text-warm-gold' : 'text-danger'}>
+                            {formatCurrencyValue((ad as any).nccpa || ad.cpa * 0.75)}
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-right">
-                          <span className={2.8 >= 3.0 ? 'text-success' : 2.8 >= 2.5 ? 'text-warm-gold' : 'text-danger'}>
-                            {2.8.toFixed(2)}x
+                          <span className={((ad as any).roas || 2.8) >= 3.0 ? 'text-success' : ((ad as any).roas || 2.8) >= 2.5 ? 'text-warm-gold' : 'text-danger'}>
+                            {((ad as any).roas || 2.8).toFixed(2)}x
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-right">
-                          <span className={(2.8 * 0.8) >= 2.4 ? 'text-success' : (2.8 * 0.8) >= 2.0 ? 'text-warm-gold' : 'text-danger'}>
-                            {(2.8 * 0.8).toFixed(2)}x
+                          <span className={((ad as any).ncroas || ((ad as any).roas || 2.8) * 0.8) >= 2.4 ? 'text-success' : ((ad as any).ncroas || ((ad as any).roas || 2.8) * 0.8) >= 2.0 ? 'text-warm-gold' : 'text-danger'}>
+                            {((ad as any).ncroas || ((ad as any).roas || 2.8) * 0.8).toFixed(2)}x
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-center">
