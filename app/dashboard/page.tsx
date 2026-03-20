@@ -3,6 +3,7 @@ import { useState } from 'react';
 import KPICard from '@/components/ui/KPICard';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
+import DataSource from '@/components/ui/DataSource';
 import { useCurrency } from '@/components/CurrencyProvider';
 
 import { kpiCards, dailyMetrics, channelAttribution, productKPIs, revenueInsights } from '@/lib/sample-data';
@@ -190,7 +191,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="revenue-chart">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue & Marketing Costs</h3>
-            <span className="text-xs text-text-tertiary shrink-0">Triple Whale</span>
+            <DataSource source="Triple Whale" className="shrink-0" />
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
@@ -224,7 +225,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Net Orders & New Customers</h3>
-            <span className="text-xs text-text-tertiary shrink-0">Triple Whale</span>
+            <DataSource source="Triple Whale" className="shrink-0" />
           </div>
           <div className="min-h-[260px]">
             <ResponsiveContainer width="100%" height={260}>
@@ -258,7 +259,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary">Marketing Insights</h3>
-            <span className="text-xs text-text-tertiary">Google Analytics</span>
+            <DataSource source="Google Analytics" />
           </div>
           {[
             { label: 'Sessions', value: '33,850', change: 8.2 },
@@ -285,7 +286,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary">Marketing Metrics Trend</h3>
-            <span className="text-xs text-text-tertiary">Triple Whale</span>
+            <DataSource source="Triple Whale" />
           </div>
           <div className="min-h-[180px]">
             <ResponsiveContainer width="100%" height={180}>
@@ -386,7 +387,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue Composition (NC vs RC)</h3>
-            <span className="text-xs text-text-tertiary shrink-0">Triple Whale</span>
+            <DataSource source="Triple Whale" className="shrink-0" />
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
@@ -418,7 +419,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary">Revenue Breakdown</h3>
-            <span className="text-xs text-text-tertiary">Triple Whale</span>
+            <DataSource source="Triple Whale" />
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {[

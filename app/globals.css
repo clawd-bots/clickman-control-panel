@@ -72,3 +72,25 @@ body {
 .recharts-default-tooltip {
   transition: background-color 0.2s ease;
 }
+
+/* Data source color indicators */
+.data-source-triplewhale {
+  color: #334FB4; /* brand-blue */
+}
+.data-source-google {
+  color: #059669; /* success green */
+}
+.data-source-sheets {
+  color: #D97706; /* warm-gold */
+}
+
+/* Dark mode data source colors */
+.dark .data-source-triplewhale {
+  color: #4A6BD6; /* brand-blue-light */
+}
+.dark .data-source-google {
+  color: #34D399; /* success light */
+}
+.dark .data-source-sheets {
+  color: #EDBF63; /* warm-gold light */
+}
