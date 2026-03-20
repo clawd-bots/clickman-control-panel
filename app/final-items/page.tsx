@@ -6,7 +6,7 @@ import { finalItems as initialFinalItems, getAllDone, getPendingCount, type Fina
 const categoryColor = {
   'data': 'bg-brand-blue/10 text-brand-blue-light',
   'integration': 'bg-warm-gold/10 text-warm-gold',
-  'config': 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-300',
+  'config': 'bg-purple-100 text-purple-600 dark:bg-purple-900/20 dark:text-purple-300',
 };
 
 const ownerConfig = {

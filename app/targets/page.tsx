@@ -278,7 +278,7 @@ export default function TargetsPage() {
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-3 px-3 font-semibold text-text-primary sticky left-0 z-10 bg-white dark:bg-gray-800 min-w-[140px] border-r border-border">
+                  <th className="text-left py-3 px-3 font-semibold text-text-primary sticky left-0 z-10 bg-bg-surface min-w-[140px] border-r border-border">
                     Metric
                   </th>
                   {monthLabels.slice(0, 1).map((month, i) => (
@@ -294,7 +294,7 @@ export default function TargetsPage() {
               <tbody>
                 {monthlyTargets.map((row, rowIndex) => (
                   <tr key={row.metric} className="border-b border-border/30 hover:bg-bg-elevated/30">
-                    <td className="py-2 px-3 font-medium text-text-primary sticky left-0 z-10 bg-white dark:bg-gray-800 border-r border-border">
+                    <td className="py-2 px-3 font-medium text-text-primary sticky left-0 z-10 bg-bg-surface border-r border-border">
                       <div className="flex items-center gap-1">
                         {row.metric}
                         <InfoTooltip metric={row.metric} />
@@ -377,7 +377,7 @@ export default function TargetsPage() {
           <table className="w-full text-xs border-collapse min-w-[1200px]">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-3 font-semibold text-text-primary sticky left-0 z-10 bg-white dark:bg-gray-800 min-w-[140px]">
+                <th className="text-left py-3 px-3 font-semibold text-text-primary sticky left-0 z-10 bg-bg-surface min-w-[140px]">
                   Metric
                 </th>
                 {currentMonthLabels.map((month, i) => (
@@ -399,7 +399,7 @@ export default function TargetsPage() {
             <tbody>
               {monthlyTargets.map((row, rowIndex) => (
                 <tr key={row.metric} className="border-b border-border/30 hover:bg-bg-elevated/30">
-                  <td className="py-2 px-3 font-medium text-text-primary sticky left-0 z-10 bg-white dark:bg-gray-800">
+                  <td className="py-2 px-3 font-medium text-text-primary sticky left-0 z-10 bg-bg-surface">
                     <div className="flex items-center gap-1">
                       {row.metric}
                       <InfoTooltip metric={row.metric} />
