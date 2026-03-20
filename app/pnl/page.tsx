@@ -391,7 +391,7 @@ export default function PnLPage() {
                   borderRadius: 8, 
                   fontSize: 12 
                 }}
-                formatter={(value: number) => [`${value.toFixed(1)}%`, '']}
+                formatter={(value) => value ? [`${(value as number).toFixed(1)}%`, ''] : ['', '']}
               />
               <Legend wrapperStyle={{ fontSize: 11 }} />
               <Line type="monotone" dataKey="cm1" name="CM1" stroke="#EDBF63" strokeWidth={2} dot={false} />

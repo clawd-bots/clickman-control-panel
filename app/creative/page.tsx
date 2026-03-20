@@ -334,10 +334,10 @@ export default function CreativePage() {
                       <td className="py-2.5 px-2 text-right text-text-primary font-medium">{row.conversions}</td>
                       <td className="py-2.5 px-2 text-right"><span className={row.cpa <= 700 ? 'text-success' : row.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>{formatCurrencyValue(row.cpa)}</span></td>
                       <td className="py-2.5 px-2 text-right"><span className={row.roas >= 3.0 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>{row.roas.toFixed(2)}x</span></td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{(row.frequency || 1.2).toFixed(1)}</td>
-                      <td className="py-2.5 px-2 text-right"><span className={(row.ncroas || row.roas * 0.8) >= 2.4 ? 'text-success' : (row.ncroas || row.roas * 0.8) >= 2.0 ? 'text-warm-gold' : 'text-danger'}>{(row.ncroas || row.roas * 0.8).toFixed(2)}x</span></td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.aov || 2150)}</td>
-                      <td className="py-2.5 px-2 text-right"><span className={(row.nccpa || row.cpa * 0.75) <= 525 ? 'text-success' : (row.nccpa || row.cpa * 0.75) <= 638 ? 'text-warm-gold' : 'text-danger'}>{formatCurrencyValue(row.nccpa || row.cpa * 0.75)}</span></td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{((row as any).frequency || 1.2).toFixed(1)}</td>
+                      <td className="py-2.5 px-2 text-right"><span className={((row as any).ncroas || row.roas * 0.8) >= 2.4 ? 'text-success' : ((row as any).ncroas || row.roas * 0.8) >= 2.0 ? 'text-warm-gold' : 'text-danger'}>{((row as any).ncroas || row.roas * 0.8).toFixed(2)}x</span></td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue((row as any).aov || 2150)}</td>
+                      <td className="py-2.5 px-2 text-right"><span className={((row as any).nccpa || row.cpa * 0.75) <= 525 ? 'text-success' : ((row as any).nccpa || row.cpa * 0.75) <= 638 ? 'text-warm-gold' : 'text-danger'}>{formatCurrencyValue((row as any).nccpa || row.cpa * 0.75)}</span></td>
                       <td className="py-2.5 px-2 text-center"><span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${row.status === 'Active' ? 'bg-success/15 text-success' : 'bg-warm-gold/15 text-warm-gold'}`}>{row.status}</span></td>
                     </tr>
                   ))}
@@ -661,18 +661,18 @@ export default function CreativePage() {
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-right">
-                          <span className={(ad.nccpa || ad.cpa * 0.75) <= 525 ? 'text-success' : (ad.nccpa || ad.cpa * 0.75) <= 638 ? 'text-warm-gold' : 'text-danger'}>
-                            {formatCurrencyValue(ad.nccpa || ad.cpa * 0.75)}
+                          <span className={(ad.cpa * 0.75) <= 525 ? 'text-success' : (ad.cpa * 0.75) <= 638 ? 'text-warm-gold' : 'text-danger'}>
+                            {formatCurrencyValue(ad.cpa * 0.75)}
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-right">
-                          <span className={(ad.roas || 2.8) >= 3.0 ? 'text-success' : (ad.roas || 2.8) >= 2.5 ? 'text-warm-gold' : 'text-danger'}>
-                            {(ad.roas || 2.8).toFixed(2)}x
+                          <span className={2.8 >= 3.0 ? 'text-success' : 2.8 >= 2.5 ? 'text-warm-gold' : 'text-danger'}>
+                            {2.8.toFixed(2)}x
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-right">
-                          <span className={(ad.ncroas || (ad.roas || 2.8) * 0.8) >= 2.4 ? 'text-success' : (ad.ncroas || (ad.roas || 2.8) * 0.8) >= 2.0 ? 'text-warm-gold' : 'text-danger'}>
-                            {(ad.ncroas || (ad.roas || 2.8) * 0.8).toFixed(2)}x
+                          <span className={(2.8 * 0.8) >= 2.4 ? 'text-success' : (2.8 * 0.8) >= 2.0 ? 'text-warm-gold' : 'text-danger'}>
+                            {(2.8 * 0.8).toFixed(2)}x
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-center">
@@ -990,6 +990,7 @@ export default function CreativePage() {
                 </div>
               ))}
             </div>
+            )}
           </div>
 
           {/* Gender Breakdown */}
@@ -998,19 +999,26 @@ export default function CreativePage() {
               <h3 className="text-sm font-medium text-text-primary">Performance by Gender</h3>
               <span className="text-xs text-text-tertiary shrink-0">{platform} Ads</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {demographicsGender.map((row) => (
-                <div key={row.gender} className="bg-bg-elevated border border-border rounded-lg p-4">
-                  <div className="text-sm font-medium text-text-primary mb-3">{row.gender}</div>
-                  <div className="space-y-2 text-xs">
-                    <div className="flex justify-between"><span className="text-text-secondary">Spend</span><span className="text-text-primary font-medium">{formatCurrencyValue(row.spend)}</span></div>
-                    <div className="flex justify-between"><span className="text-text-secondary">Conversions</span><span className="text-text-primary font-medium">{row.conversions} ({row.pctConversions}%)</span></div>
-                    <div className="flex justify-between"><span className="text-text-secondary">CPA</span><span className={row.cpa <= 700 ? 'text-success font-medium' : row.cpa <= 800 ? 'text-warm-gold font-medium' : 'text-danger font-medium'}>{formatCurrencyValue(row.cpa)}</span></div>
-                    <div className="flex justify-between"><span className="text-text-secondary">ROAS</span><span className={row.roas >= 3.0 ? 'text-success font-medium' : 'text-warm-gold font-medium'}>{row.roas.toFixed(2)}x</span></div>
+            {platform === 'Google' ? (
+              <div className="text-center py-8 text-text-secondary">
+                <div className="text-sm font-medium mb-2">Google Ads Demographics Data</div>
+                <div className="text-xs">Gender breakdown not available for Google Ads platform.<br />This feature requires Google Ads demographic API integration.</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {demographicsGender.map((row) => (
+                  <div key={row.gender} className="bg-bg-elevated border border-border rounded-lg p-4">
+                    <div className="text-sm font-medium text-text-primary mb-3">{row.gender}</div>
+                    <div className="space-y-2 text-xs">
+                      <div className="flex justify-between"><span className="text-text-secondary">Spend</span><span className="text-text-primary font-medium">{formatCurrencyValue(row.spend)}</span></div>
+                      <div className="flex justify-between"><span className="text-text-secondary">Conversions</span><span className="text-text-primary font-medium">{row.conversions} ({row.pctConversions}%)</span></div>
+                      <div className="flex justify-between"><span className="text-text-secondary">CPA</span><span className={row.cpa <= 700 ? 'text-success font-medium' : row.cpa <= 800 ? 'text-warm-gold font-medium' : 'text-danger font-medium'}>{formatCurrencyValue(row.cpa)}</span></div>
+                      <div className="flex justify-between"><span className="text-text-secondary">ROAS</span><span className={row.roas >= 3.0 ? 'text-success font-medium' : 'text-warm-gold font-medium'}>{row.roas.toFixed(2)}x</span></div>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Gender+Age Stacked Area over time */}
@@ -1027,29 +1035,36 @@ export default function CreativePage() {
                 </div>
               ))}
             </div>
-            <div className="min-h-[320px]" style={{ width: '100%', height: '320px' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={demographicsGenderAge} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                  <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
-                  <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
-                  <Tooltip
-                    contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11 }}
-                    formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
-                  />
-                  <Area type="monotone" dataKey="F 18-24" stackId="demo" fill="#fca5a5" stroke="#fca5a5" fillOpacity={0.85} />
-                  <Area type="monotone" dataKey="F 25-34" stackId="demo" fill="#ef4444" stroke="#ef4444" fillOpacity={0.85} />
-                  <Area type="monotone" dataKey="F 35-44" stackId="demo" fill="#dc2626" stroke="#dc2626" fillOpacity={0.85} />
-                  <Area type="monotone" dataKey="F 45-54" stackId="demo" fill="#b91c1c" stroke="#b91c1c" fillOpacity={0.85} />
-                  <Area type="monotone" dataKey="F 55+" stackId="demo" fill="#7f1d1d" stroke="#7f1d1d" fillOpacity={0.85} />
-                  <Area type="monotone" dataKey="M 18-24" stackId="demo" fill="#93c5fd" stroke="#93c5fd" fillOpacity={0.85} />
-                  <Area type="monotone" dataKey="M 25-34" stackId="demo" fill="#3b82f6" stroke="#3b82f6" fillOpacity={0.85} />
-                  <Area type="monotone" dataKey="M 35-44" stackId="demo" fill="#2563eb" stroke="#2563eb" fillOpacity={0.85} />
-                  <Area type="monotone" dataKey="M 45-54" stackId="demo" fill="#1d4ed8" stroke="#1d4ed8" fillOpacity={0.85} />
-                  <Area type="monotone" dataKey="M 55+" stackId="demo" fill="#1e3a8a" stroke="#1e3a8a" fillOpacity={0.85} />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            {platform === 'Google' ? (
+              <div className="text-center py-16 text-text-secondary min-h-[320px] flex flex-col justify-center">
+                <div className="text-sm font-medium mb-2">Google Ads Demographics Data</div>
+                <div className="text-xs">Demographic timeline data not available for Google Ads platform.<br />This feature requires Google Ads demographic API integration.</div>
+              </div>
+            ) : (
+              <div className="min-h-[320px]" style={{ width: '100%', height: '320px' }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={demographicsGenderAge} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                    <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
+                    <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
+                    <Tooltip
+                      contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11 }}
+                      formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
+                    />
+                    <Area type="monotone" dataKey="F 18-24" stackId="demo" fill="#fca5a5" stroke="#fca5a5" fillOpacity={0.85} />
+                    <Area type="monotone" dataKey="F 25-34" stackId="demo" fill="#ef4444" stroke="#ef4444" fillOpacity={0.85} />
+                    <Area type="monotone" dataKey="F 35-44" stackId="demo" fill="#dc2626" stroke="#dc2626" fillOpacity={0.85} />
+                    <Area type="monotone" dataKey="F 45-54" stackId="demo" fill="#b91c1c" stroke="#b91c1c" fillOpacity={0.85} />
+                    <Area type="monotone" dataKey="F 55+" stackId="demo" fill="#7f1d1d" stroke="#7f1d1d" fillOpacity={0.85} />
+                    <Area type="monotone" dataKey="M 18-24" stackId="demo" fill="#93c5fd" stroke="#93c5fd" fillOpacity={0.85} />
+                    <Area type="monotone" dataKey="M 25-34" stackId="demo" fill="#3b82f6" stroke="#3b82f6" fillOpacity={0.85} />
+                    <Area type="monotone" dataKey="M 35-44" stackId="demo" fill="#2563eb" stroke="#2563eb" fillOpacity={0.85} />
+                    <Area type="monotone" dataKey="M 45-54" stackId="demo" fill="#1d4ed8" stroke="#1d4ed8" fillOpacity={0.85} />
+                    <Area type="monotone" dataKey="M 55+" stackId="demo" fill="#1e3a8a" stroke="#1e3a8a" fillOpacity={0.85} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
           </div>
 
           {/* Insight callout */}

@@ -100,6 +100,9 @@ const initialMonthlyTargets: MonthlyTarget[] = [
   },
 ];
 
+let initialMonthColumns = ['Apr26', 'May26', 'Jun26', 'Jul26', 'Aug26', 'Sep26', 'Oct26', 'Nov26', 'Dec26', 'Jan27', 'Feb27', 'Mar27'] as const;
+let initialMonthLabels = ['Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26', 'Sep 26', 'Oct 26', 'Nov 26', 'Dec 26', 'Jan 27', 'Feb 27', 'Mar 27'];
+
 const monthColumns = ['Apr26', 'May26', 'Jun26', 'Jul26', 'Aug26', 'Sep26', 'Oct26', 'Nov26', 'Dec26', 'Jan27', 'Feb27', 'Mar27'] as const;
 const monthLabels = ['Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26', 'Sep 26', 'Oct 26', 'Nov 26', 'Dec 26', 'Jan 27', 'Feb 27', 'Mar 27'];
 
@@ -108,6 +111,9 @@ export default function TargetsPage() {
   const [monthlyTargets, setMonthlyTargets] = useState<MonthlyTarget[]>(initialMonthlyTargets);
   const [editingCell, setEditingCell] = useState<{row: number, col: string} | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [currentMonthColumns, setCurrentMonthColumns] = useState<string[]>([...monthColumns]);
+  const [currentMonthLabels, setCurrentMonthLabels] = useState<string[]>([...monthLabels]);
+  const [showAddMonthDialog, setShowAddMonthDialog] = useState(false);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -148,7 +154,7 @@ export default function TargetsPage() {
       
       // Auto-calculations for various metrics
       if (editingCell.col !== 'lastUpdated') {
-        const colKey = editingCell.col as keyof MonthlyTarget;
+        const colKey = editingCell.col;
         
         // Get all relevant metrics
         const revenue = updatedTargets.find(t => t.metric === 'Net Revenue');
@@ -159,15 +165,15 @@ export default function TargetsPage() {
         const merRow = updatedTargets.find(t => t.metric === 'MER');
         const amerRow = updatedTargets.find(t => t.metric === 'aMER');
         
-        const revenueValue = parseFloat(revenue?.[colKey] as string) || 0;
-        const ordersValue = parseFloat(ncOrders?.[colKey] as string) || 0;
-        const cacValue = parseFloat(cac?.[colKey] as string) || 0;
-        const ncacValue = parseFloat(ncac?.[colKey] as string) || 0;
+        const revenueValue = parseFloat((revenue as any)?.[colKey] as string) || 0;
+        const ordersValue = parseFloat((ncOrders as any)?.[colKey] as string) || 0;
+        const cacValue = parseFloat((cac as any)?.[colKey] as string) || 0;
+        const ncacValue = parseFloat((ncac as any)?.[colKey] as string) || 0;
         
         // Auto-calculate AOV when revenue and NC Orders are available
         if (revenue && ncOrders && aovRow && revenueValue > 0 && ordersValue > 0) {
           const calculatedAOV = Math.round(revenueValue / ordersValue);
-          aovRow[colKey] = calculatedAOV.toString();
+          (aovRow as any)[colKey] = calculatedAOV.toString();
           aovRow.lastUpdated = 'Auto-calculated';
         }
         
@@ -176,7 +182,7 @@ export default function TargetsPage() {
         if (revenue && ncOrders && cac && merRow && revenueValue > 0 && ordersValue > 0 && cacValue > 0) {
           const marketingSpend = cacValue * ordersValue;
           const calculatedMER = (revenueValue / marketingSpend).toFixed(2);
-          merRow[colKey] = calculatedMER;
+          (merRow as any)[colKey] = calculatedMER;
           merRow.lastUpdated = 'Auto-calculated';
         }
         
@@ -184,7 +190,7 @@ export default function TargetsPage() {
         if (revenue && ncOrders && ncac && amerRow && revenueValue > 0 && ordersValue > 0 && ncacValue > 0) {
           const newCustomerSpend = ncacValue * ordersValue;
           const calculatedAMER = (revenueValue / newCustomerSpend).toFixed(2);
-          amerRow[colKey] = calculatedAMER;
+          (amerRow as any)[colKey] = calculatedAMER;
           amerRow.lastUpdated = 'Auto-calculated';
         }
       }
@@ -200,6 +206,35 @@ export default function TargetsPage() {
   const cancelEdit = () => {
     setEditingCell(null);
     setEditValue('');
+  };
+
+  // Add new month column  
+  const addNewMonth = () => {
+    const lastMonth = currentMonthLabels[currentMonthLabels.length - 1];
+    const lastMonthDate = new Date(lastMonth.replace(' ', ' 1, 20'));
+    const nextMonth = new Date(lastMonthDate.getFullYear(), lastMonthDate.getMonth() + 1, 1);
+    
+    const nextMonthKey = nextMonth.toLocaleDateString('en-US', { 
+      month: 'short', 
+      year: '2-digit' 
+    }).replace(' ', '').replace("'", "");
+    
+    const nextMonthLabel = nextMonth.toLocaleDateString('en-US', { 
+      month: 'short',
+      year: '2-digit' 
+    }).replace("'", "");
+
+    // Add to column arrays
+    setCurrentMonthColumns(prev => [...prev, nextMonthKey]);
+    setCurrentMonthLabels(prev => [...prev, nextMonthLabel]);
+
+    // Add empty column to all target rows
+    setMonthlyTargets(prev => prev.map(target => ({
+      ...target,
+      [nextMonthKey]: ''
+    })));
+
+    setShowAddMonthDialog(false);
   };
 
   // Dynamic AI suggestions with historical data analysis
@@ -238,7 +273,7 @@ export default function TargetsPage() {
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="border-b border-border">
-                  <th className="text-left py-3 px-3 font-semibold text-text-primary sticky left-0 bg-bg-surface min-w-[140px] z-10 border-r border-border">
+                  <th className="text-left py-3 px-3 font-semibold text-text-primary sticky left-0 z-10 bg-white dark:bg-gray-800 min-w-[140px] border-r border-border">
                     Metric
                   </th>
                   {monthLabels.slice(0, 1).map((month, i) => (
@@ -254,14 +289,14 @@ export default function TargetsPage() {
               <tbody>
                 {monthlyTargets.map((row, rowIndex) => (
                   <tr key={row.metric} className="border-b border-border/30 hover:bg-bg-elevated/30">
-                    <td className="py-2 px-3 font-medium text-text-primary sticky left-0 bg-bg-surface z-10 border-r border-border">
+                    <td className="py-2 px-3 font-medium text-text-primary sticky left-0 z-10 bg-white dark:bg-gray-800 border-r border-border">
                       <div className="flex items-center gap-1">
                         {row.metric}
                         <InfoTooltip metric={row.metric} />
                       </div>
                     </td>
-                    {monthColumns.map((colKey, colIndex) => {
-                      const cellValue = row[colKey];
+                    {currentMonthColumns.map((colKey, colIndex) => {
+                      const cellValue = (row as any)[colKey];
                       const isAutoCalc = isAutoCalculated(row.metric);
                       const isEditing = editingCell?.row === rowIndex && editingCell?.col === colKey;
 
@@ -337,28 +372,37 @@ export default function TargetsPage() {
           <table className="w-full text-xs border-collapse min-w-[1200px]">
             <thead>
               <tr className="border-b border-border">
-                <th className="text-left py-3 px-3 font-semibold text-text-primary sticky left-0 bg-bg-surface min-w-[140px]">
+                <th className="text-left py-3 px-3 font-semibold text-text-primary sticky left-0 z-10 bg-white dark:bg-gray-800 min-w-[140px]">
                   Metric
                 </th>
-                {monthLabels.map((month, i) => (
+                {currentMonthLabels.map((month, i) => (
                   <th key={month} className="text-center py-3 px-3 font-medium text-text-secondary min-w-[100px]">
                     {month}
                   </th>
                 ))}
+                <th className="text-center py-3 px-3 font-medium text-text-secondary min-w-[100px]">
+                  <button
+                    onClick={() => setShowAddMonthDialog(true)}
+                    className="w-8 h-8 rounded-full bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue-light flex items-center justify-center transition-colors"
+                    title="Add new month column"
+                  >
+                    +
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
               {monthlyTargets.map((row, rowIndex) => (
                 <tr key={row.metric} className="border-b border-border/30 hover:bg-bg-elevated/30">
-                  <td className="py-2 px-3 font-medium text-text-primary sticky left-0 bg-bg-surface">
+                  <td className="py-2 px-3 font-medium text-text-primary sticky left-0 z-10 bg-white dark:bg-gray-800">
                     <div className="flex items-center gap-1">
                       {row.metric}
                       <InfoTooltip metric={row.metric} />
                     </div>
                   </td>
-                  {monthColumns.map((colKey, colIndex) => {
+                  {currentMonthColumns.map((colKey, colIndex) => {
                     const isEditing = editingCell?.row === rowIndex && editingCell?.col === colKey;
-                    const cellValue = row[colKey];
+                    const cellValue = (row as any)[colKey];
                     const isAutoCalc = isAutoCalculated(row.metric);
                     
                     return (
@@ -415,7 +459,7 @@ export default function TargetsPage() {
                                 : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-primary border border-dashed border-text-tertiary hover:border-text-secondary'
                             }`}
                             onClick={() => startEdit(rowIndex, colKey, cellValue)}
-                            title={cellValue || `Set ${row.metric} target for ${monthLabels[colIndex]}`}
+                            title={cellValue || `Set ${row.metric} target for ${currentMonthLabels[colIndex]}`}
                           >
                             {cellValue || 'Set target'}
                           </button>
@@ -423,6 +467,9 @@ export default function TargetsPage() {
                       </td>
                     );
                   })}
+                  <td className="py-2 px-3 text-center">
+                    <div className="w-8 h-8"></div>
+                  </td>
 
                 </tr>
               ))}
@@ -431,8 +478,8 @@ export default function TargetsPage() {
                 <td className="py-3 px-3 font-medium text-text-secondary sticky left-0 bg-bg-elevated/30">
                   Save Column
                 </td>
-                {monthColumns.map((colKey) => {
-                  const columnHasData = monthlyTargets.some(target => target[colKey] && target[colKey] !== '');
+                {currentMonthColumns.map((colKey) => {
+                  const columnHasData = monthlyTargets.some(target => (target as any)[colKey] && (target as any)[colKey] !== '');
                   return (
                     <td key={`save-${colKey}`} className="py-2.5 px-2 text-center">
                       <button
@@ -455,18 +502,24 @@ export default function TargetsPage() {
                     </td>
                   );
                 })}
+                <td className="py-2.5 px-2 text-center">
+                  <div className="w-8 h-8"></div>
+                </td>
               </tr>
               {/* Last Updated Summary Row */}
               <tr className="border-t border-border/50 bg-bg-elevated/20">
                 <td className="py-2.5 px-3 font-medium text-text-secondary sticky left-0 bg-bg-elevated/20">
                   Last Updated
                 </td>
-                {monthColumns.map((colKey) => (
+                {currentMonthColumns.map((colKey) => (
                   <td key={`lastupdate-${colKey}`} className="py-2.5 px-2 text-center text-xs text-text-tertiary">
                     {/* Show most recent update time for this column across all metrics */}
-                    {monthlyTargets.find(target => target[colKey] && target[colKey] !== '')?.lastUpdated || 'Never'}
+                    {monthlyTargets.find(target => (target as any)[colKey] && (target as any)[colKey] !== '')?.lastUpdated || 'Never'}
                   </td>
                 ))}
+                <td className="py-2.5 px-2 text-center text-xs text-text-tertiary">
+                  <div className="w-8 h-8"></div>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -480,6 +533,33 @@ export default function TargetsPage() {
           title="Target Intelligence"
         />
       </div>
+
+      {/* Add Month Confirmation Dialog */}
+      {showAddMonthDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-bg-surface border border-border rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Add New Month Column</h3>
+            <p className="text-sm text-text-secondary mb-6">
+              This will add a new month column after {currentMonthLabels[currentMonthLabels.length - 1]}. 
+              All target rows will get an empty input field for this new month.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowAddMonthDialog(false)}
+                className="px-4 py-2 text-text-secondary hover:text-text-primary border border-border rounded-md transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={addNewMonth}
+                className="px-4 py-2 bg-brand-blue text-white rounded-md hover:bg-brand-blue-light transition-colors"
+              >
+                Add Month
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
