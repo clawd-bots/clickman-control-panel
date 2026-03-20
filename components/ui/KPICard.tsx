@@ -12,14 +12,18 @@ interface KPICardProps {
   target?: string;
   targetAchievement?: number; // percentage of target achieved
   secondary?: string; // secondary value displayed below main value
+  testId?: string; // for PDF export selectors
 }
 
-export default function KPICard({ label, value, change, sparkline, target, targetAchievement, secondary }: KPICardProps) {
+export default function KPICard({ label, value, change, sparkline, target, targetAchievement, secondary, testId }: KPICardProps) {
   const isPositive = change >= 0;
   const data = sparkline.map((v, i) => ({ v, i }));
 
   return (
-    <div className="bg-bg-surface border border-border rounded-lg p-4 flex flex-col gap-2">
+    <div 
+      className="bg-bg-surface border border-border rounded-lg p-4 flex flex-col gap-2"
+      data-testid={testId || `kpi-${label.toLowerCase().replace(/\s+/g, '-')}`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center text-xs text-text-secondary font-medium uppercase tracking-wide">
           {label}

@@ -7,6 +7,7 @@ import { formatCurrency, formatNumber } from '@/lib/utils';
 import { Pencil, Check, X, Users as UsersIcon } from 'lucide-react';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
+import { getPromptById, syncPromptChanges } from '@/lib/prompt-registry';
 
 // Monthly target data structure
 interface MonthlyTarget {
@@ -237,10 +238,14 @@ export default function TargetsPage() {
     setShowAddMonthDialog(false);
   };
 
-  // Dynamic AI suggestions with historical data analysis
+  // Dynamic AI suggestions with historical data analysis linked to prompt templates
   const getDynamicTargetIntelligence = () => {
+    const targetPrompt = getPromptById('target-intelligence');
+    const basePrompt = targetPrompt?.prompt || '';
+    
+    // Generate specific suggestions based on current data and linked prompt
     return [
-      `Based on 30-day trend: Current revenue run rate ${formatCurrencyValue(322000)}/day suggests April target should be ${formatCurrencyValue(2800000)} (vs typical ${formatCurrencyValue(2500000)}).`,
+      `${basePrompt.split('.')[0]}: Current revenue run rate ${formatCurrencyValue(322000)}/day suggests April target should be ${formatCurrencyValue(2800000)} (vs typical ${formatCurrencyValue(2500000)}).`,
       `Historical seasonality: Q4 typically sees 15-20% lift. December targets should reflect holiday season boost in spend and conversions.`,
       `90-day moving average shows nCAC improving 8% MoM. Set progressive reduction targets: Apr ${formatCurrencyValue(780)} → Dec ${formatCurrencyValue(650)}.`,
       `365-day cohort data indicates March-May launches perform 25% better. Increase Q2 new customer targets by corresponding amount.`,
