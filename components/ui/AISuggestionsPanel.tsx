@@ -71,7 +71,10 @@ export default function AISuggestionsPanel({
   const [refreshing, setRefreshing] = useState(false);
   const [showPromptEdit, setShowPromptEdit] = useState(false);
   const [showPromptHistory, setShowPromptHistory] = useState(false);
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
+
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [restorePrompt, setRestorePrompt] = useState('');
+  const [restorePromptName, setRestorePromptName] = useState('');
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [promptHistory, setPromptHistory] = useState<Array<{prompt: string, timestamp: string, response: string}>>([]);
 
@@ -133,8 +136,44 @@ export default function AISuggestionsPanel({
   };
 
   const restoreFromHistory = (prompt: string) => {
-    setCurrentPrompt(prompt);
+    setRestorePrompt(prompt);
+    setRestorePromptName(title); // Default to section title
+    setShowRestoreModal(true);
     setShowPromptHistory(false);
+  };
+
+  const saveRestoredPrompt = () => {
+    // Create a new version entry in history with GMT+8 timestamp
+    const newEntry = {
+      prompt: currentPrompt, // Save the current prompt before replacing
+      timestamp: new Date().toLocaleString('en-US', {
+        timeZone: 'Asia/Singapore',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      }),
+      response: `Restored from v${promptHistory.length}`
+    };
+    
+    const updatedHistory = [newEntry, ...promptHistory].slice(0, 10); // Keep last 10
+    setPromptHistory(updatedHistory);
+    
+    // Save to localStorage
+    const historyKey = `ai-prompt-history-${title.toLowerCase().replace(/\s+/g, '-')}`;
+    const storageKey = `ai-prompt-${title.toLowerCase().replace(/\s+/g, '-')}`;
+    
+    localStorage.setItem(historyKey, JSON.stringify(updatedHistory));
+    localStorage.setItem(storageKey, restorePrompt);
+    
+    // Update current prompt
+    setCurrentPrompt(restorePrompt);
+    setShowRestoreModal(false);
+    
+    // Show success notification (you could add a toast here)
+    console.log(`Prompt restored and saved as v${updatedHistory.length}`);
   };
 
   // Function to parse markdown bold text
@@ -168,17 +207,7 @@ export default function AISuggestionsPanel({
     setTimeout(() => setRefreshing(false), 1200);
   };
 
-  const handleTemplateSelect = (template: {id: string, name: string, prompt: string}) => {
-    setCurrentPrompt(template.prompt);
-    
-    // Save to localStorage
-    const storageKey = `ai-prompt-${title.toLowerCase().replace(/\s+/g, '-')}`;
-    localStorage.setItem(storageKey, template.prompt);
-    
-    setShowTemplateSelector(false);
-  };
 
-  const availableTemplates = AVAILABLE_TEMPLATES[title] || [];
 
   return (
     <div className="bg-bg-surface border border-border rounded-lg p-5">
@@ -202,13 +231,7 @@ export default function AISuggestionsPanel({
             <History size={12} />
             <span className="hidden sm:inline">History</span>
           </button>
-          <button
-            onClick={() => setShowTemplateSelector(true)}
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-brand-blue/15 text-brand-blue text-xs font-medium hover:bg-brand-blue/25 transition-colors whitespace-nowrap"
-          >
-            <FileText size={12} />
-            <span className="hidden sm:inline">Templates</span>
-          </button>
+
           <button
             onClick={handleRefresh}
             className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-warm-gold/15 text-warm-gold text-xs font-medium hover:bg-warm-gold/25 transition-colors whitespace-nowrap"
@@ -282,31 +305,57 @@ export default function AISuggestionsPanel({
       {/* Prompt History Modal */}
       {showPromptHistory && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-2xl mx-4">
+          <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-5xl mx-4">
             <h3 className="text-lg font-semibold text-text-primary mb-4">Prompt History</h3>
-            <div className="space-y-3 max-h-80 overflow-y-auto">
+            <div className="max-h-96 overflow-y-auto">
               {promptHistory.length === 0 ? (
                 <p className="text-sm text-text-secondary text-center py-8">No prompt history available</p>
               ) : (
-                promptHistory.map((entry, index) => (
-                  <div key={index} className="bg-bg-elevated border border-border rounded-md p-3">
-                    <div className="text-xs text-text-tertiary mb-1">{entry.timestamp}</div>
-                    <div className="text-sm text-text-primary mb-2 line-clamp-3">
-                      {entry.prompt}
-                    </div>
-                    {entry.response && (
-                      <div className="text-xs text-text-secondary mb-2 italic line-clamp-2">
-                        Response: {entry.response.substring(0, 150)}...
-                      </div>
-                    )}
-                    <button
-                      onClick={() => restoreFromHistory(entry.prompt)}
-                      className="text-xs text-brand-blue-light hover:text-brand-blue transition-colors"
-                    >
-                      Restore this prompt
-                    </button>
-                  </div>
-                ))
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-bg-elevated border-b border-border">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider w-16">Version</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider w-32">Date Saved</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Prompt</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider w-24">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {promptHistory.map((entry, index) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-bg-surface' : 'bg-bg-elevated'}>
+                          <td className="px-4 py-3 text-sm text-text-primary">
+                            v{promptHistory.length - index}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-text-secondary">
+                            {new Date(entry.timestamp).toLocaleString('en-US', {
+                              timeZone: 'Asia/Singapore',
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-text-primary">
+                            <div className="max-w-md truncate" title={entry.prompt}>
+                              {entry.prompt.length > 100 ? entry.prompt.substring(0, 100) + '...' : entry.prompt}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <button
+                              onClick={() => restoreFromHistory(entry.prompt)}
+                              className="inline-flex items-center px-3 py-1 bg-brand-blue text-white text-xs font-medium rounded-md hover:bg-brand-blue/90 transition-colors"
+                            >
+                              Restore
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
             <div className="flex items-center justify-end gap-3 mt-4">
@@ -321,41 +370,50 @@ export default function AISuggestionsPanel({
         </div>
       )}
 
-      {/* Template Selector Modal */}
-      {showTemplateSelector && (
+
+
+      {/* Restore Prompt Modal */}
+      {showRestoreModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-3xl mx-4">
-            <h3 className="text-lg font-semibold text-text-primary mb-4">Select AI Analysis Template</h3>
-            <div className="space-y-3 max-h-80 overflow-y-auto">
-              {availableTemplates.length === 0 ? (
-                <p className="text-sm text-text-secondary text-center py-8">
-                  No templates available for {title}. You can create templates in the Prompt Templates page.
-                </p>
-              ) : (
-                availableTemplates.map((template) => (
-                  <div key={template.id} className="bg-bg-elevated border border-border rounded-md p-4 hover:border-brand-blue/50 transition-colors">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-text-primary mb-1">{template.name}</h4>
-                        <p className="text-sm text-text-secondary mb-3 line-clamp-2">{template.prompt.substring(0, 200)}...</p>
-                        <button
-                          onClick={() => handleTemplateSelect(template)}
-                          className="text-xs bg-brand-blue text-white px-3 py-1.5 rounded-md hover:bg-brand-blue/90 transition-colors"
-                        >
-                          Use This Template
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
+          <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-2xl mx-4">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Restore Prompt</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">
+                  Prompt Name
+                </label>
+                <input
+                  type="text"
+                  value={restorePromptName}
+                  onChange={(e) => setRestorePromptName(e.target.value)}
+                  className="w-full bg-bg-elevated border border-border rounded-md p-3 text-sm text-text-primary outline-none focus:border-brand-blue"
+                  placeholder="Enter prompt name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-2">
+                  Prompt
+                </label>
+                <textarea
+                  value={restorePrompt}
+                  onChange={(e) => setRestorePrompt(e.target.value)}
+                  className="w-full h-40 bg-bg-elevated border border-border rounded-md p-3 text-sm text-text-primary resize-none outline-none focus:border-brand-blue"
+                  placeholder="Edit the prompt text here..."
+                />
+              </div>
             </div>
-            <div className="flex items-center justify-end gap-3 mt-4">
+            <div className="flex items-center justify-end gap-3 mt-6">
               <button
-                onClick={() => setShowTemplateSelector(false)}
+                onClick={() => setShowRestoreModal(false)}
                 className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
               >
-                Close
+                Cancel
+              </button>
+              <button
+                onClick={saveRestoredPrompt}
+                className="px-4 py-2 bg-brand-blue text-white text-sm rounded-md hover:bg-brand-blue/90 transition-colors"
+              >
+                Save
               </button>
             </div>
           </div>
