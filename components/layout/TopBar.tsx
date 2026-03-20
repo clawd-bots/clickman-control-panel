@@ -129,11 +129,13 @@ export default function TopBar() {
           height={24}
           className="h-6 w-auto shrink-0" 
         />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={theme === 'dark' ? '/clickman-logo-white.svg' : '/clickman-logo-black.svg'}
-          alt="Click-Man Control Panel"
-          className="h-8 w-auto shrink-0"
+        <Image 
+          src={theme === 'light' ? '/clickman-logo-black.svg' : '/clickman-logo-white.svg'} 
+          alt="Click-Man Control Panel" 
+          width={120}
+          height={32}
+          className="h-6 sm:h-8 w-auto shrink-0"
+          priority
         />
       </div>
 
@@ -144,12 +146,7 @@ export default function TopBar() {
             {/* Date Range Picker */}
             <div ref={dateRef} className="relative">
               <button
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  e.stopPropagation(); 
-                  setShowDateDropdown(!showDateDropdown); 
-                  setShowCompDropdown(false); 
-                }}
+                onClick={() => { setShowDateDropdown(!showDateDropdown); setShowCompDropdown(false); }}
                 className="flex items-center gap-1 md:gap-2 bg-bg-elevated border border-border rounded-md px-2 md:px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-text-tertiary transition-colors"
               >
                 <Calendar size={13} />
