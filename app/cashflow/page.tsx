@@ -41,20 +41,12 @@ export default function CashFlowPage() {
 
   // Helper function to get months to display based on date range
   const getMonthsToDisplay = () => {
-    console.log('getMonthsToDisplay called:', { 
-      dateRange, 
-      isInForecast: isInForecastPeriod(),
-      startDate: dateRange.startDate,
-      endDate: dateRange.endDate 
-    });
-    
     if (isInForecastPeriod()) {
       // Show forecast data - all 12 months
       return months.length;
     } else {
       // Show historical data - limit based on date range
       const daysDiff = Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24));
-      console.log('Days diff:', daysDiff);
       if (daysDiff <= 31) return 1; // 1 month
       if (daysDiff <= 93) return 3; // 3 months
       if (daysDiff <= 186) return 6; // 6 months
