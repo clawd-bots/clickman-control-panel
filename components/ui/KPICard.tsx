@@ -1,5 +1,6 @@
 'use client';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { useState, useEffect } from 'react';
 import InfoTooltip from './InfoTooltip';
 
 interface KPICardProps {
@@ -18,6 +19,29 @@ interface KPICardProps {
 export default function KPICard({ label, value, change, sparkline, target, targetAchievement, secondary, testId }: KPICardProps) {
   const isPositive = change >= 0;
   const data = sparkline.map((v, i) => ({ v, i }));
+  const [comparisonEnabled, setComparisonEnabled] = useState(true);
+
+  // Listen for comparison state changes from TopBar
+  useEffect(() => {
+    const handleDateChange = (event: CustomEvent) => {
+      const { comparisonEnabled: enabled } = event.detail;
+      if (enabled !== undefined) {
+        setComparisonEnabled(enabled);
+      }
+    };
+
+    // Load initial state from localStorage
+    const stored = localStorage.getItem('clickman-comparison-enabled');
+    if (stored !== null) {
+      setComparisonEnabled(stored === 'true');
+    }
+
+    window.addEventListener('dateRangeChanged', handleDateChange as EventListener);
+    
+    return () => {
+      window.removeEventListener('dateRangeChanged', handleDateChange as EventListener);
+    };
+  }, []);
 
   return (
     <div 
@@ -48,14 +72,16 @@ export default function KPICard({ label, value, change, sparkline, target, targe
         <div className="text-sm text-text-secondary">{secondary}</div>
       )}
       <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-            isPositive ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'
-          }`}>
-            {isPositive ? '↑' : '↓'} {Math.abs(change).toFixed(1)}%
-          </span>
-          <span className="text-xs text-text-secondary">vs prior period</span>
-        </div>
+        {comparisonEnabled && (
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+              isPositive ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'
+            }`}>
+              {isPositive ? '↑' : '↓'} {Math.abs(change).toFixed(1)}%
+            </span>
+            <span className="text-xs text-text-secondary">vs prior period</span>
+          </div>
+        )}
         {target && targetAchievement !== undefined && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">

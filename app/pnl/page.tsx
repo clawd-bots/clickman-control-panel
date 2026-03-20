@@ -1,11 +1,12 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import KPICard from '@/components/ui/KPICard';
 import DataSource from '@/components/ui/DataSource';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { pnlData, pnlTrend } from '@/lib/sample-data';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/components/CurrencyProvider';
+import { useDateRange } from '@/components/DateProvider';
 import { ChevronRight, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -164,6 +165,7 @@ const extendedPnlRows: PnlRow[] = [
 
 export default function PnLPage() {
   const { currency, convertValue } = useCurrency();
+  const { dateRange } = useDateRange();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [timePeriod, setTimePeriod] = useState('Total');
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
@@ -174,20 +176,55 @@ export default function PnLPage() {
     return formatCurrency(convertValue(value), currency);
   };
 
-  // Get data based on selected time period with proper aggregation
+  // Update local state when global date context changes
+  useEffect(() => {
+    // Map global date preset to local time period
+    const presetMapping: Record<string, string> = {
+      'today': 'Day',
+      'yesterday': 'Day', 
+      '7d': 'Week',
+      '30d': 'Month',
+      'this-month': 'Month',
+      'last-month': 'Month',
+      'this-quarter': 'Quarter',
+      'custom': 'Custom'
+    };
+    
+    const mappedPeriod = presetMapping[dateRange.preset] || 'Total';
+    setTimePeriod(mappedPeriod);
+    
+    // Handle custom date ranges
+    if (dateRange.preset === 'custom') {
+      setCustomDateRange({
+        start: dateRange.startDate.toISOString().split('T')[0],
+        end: dateRange.endDate.toISOString().split('T')[0]
+      });
+      setShowCustomDatePicker(true);
+    } else {
+      setShowCustomDatePicker(false);
+    }
+  }, [dateRange]);
+
+  // Get data based on selected date range with proper aggregation
   const getCurrentPnLData = useMemo(() => {
     const baseData = pnlData;
     
-    // Apply different multipliers based on time period
-    const multipliers = {
-      'Total': 1,
-      'Quarter': 0.33,
-      'Month': 0.1,
-      'Week': 0.025,
-      'Day': 0.0033,
-    };
+    // Calculate multiplier based on date range and preset
+    let mult = 1;
     
-    const mult = multipliers[timePeriod as keyof typeof multipliers] || 1;
+    if (dateRange.preset === 'today' || dateRange.preset === 'yesterday') {
+      mult = 0.0033; // Daily
+    } else if (dateRange.preset === '7d') {
+      mult = 0.025; // Weekly  
+    } else if (dateRange.preset === '30d' || dateRange.preset === 'this-month' || dateRange.preset === 'last-month') {
+      mult = 0.1; // Monthly
+    } else if (dateRange.preset === 'this-quarter') {
+      mult = 0.33; // Quarterly
+    } else if (dateRange.preset === 'custom') {
+      // Calculate based on actual date range
+      const days = Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24));
+      mult = days / 365; // Scale based on days relative to full year
+    }
     
     return {
       netRevenue: { value: Math.round(baseData.netRevenue.value * mult) },
@@ -196,7 +233,7 @@ export default function PnLPage() {
       cm3: { value: Math.round(baseData.cm3.value * mult), pct: baseData.cm3.pct },
       ebitda: { value: Math.round(baseData.ebitda.value * mult), pct: baseData.ebitda.pct },
     };
-  }, [timePeriod]);
+  }, [dateRange]);
 
   // Generate margin chart data with proper date aggregation
   const marginTrendData = useMemo(() => {
@@ -272,62 +309,14 @@ export default function PnLPage() {
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
         <h2 className="text-lg sm:text-xl font-semibold">Profit & Loss</h2>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <span className="text-xs text-text-secondary font-medium">View by:</span>
-          <div className="flex gap-1 flex-wrap">
-            {['Total', 'Quarter', 'Month', 'Week', 'Day', 'Custom'].map(p => (
-              <button key={p} onClick={() => {
-                setTimePeriod(p);
-                if (p === 'Custom') {
-                  setShowCustomDatePicker(true);
-                } else {
-                  setShowCustomDatePicker(false);
-                }
-              }} className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${timePeriod === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
-                {p}
-              </button>
-            ))}
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-text-secondary font-medium">
+            Current Period: <span className="text-text-primary font-semibold">{timePeriod}</span>
+          </span>
         </div>
       </div>
 
-      {/* Custom Date Picker */}
-      {showCustomDatePicker && (
-        <div className="bg-bg-surface border border-border rounded-lg p-4 mx-1">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            <span className="text-sm font-medium text-text-primary">Custom Date Range:</span>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-text-secondary">From:</label>
-                <input
-                  type="date"
-                  value={customDateRange.start}
-                  onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
-                  className="px-3 py-1.5 bg-bg-elevated border border-border rounded-md text-xs text-text-primary outline-none focus:border-brand-blue"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-text-secondary">To:</label>
-                <input
-                  type="date"
-                  value={customDateRange.end}
-                  onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
-                  className="px-3 py-1.5 bg-bg-elevated border border-border rounded-md text-xs text-text-primary outline-none focus:border-brand-blue"
-                />
-              </div>
-              <button
-                onClick={() => {
-                  // Here you would normally apply the custom date range to filter the data
-                  console.log('Applying custom date range:', customDateRange);
-                }}
-                className="px-4 py-1.5 bg-brand-blue text-white text-xs font-medium rounded-md hover:bg-brand-blue/90 transition-colors"
-              >
-                Apply
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* KPI Cards - PNL-1: EBITDA shows currency value, not percentage */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mx-1">
