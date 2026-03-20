@@ -129,13 +129,11 @@ export default function TopBar() {
           height={24}
           className="h-6 w-auto shrink-0" 
         />
-        <Image
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
           src={theme === 'dark' ? '/clickman-logo-white.svg' : '/clickman-logo-black.svg'}
           alt="Click-Man Control Panel"
-          width={240}
-          height={48}
           className="h-8 w-auto shrink-0"
-          priority
         />
       </div>
 
