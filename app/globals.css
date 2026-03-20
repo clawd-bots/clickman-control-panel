@@ -75,22 +75,28 @@ body {
 
 /* Data source color indicators */
 .data-source-triplewhale {
-  color: #334FB4; /* brand-blue */
+  color: #1A73E8; /* TripleWhale brand */
 }
-.data-source-google {
-  color: #059669; /* success green */
+.data-source-meta {
+  color: #0668E1; /* Meta brand */
 }
 .data-source-sheets {
-  color: #D97706; /* warm-gold */
+  color: #0F9D58; /* Google Sheets brand */
+}
+.data-source-ga4 {
+  color: #F9AB00; /* GA4 brand */
 }
 
-/* Dark mode data source colors */
+/* Dark mode data source colors - keep same colors for brand consistency */
 .dark .data-source-triplewhale {
-  color: #4A6BD6; /* brand-blue-light */
+  color: #1A73E8;
 }
-.dark .data-source-google {
-  color: #34D399; /* success light */
+.dark .data-source-meta {
+  color: #0668E1;
 }
 .dark .data-source-sheets {
-  color: #EDBF63; /* warm-gold light */
+  color: #0F9D58;
+}
+.dark .data-source-ga4 {
+  color: #F9AB00;
 }
