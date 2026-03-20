@@ -1,6 +1,7 @@
-<svg width="120" height="32" viewBox="0 0 120 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Click-Man logo for light mode (black text) -->
-  <text x="0" y="22" font-family="Inter, system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#1a1a1a">
-    <tspan fill="#D4AF37">Click</tspan><tspan fill="#1a1a1a">-Man</tspan>
+<svg width="300" height="60" viewBox="0 0 300 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Black version for light mode -->
+  <text x="10" y="40" font-family="Inter, system-ui, sans-serif" font-size="24" font-weight="600">
+    <tspan fill="#F59E0B">Click-Man</tspan>
+    <tspan fill="#000000"> Control Panel</tspan>
   </text>
 </svg>
