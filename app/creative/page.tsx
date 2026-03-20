@@ -250,7 +250,8 @@ export default function CreativePage() {
             <h3 className="text-sm font-medium text-text-primary">Creative Performance</h3>
             <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
           </div>
-          <div className="overflow-x-auto -mx-1 sm:mx-0">
+          {/* Desktop Table */}
+          <div className="hidden lg:block overflow-x-auto -mx-1 sm:mx-0">
             <div className="min-w-[900px]">
               <table className="w-full text-xs">
                 <thead>
@@ -339,6 +340,70 @@ export default function CreativePage() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Mobile Card Layout */}
+          <div className="lg:hidden space-y-3">
+            {filtered.map((row: any) => (
+              <div key={row.name} className="bg-bg-elevated border border-border rounded-lg p-4">
+                {/* Ad Name & Creative */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <a 
+                      href={`/api/ad-preview/${row.name.replace(/\s+/g, '-').toLowerCase()}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand-blue-light hover:text-brand-blue underline text-sm font-medium block truncate"
+                      title={`View details for ${row.name}`}
+                    >
+                      {row.name}
+                    </a>
+                    <div className="text-xs text-text-secondary mt-1">
+                      {row.platform} • <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${
+                        row.status === 'Active' ? 'bg-success/15 text-success' : 'bg-warm-gold/15 text-warm-gold'
+                      }`}>{row.status}</span>
+                    </div>
+                  </div>
+                  <div 
+                    onClick={() => window.open(`/api/ad-preview/${row.name.replace(/\s+/g, '-').toLowerCase()}`, '_blank')}
+                    className="ml-3 cursor-pointer hover:opacity-75 transition-opacity"
+                    title={`Preview ${row.name}`}
+                  >
+                    <img src={`/api/ad-thumbnail/creative/${row.platform.toLowerCase()}/${row.name.replace(/\s+/g, '-').toLowerCase()}.jpg`} alt="" className="w-12 h-12 rounded object-cover" />
+                  </div>
+                </div>
+
+                {/* Key Metrics */}
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-text-secondary block">Spend</span>
+                    <span className="text-text-primary font-medium">{formatCurrencyValue(row.spend)}</span>
+                  </div>
+                  <div>
+                    <span className="text-text-secondary block">CPA</span>
+                    <span className="text-text-primary font-medium">{formatCurrencyValue(row.cpa)}</span>
+                  </div>
+                  <div>
+                    <span className="text-text-secondary block">ROAS</span>
+                    <span className="text-text-primary font-medium">{row.roas.toFixed(2)}x</span>
+                  </div>
+                  <div>
+                    <span className="text-text-secondary block">CTR</span>
+                    <span className="text-text-primary font-medium">{row.ctr.toFixed(2)}%</span>
+                  </div>
+                </div>
+
+                {/* Strategy Badge */}
+                <div className="mt-3 flex justify-end">
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                    row.campaign === 'scale' ? 'bg-success/15 text-success' :
+                    row.campaign === 'kill' ? 'bg-danger/15 text-danger' :
+                    row.campaign === 'test' ? 'bg-brand-blue/15 text-brand-blue-light' :
+                    'bg-warm-gold/15 text-warm-gold'
+                  }`}>{row.campaign}</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}

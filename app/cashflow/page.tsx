@@ -402,7 +402,11 @@ export default function CashFlowPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis 
                 dataKey="month" 
-                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
+                angle={-45} 
+                textAnchor="end" 
+                height={60} 
+                interval={0}
                 label={{ value: 'Month', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
               />
               <YAxis 
@@ -438,7 +442,11 @@ export default function CashFlowPage() {
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
               <XAxis 
                 dataKey="month" 
-                tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
+                angle={-45} 
+                textAnchor="end" 
+                height={60} 
+                interval={0}
                 label={{ value: 'Month', position: 'insideBottom', offset: -5, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
               />
               <YAxis 
