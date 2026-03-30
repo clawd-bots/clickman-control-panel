@@ -25,23 +25,64 @@ const comparisonOptions = [
   { label: 'Custom', value: 'custom' },
 ];
 
+function fmtDate(d: Date, opts: Intl.DateTimeFormatOptions): string {
+  return d.toLocaleDateString('en-US', opts);
+}
+
 function getDisplayDate(preset: string): string {
+  const today = new Date();
+  const fmt = (d: Date) => fmtDate(d, { month: 'short', day: 'numeric', year: 'numeric' });
+  const fmtShort = (d: Date) => fmtDate(d, { month: 'short', day: 'numeric' });
+
   switch (preset) {
-    case 'today': return 'Mar 14, 2026';
-    case 'yesterday': return 'Mar 13, 2026';
-    case '7d': return 'Mar 8 - Mar 14, 2026';
-    case '30d': return 'Feb 13 - Mar 14, 2026';
-    case 'this-month': return 'Mar 1 - Mar 14, 2026';
-    case 'last-month': return 'Feb 1 - Feb 28, 2026';
-    case 'this-quarter': return 'Jan 1 - Mar 14, 2026';
-    default: return 'Mar 1 - Mar 7, 2026';
+    case 'today':
+      return fmt(today);
+    case 'yesterday': {
+      const y = new Date(today);
+      y.setDate(y.getDate() - 1);
+      return fmt(y);
+    }
+    case '7d': {
+      const start = new Date(today);
+      start.setDate(today.getDate() - 6);
+      return `${fmtShort(start)} - ${fmt(today)}`;
+    }
+    case '30d': {
+      const start = new Date(today);
+      start.setDate(today.getDate() - 29);
+      return `${fmtShort(start)} - ${fmt(today)}`;
+    }
+    case 'this-month': {
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      return `${fmtShort(start)} - ${fmt(today)}`;
+    }
+    case 'last-month': {
+      const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const end = new Date(today.getFullYear(), today.getMonth(), 0);
+      return `${fmtShort(start)} - ${fmt(end)}`;
+    }
+    case 'this-quarter': {
+      const q = Math.floor(today.getMonth() / 3);
+      const start = new Date(today.getFullYear(), q * 3, 1);
+      return `${fmtShort(start)} - ${fmt(today)}`;
+    }
+    default:
+      return `${fmtShort(today)} (Custom)`;
   }
 }
 
 function getShortDisplayDate(preset: string): string {
+  const today = new Date();
+  const fmtShort = (d: Date) => fmtDate(d, { month: 'short', day: 'numeric' });
+
   switch (preset) {
-    case 'today': return 'Mar 14';
-    case 'yesterday': return 'Mar 13';
+    case 'today':
+      return fmtShort(today);
+    case 'yesterday': {
+      const y = new Date(today);
+      y.setDate(y.getDate() - 1);
+      return fmtShort(y);
+    }
     case '7d': return '7 Days';
     case '30d': return '30 Days';
     case 'this-month': return 'This Mo.';
