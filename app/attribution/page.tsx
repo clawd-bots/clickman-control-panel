@@ -1,12 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import DataSource from '@/components/ui/DataSource';
 import AIIntelligenceControls from '@/components/ui/AIIntelligenceControls';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
-import { attributionSurvey, trackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
+import { attributionSurvey, trackingHealth as sampleTrackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
 import { Star, GitBranch, Activity, Database, Layers, Sparkles, ChevronDown } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ScatterChart, Scatter,
@@ -44,6 +44,54 @@ export default function AttributionPage() {
   const [cohortAttrModel, setCohortAttrModel] = useState('First Click');
   const [cohortAttrWindow, setCohortAttrWindow] = useState('7-day click / 1-day view');
   const [expandedSystems, setExpandedSystems] = useState<Set<string>>(new Set());
+  const [liveTrackingData, setLiveTrackingData] = useState<{
+    totalEventsPerDay: number;
+    status: 'healthy' | 'warning' | 'error';
+    events: { event: string; count: string; type: string }[];
+  } | null>(null);
+  const [trackingIsLive, setTrackingIsLive] = useState(false);
+
+  // Fetch live Google Ads tracking data
+  const fetchTrackingData = useCallback(async () => {
+    try {
+      const startDateStr = dateRange.startDate.toISOString().split('T')[0];
+      const endDateStr = dateRange.endDate.toISOString().split('T')[0];
+      const res = await fetch(`/api/google-ads/tracking?startDate=${startDateStr}&endDate=${endDateStr}`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        setLiveTrackingData(json.data);
+        setTrackingIsLive(true);
+      } else {
+        setLiveTrackingData(null);
+        setTrackingIsLive(false);
+      }
+    } catch {
+      setLiveTrackingData(null);
+      setTrackingIsLive(false);
+    }
+  }, [dateRange.startDate, dateRange.endDate]);
+
+  useEffect(() => {
+    fetchTrackingData();
+  }, [fetchTrackingData]);
+
+  // Merge live Google Ads data into tracking health array
+  const trackingHealth = sampleTrackingHealth.map((item) => {
+    if (item.system === 'Google Ads Tag' && liveTrackingData) {
+      return {
+        ...item,
+        status: liveTrackingData.status,
+        events: `${liveTrackingData.totalEventsPerDay.toLocaleString()}/day`,
+        eventBreakdown: liveTrackingData.events.map((ev) => ({
+          event: ev.event,
+          count: ev.count,
+          matchRate: 'N/A' as const,
+          type: 'Multiple' as const,
+        })),
+      };
+    }
+    return item;
+  });
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -417,6 +465,11 @@ export default function AttributionPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${item.status === 'healthy' ? 'bg-success' : item.status === 'warning' ? 'bg-warm-gold' : 'bg-danger'}`} />
                     <span className="text-sm font-medium text-text-primary truncate">{item.system}</span>
+                    {item.system === 'Google Ads Tag' && trackingIsLive && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-success/20 text-success animate-pulse">
+                        LIVE
+                      </span>
+                    )}
                     <InfoTooltip metric={item.system} />
                     <button
                       onClick={() => toggleSystemExpansion(item.system)}

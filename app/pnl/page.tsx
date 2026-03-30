@@ -171,6 +171,31 @@ export default function PnLPage() {
   const [timePeriod, setTimePeriod] = useState('Total');
   const [customDateRange, setCustomDateRange] = useState({ start: '', end: '' });
   const [showCustomDatePicker, setShowCustomDatePicker] = useState(false);
+  const [liveGoogleAdsSpend, setLiveGoogleAdsSpend] = useState<number | null>(null);
+  const [googleAdsIsLive, setGoogleAdsIsLive] = useState(false);
+
+  // Fetch live Google Ads spend data
+  useEffect(() => {
+    async function fetchSpend() {
+      try {
+        const startDateStr = dateRange.startDate.toISOString().split('T')[0];
+        const endDateStr = dateRange.endDate.toISOString().split('T')[0];
+        const res = await fetch(`/api/google-ads/spend-summary?startDate=${startDateStr}&endDate=${endDateStr}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setLiveGoogleAdsSpend(json.data.totalSpend);
+          setGoogleAdsIsLive(true);
+        } else {
+          setLiveGoogleAdsSpend(null);
+          setGoogleAdsIsLive(false);
+        }
+      } catch {
+        setLiveGoogleAdsSpend(null);
+        setGoogleAdsIsLive(false);
+      }
+    }
+    fetchSpend();
+  }, [dateRange.startDate, dateRange.endDate]);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -434,22 +459,50 @@ export default function PnLPage() {
                   </tr>
                 ];
                 if (expanded[row.label] && row.children) {
-                  row.children.forEach((child) => {
+                  // Build children, injecting live Google Ads Spend under Operating Expenses
+                  const children = [...row.children];
+                  if (row.label === 'Operating Expenses' && googleAdsIsLive && liveGoogleAdsSpend !== null) {
+                    // Find the "  Google Ads" entry and replace it with live data
+                    const googleAdsIdx = children.findIndex(c => c.label === '  Google Ads');
+                    if (googleAdsIdx !== -1) {
+                      children[googleAdsIdx] = {
+                        ...children[googleAdsIdx],
+                        value: -Math.round(liveGoogleAdsSpend * 100),  // Convert to cents-style like other values
+                        label: '  Google Ads',
+                      };
+                    }
+                  }
+
+                  children.forEach((child) => {
+                    const isLiveGoogleAds = row.label === 'Operating Expenses' 
+                      && child.label === '  Google Ads' 
+                      && googleAdsIsLive 
+                      && liveGoogleAdsSpend !== null;
+
                     rows.push(
                       <tr key={`${row.label}-${child.label}`} className="border-b border-border/20 hover:bg-bg-elevated/20 transition-colors">
                         <td className="py-2.5 px-3 pl-14">
                           <div className={`flex items-center gap-2 text-text-secondary ${child.label.startsWith('  ') ? 'pl-4 text-text-tertiary' : ''}`}>
                             {child.label.replace(/^  /, '')}
+                            {isLiveGoogleAds && (
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-success/20 text-success animate-pulse">
+                                LIVE
+                              </span>
+                            )}
                             <InfoTooltip metric={child.label.replace(/^  /, '')} />
                           </div>
                         </td>
                         <td className="py-2.5 px-3 text-right text-text-secondary">
-                          {typeof child.value === 'number' && Math.abs(child.value) > 100
-                            ? formatCurrencyValue(child.value)
-                            : child.value.toLocaleString()}
+                          {isLiveGoogleAds
+                            ? formatCurrencyValue(-liveGoogleAdsSpend)
+                            : typeof child.value === 'number' && Math.abs(child.value) > 100
+                              ? formatCurrencyValue(child.value)
+                              : child.value.toLocaleString()}
                         </td>
                         <td className="py-2.5 px-3 text-right text-text-tertiary">
-                          {child.pct !== undefined ? `${child.pct.toFixed(1)}%` : '—'}
+                          {isLiveGoogleAds
+                            ? `${((-liveGoogleAdsSpend / pnlData.netRevenue.value) * 100).toFixed(1)}%`
+                            : child.pct !== undefined ? `${child.pct.toFixed(1)}%` : '—'}
                         </td>
                       </tr>
                     );
