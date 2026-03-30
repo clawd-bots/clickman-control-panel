@@ -1,12 +1,12 @@
 // ─── Dashboard Overview ───
 export const dailyMetrics = [
-  { date: 'Mar 1', revenue: 285000, spend: 82000, orders: 142, newCustomers: 98, sessions: 4200 },
-  { date: 'Mar 2', revenue: 312000, spend: 85000, orders: 156, newCustomers: 108, sessions: 4600 },
-  { date: 'Mar 3', revenue: 298000, spend: 79000, orders: 149, newCustomers: 103, sessions: 4350 },
-  { date: 'Mar 4', revenue: 335000, spend: 91000, orders: 168, newCustomers: 115, sessions: 5100 },
-  { date: 'Mar 5', revenue: 320000, spend: 88000, orders: 160, newCustomers: 110, sessions: 4800 },
-  { date: 'Mar 6', revenue: 345000, spend: 93000, orders: 172, newCustomers: 120, sessions: 5300 },
-  { date: 'Mar 7', revenue: 358000, spend: 95000, orders: 179, newCustomers: 125, sessions: 5500 },
+  { date: '2026-03-01', revenue: 285000, spend: 82000, orders: 142, newCustomers: 98, sessions: 4200 },
+  { date: '2026-03-02', revenue: 312000, spend: 85000, orders: 156, newCustomers: 108, sessions: 4600 },
+  { date: '2026-03-03', revenue: 298000, spend: 79000, orders: 149, newCustomers: 103, sessions: 4350 },
+  { date: '2026-03-04', revenue: 335000, spend: 91000, orders: 168, newCustomers: 115, sessions: 5100 },
+  { date: '2026-03-05', revenue: 320000, spend: 88000, orders: 160, newCustomers: 110, sessions: 4800 },
+  { date: '2026-03-06', revenue: 345000, spend: 93000, orders: 172, newCustomers: 120, sessions: 5300 },
+  { date: '2026-03-07', revenue: 358000, spend: 95000, orders: 179, newCustomers: 125, sessions: 5500 },
 ];
 
 export const kpiCards = {
@@ -46,12 +46,12 @@ export const revenueInsights = {
   firstPurchasePct: 58.6,
   repeatPct: 41.4,
   monthly: [
-    { month: 'Oct', nc: 980000, rc: 620000 },
-    { month: 'Nov', nc: 1050000, rc: 710000 },
-    { month: 'Dec', nc: 1180000, rc: 830000 },
-    { month: 'Jan', nc: 1150000, rc: 850000 },
-    { month: 'Feb', nc: 1250000, rc: 900000 },
-    { month: 'Mar', nc: 1320000, rc: 933000 },
+    { month: '2025-10-01', nc: 980000, rc: 620000 },
+    { month: '2025-11-01', nc: 1050000, rc: 710000 },
+    { month: '2025-12-01', nc: 1180000, rc: 830000 },
+    { month: '2026-01-01', nc: 1150000, rc: 850000 },
+    { month: '2026-02-01', nc: 1250000, rc: 900000 },
+    { month: '2026-03-01', nc: 1320000, rc: 933000 },
   ],
 };
 
@@ -89,12 +89,12 @@ export const pnlData = {
 };
 
 export const pnlTrend = [
-  { month: 'Oct', netRevenue: 1600000, cm1: 1120000, cm2: 870000, cm3: 380000 },
-  { month: 'Nov', netRevenue: 1760000, cm1: 1232000, cm2: 960000, cm3: 430000 },
-  { month: 'Dec', netRevenue: 2010000, cm1: 1407000, cm2: 1085000, cm3: 510000 },
-  { month: 'Jan', netRevenue: 2000000, cm1: 1400000, cm2: 1090000, cm3: 490000 },
-  { month: 'Feb', netRevenue: 2150000, cm1: 1505000, cm2: 1170000, cm3: 560000 },
-  { month: 'Mar', netRevenue: 2253000, cm1: 1577100, cm2: 1239150, cm3: 626150 },
+  { month: '2025-10-01', netRevenue: 1600000, cm1: 1120000, cm2: 870000, cm3: 380000 },
+  { month: '2025-11-01', netRevenue: 1760000, cm1: 1232000, cm2: 960000, cm3: 430000 },
+  { month: '2025-12-01', netRevenue: 2010000, cm1: 1407000, cm2: 1085000, cm3: 510000 },
+  { month: '2026-01-01', netRevenue: 2000000, cm1: 1400000, cm2: 1090000, cm3: 490000 },
+  { month: '2026-02-01', netRevenue: 2150000, cm1: 1505000, cm2: 1170000, cm3: 560000 },
+  { month: '2026-03-01', netRevenue: 2253000, cm1: 1577100, cm2: 1239150, cm3: 626150 },
 ];
 
 // ─── Cash Flow ───
@@ -162,30 +162,21 @@ export const trackingHealth = [
     status: 'healthy' as const, 
     events: '14,230/day', 
     matchRate: '9.2/10',
+    source: 'Multiple Sources' as const,
     eventBreakdown: [
-      { event: 'PageView', count: '8,450', matchRate: '9.5/10', type: 'Browser' },
-      { event: 'AddToCart', count: '3,210', matchRate: '9.1/10', type: 'Browser' },
-      { event: 'InitiateCheckout', count: '1,820', matchRate: '8.9/10', type: 'Browser' },
-      { event: 'Purchase', count: '750', matchRate: '9.4/10', type: 'Browser' }
+      { event: 'PageView', count: '8,450', matchRate: '9.5/10', type: 'Multiple' },
+      { event: 'AddToCart', count: '3,210', matchRate: '9.1/10', type: 'Multiple' },
+      { event: 'InitiateCheckout', count: '1,820', matchRate: '8.9/10', type: 'Multiple' },
+      { event: 'Purchase', count: '750', matchRate: '9.4/10', type: 'Multiple' }
     ]
   },
-  { 
-    system: 'Meta CAPI', 
-    status: 'healthy' as const, 
-    events: '13,850/day', 
-    matchRate: '8.9/10',
-    eventBreakdown: [
-      { event: 'PageView', count: '8,100', matchRate: '9.2/10', type: 'Server' },
-      { event: 'AddToCart', count: '3,050', matchRate: '8.7/10', type: 'Server' },
-      { event: 'InitiateCheckout', count: '1,750', matchRate: '8.5/10', type: 'Server' },
-      { event: 'Purchase', count: '950', matchRate: '9.1/10', type: 'Server' }
-    ]
-  },
+
   { 
     system: 'Google Ads Tag', 
     status: 'healthy' as const, 
     events: '8,920/day', 
     matchRate: '9.4/10',
+    source: 'Multiple Sources' as const,
     eventBreakdown: [
       { event: 'page_view', count: '5,200', matchRate: '9.6/10', type: 'Multiple' },
       { event: 'add_to_cart', count: '1,870', matchRate: '9.3/10', type: 'Multiple' },
@@ -198,6 +189,7 @@ export const trackingHealth = [
     status: 'warning' as const, 
     events: '5,100/day', 
     matchRate: '7.1/10',
+    source: 'Browser' as const,
     eventBreakdown: [
       { event: 'ViewContent', count: '3,200', matchRate: '7.3/10', type: 'Browser' },
       { event: 'AddToCart', count: '1,250', matchRate: '6.8/10', type: 'Browser' },
@@ -210,6 +202,7 @@ export const trackingHealth = [
     status: 'healthy' as const, 
     events: '22,400/day', 
     matchRate: 'N/A',
+    source: 'Multiple Sources' as const,
     eventBreakdown: [
       { event: 'page_view', count: '15,400', matchRate: 'N/A', type: 'Multiple' },
       { event: 'add_to_cart', count: '3,800', matchRate: 'N/A', type: 'Multiple' },
@@ -222,6 +215,7 @@ export const trackingHealth = [
     status: 'error' as const, 
     events: '0/day', 
     matchRate: '0/10',
+    source: 'Server' as const,
     eventBreakdown: [
       { event: 'page_view', count: '0', matchRate: '0/10', type: 'Server' },
       { event: 'add_to_cart', count: '0', matchRate: '0/10', type: 'Server' },
@@ -246,14 +240,28 @@ export const adScatterData = [
 
 // ─── Creative & MTA ───
 export const creativePerformance = [
-  { name: 'GLP-1 Testimonial V3', platform: 'Meta', spend: 45200, impressions: 892000, clicks: 12480, ctr: 1.40, cpc: 3.62, conversions: 69, cpa: 655, roas: 3.05, status: 'Active', campaign: 'scale' },
-  { name: 'Hair Before/After Carousel', platform: 'Meta', spend: 38100, impressions: 756000, clicks: 10584, ctr: 1.40, cpc: 3.60, conversions: 66, cpa: 577, roas: 3.47, status: 'Active', campaign: 'scale' },
-  { name: 'Doc Consultation UGC', platform: 'Meta', spend: 32400, impressions: 645000, clicks: 8385, ctr: 1.30, cpc: 3.86, conversions: 45, cpa: 720, roas: 2.78, status: 'Active', campaign: 'test' },
-  { name: 'Weight Loss Journey TikTok', platform: 'TikTok', spend: 28300, impressions: 1250000, clicks: 18750, ctr: 1.50, cpc: 1.51, conversions: 41, cpa: 690, roas: 2.90, status: 'Active', campaign: 'scale' },
-  { name: 'Brand Search Exact', platform: 'Google', spend: 52100, impressions: 125000, clicks: 31250, ctr: 25.0, cpc: 1.67, conversions: 124, cpa: 420, roas: 4.76, status: 'Active', campaign: 'scale' },
-  { name: 'Competitor Keywords', platform: 'Google', spend: 35200, impressions: 98000, clicks: 5880, ctr: 6.0, cpc: 5.99, conversions: 40, cpa: 880, roas: 2.27, status: 'Under Review', campaign: 'kill' },
-  { name: 'Hair Regrowth Demo', platform: 'TikTok', spend: 22100, impressions: 980000, clicks: 14700, ctr: 1.50, cpc: 1.50, conversions: 36, cpa: 614, roas: 3.26, status: 'Active', campaign: 'test' },
-  { name: 'Semaglutide Explainer', platform: 'Meta', spend: 41500, impressions: 820000, clicks: 10660, ctr: 1.30, cpc: 3.89, conversions: 62, cpa: 669, roas: 2.99, status: 'Active', campaign: 'learn' },
+  // Meta
+  { name: 'GLP-1 Testimonial V3', platform: 'Meta', spend: 45200, impressions: 892000, clicks: 12480, ctr: 1.40, cpc: 3.62, conversions: 69, cpa: 655, roas: 3.05, status: 'Active', campaign: 'scale', campaignName: 'AY - Meta - GLP1 - Scale', angle: 'GLP-1' },
+  { name: 'GLP-1 Before/After Static', platform: 'Meta', spend: 18200, impressions: 362000, clicks: 5070, ctr: 1.40, cpc: 3.59, conversions: 28, cpa: 650, roas: 3.08, status: 'Active', campaign: 'scale', campaignName: 'AY - Meta - GLP1 - Scale', angle: 'GLP-1' },
+  { name: 'Hair Before/After Carousel', platform: 'Meta', spend: 38100, impressions: 756000, clicks: 10584, ctr: 1.40, cpc: 3.60, conversions: 66, cpa: 577, roas: 3.47, status: 'Active', campaign: 'scale', campaignName: 'AY - Meta - Hair - Scale', angle: 'Hair' },
+  { name: 'Hair Regrowth Timeline', platform: 'Meta', spend: 12400, impressions: 248000, clicks: 3472, ctr: 1.40, cpc: 3.57, conversions: 19, cpa: 653, roas: 3.06, status: 'Active', campaign: 'scale', campaignName: 'AY - Meta - Hair - Scale', angle: 'Hair' },
+  { name: 'Doc Consultation UGC', platform: 'Meta', spend: 32400, impressions: 645000, clicks: 8385, ctr: 1.30, cpc: 3.86, conversions: 45, cpa: 720, roas: 2.78, status: 'Active', campaign: 'test', campaignName: 'AY - Meta - UGC - Testing', angle: 'UGC' },
+  { name: 'Patient Story UGC V2', platform: 'Meta', spend: 14800, impressions: 295000, clicks: 3835, ctr: 1.30, cpc: 3.86, conversions: 20, cpa: 740, roas: 2.70, status: 'Active', campaign: 'test', campaignName: 'AY - Meta - UGC - Testing', angle: 'UGC' },
+  { name: 'Semaglutide Explainer', platform: 'Meta', spend: 41500, impressions: 820000, clicks: 10660, ctr: 1.30, cpc: 3.89, conversions: 62, cpa: 669, roas: 2.99, status: 'Active', campaign: 'learn', campaignName: 'AY - Meta - Semaglutide - Learn', angle: 'Semaglutide' },
+  { name: 'Semaglutide FAQ Carousel', platform: 'Meta', spend: 9800, impressions: 196000, clicks: 2548, ctr: 1.30, cpc: 3.85, conversions: 14, cpa: 700, roas: 2.86, status: 'Active', campaign: 'learn', campaignName: 'AY - Meta - Semaglutide - Learn', angle: 'Semaglutide' },
+  { name: 'Authority Doc Interview', platform: 'Meta', spend: 8500, impressions: 170000, clicks: 2210, ctr: 1.30, cpc: 3.85, conversions: 11, cpa: 773, roas: 2.59, status: 'Active', campaign: 'test', campaignName: 'AY - Meta - Authority - Testing', angle: 'Authority' },
+  { name: 'Promo Discount Static', platform: 'Meta', spend: 6200, impressions: 124000, clicks: 1612, ctr: 1.30, cpc: 3.85, conversions: 8, cpa: 775, roas: 2.58, status: 'Active', campaign: 'test', campaignName: 'AY - Meta - Promo - Testing', angle: 'Promo' },
+  // TikTok
+  { name: 'Weight Loss Journey TikTok', platform: 'TikTok', spend: 28300, impressions: 1250000, clicks: 18750, ctr: 1.50, cpc: 1.51, conversions: 41, cpa: 690, roas: 2.90, status: 'Active', campaign: 'scale', campaignName: 'AY - TikTok - Weight Loss - Scale', angle: 'Weight Loss' },
+  { name: 'Weight Loss Transformation', platform: 'TikTok', spend: 11200, impressions: 495000, clicks: 7425, ctr: 1.50, cpc: 1.51, conversions: 16, cpa: 700, roas: 2.86, status: 'Active', campaign: 'scale', campaignName: 'AY - TikTok - Weight Loss - Scale', angle: 'Weight Loss' },
+  { name: 'Hair Regrowth Demo', platform: 'TikTok', spend: 22100, impressions: 980000, clicks: 14700, ctr: 1.50, cpc: 1.50, conversions: 36, cpa: 614, roas: 3.26, status: 'Active', campaign: 'test', campaignName: 'AY - TikTok - Hair - Testing', angle: 'Hair' },
+  { name: 'GLP-1 Day In My Life', platform: 'TikTok', spend: 9500, impressions: 420000, clicks: 6300, ctr: 1.50, cpc: 1.51, conversions: 14, cpa: 679, roas: 2.94, status: 'Active', campaign: 'test', campaignName: 'AY - TikTok - GLP1 - Testing', angle: 'GLP-1' },
+  { name: 'TikTok Trend Hook Ad', platform: 'TikTok', spend: 4500, impressions: 200000, clicks: 3000, ctr: 1.50, cpc: 1.50, conversions: 7, cpa: 643, roas: 3.11, status: 'Active', campaign: 'test', campaignName: 'AY - TikTok - Trend - Testing', angle: 'Trend' },
+  // Google
+  { name: 'Brand Search Exact', platform: 'Google', spend: 52100, impressions: 125000, clicks: 31250, ctr: 25.0, cpc: 1.67, conversions: 124, cpa: 420, roas: 4.76, status: 'Active', campaign: 'scale', campaignName: 'AY - Google - Brand - Scale', angle: 'Brand' },
+  { name: 'Competitor Keywords', platform: 'Google', spend: 35200, impressions: 98000, clicks: 5880, ctr: 6.0, cpc: 5.99, conversions: 40, cpa: 880, roas: 2.27, status: 'Under Review', campaign: 'kill', campaignName: 'AY - Google - Competitor - Scale', angle: 'Competitor' },
+  // Reddit
+  { name: 'Reddit GLP-1 Discussion', platform: 'Reddit', spend: 4000, impressions: 85000, clicks: 1700, ctr: 2.0, cpc: 2.35, conversions: 4, cpa: 1000, roas: 2.00, status: 'Active', campaign: 'test', campaignName: 'AY - Reddit - GLP1 - Testing', angle: 'GLP-1' },
 ];
 
 // ─── Account Control Scatter Data ───
@@ -288,14 +296,74 @@ export const accountControlData = [
 ];
 
 // ─── Ad Churn / Retesting Control (Stacked by creative age) ───
-export const adChurnData = [
-  { month: 'Oct', d7: 18500, d14: 12200, d30: 22800, d90: 28500, d180: 15200, dOld: 8800 },
-  { month: 'Nov', d7: 22100, d14: 14800, d30: 19500, d90: 31200, d180: 12800, dOld: 11600 },
-  { month: 'Dec', d7: 19800, d14: 16200, d30: 24100, d90: 26800, d180: 18500, dOld: 9600 },
-  { month: 'Jan', d7: 25200, d14: 18500, d30: 21200, d90: 24500, d180: 14200, dOld: 12400 },
-  { month: 'Feb', d7: 28800, d14: 15800, d30: 26500, d90: 22100, d180: 16800, dOld: 8000 },
-  { month: 'Mar', d7: 31200, d14: 19200, d30: 23800, d90: 25500, d180: 11200, dOld: 7100 },
-];
+// Per-platform ad churn data with spend, conversions, and CPA per age bracket
+export const adChurnDataByPlatform: Record<string, Array<{
+  month: string;
+  'Last 7 Days': number; '8-14 Days': number; '15-30 Days': number;
+  '31-90 Days': number; '91-180 Days': number; '180+ Days': number;
+  conversions: number; spend: number; cpa: number;
+}>> = {
+  Meta: [
+    { month: '2025-10-01', 'Last 7 Days': 12500, '8-14 Days': 8200, '15-30 Days': 15800, '31-90 Days': 19500, '91-180 Days': 10200, '180+ Days': 5800, conversions: 98, spend: 72000, cpa: 735 },
+    { month: '2025-11-01', 'Last 7 Days': 15100, '8-14 Days': 10800, '15-30 Days': 13500, '31-90 Days': 21200, '91-180 Days': 8800, '180+ Days': 7600, conversions: 112, spend: 77000, cpa: 688 },
+    { month: '2025-12-01', 'Last 7 Days': 13800, '8-14 Days': 11200, '15-30 Days': 16100, '31-90 Days': 18800, '91-180 Days': 12500, '180+ Days': 6600, conversions: 105, spend: 79000, cpa: 752 },
+    { month: '2026-01-01', 'Last 7 Days': 17200, '8-14 Days': 12500, '15-30 Days': 14200, '31-90 Days': 16500, '91-180 Days': 9200, '180+ Days': 8400, conversions: 118, spend: 78000, cpa: 661 },
+    { month: '2026-02-01', 'Last 7 Days': 19800, '8-14 Days': 10800, '15-30 Days': 18500, '31-90 Days': 15100, '91-180 Days': 11800, '180+ Days': 5000, conversions: 125, spend: 81000, cpa: 648 },
+    { month: '2026-03-01', 'Last 7 Days': 21200, '8-14 Days': 13200, '15-30 Days': 16800, '31-90 Days': 17500, '91-180 Days': 7200, '180+ Days': 4100, conversions: 132, spend: 80000, cpa: 606 },
+  ],
+  TikTok: [
+    { month: '2025-10-01', 'Last 7 Days': 4000, '8-14 Days': 2500, '15-30 Days': 4500, '31-90 Days': 6000, '91-180 Days': 3200, '180+ Days': 1800, conversions: 28, spend: 22000, cpa: 786 },
+    { month: '2025-11-01', 'Last 7 Days': 4800, '8-14 Days': 2800, '15-30 Days': 3800, '31-90 Days': 6800, '91-180 Days': 2600, '180+ Days': 2200, conversions: 32, spend: 23000, cpa: 719 },
+    { month: '2025-12-01', 'Last 7 Days': 4200, '8-14 Days': 3400, '15-30 Days': 5200, '31-90 Days': 5500, '91-180 Days': 4000, '180+ Days': 1800, conversions: 30, spend: 24100, cpa: 803 },
+    { month: '2026-01-01', 'Last 7 Days': 5500, '8-14 Days': 4000, '15-30 Days': 4500, '31-90 Days': 5200, '91-180 Days': 3200, '180+ Days': 2600, conversions: 36, spend: 25000, cpa: 694 },
+    { month: '2026-02-01', 'Last 7 Days': 6200, '8-14 Days': 3400, '15-30 Days': 5200, '31-90 Days': 4500, '91-180 Days': 3200, '180+ Days': 1500, conversions: 38, spend: 24000, cpa: 632 },
+    { month: '2026-03-01', 'Last 7 Days': 6800, '8-14 Days': 4000, '15-30 Days': 4500, '31-90 Days': 5200, '91-180 Days': 2500, '180+ Days': 1500, conversions: 42, spend: 24500, cpa: 583 },
+  ],
+  Reddit: [
+    { month: '2025-10-01', 'Last 7 Days': 1200, '8-14 Days': 800, '15-30 Days': 1500, '31-90 Days': 2000, '91-180 Days': 1000, '180+ Days': 500, conversions: 6, spend: 7000, cpa: 1167 },
+    { month: '2025-11-01', 'Last 7 Days': 1400, '8-14 Days': 600, '15-30 Days': 1200, '31-90 Days': 2200, '91-180 Days': 800, '180+ Days': 800, conversions: 7, spend: 7000, cpa: 1000 },
+    { month: '2025-12-01', 'Last 7 Days': 1000, '8-14 Days': 900, '15-30 Days': 1800, '31-90 Days': 1800, '91-180 Days': 1400, '180+ Days': 600, conversions: 6, spend: 7500, cpa: 1250 },
+    { month: '2026-01-01', 'Last 7 Days': 1800, '8-14 Days': 1200, '15-30 Days': 1500, '31-90 Days': 1600, '91-180 Days': 1000, '180+ Days': 900, conversions: 8, spend: 8000, cpa: 1000 },
+    { month: '2026-02-01', 'Last 7 Days': 2000, '8-14 Days': 1000, '15-30 Days': 1800, '31-90 Days': 1400, '91-180 Days': 1100, '180+ Days': 700, conversions: 9, spend: 8000, cpa: 889 },
+    { month: '2026-03-01', 'Last 7 Days': 2200, '8-14 Days': 1200, '15-30 Days': 1500, '31-90 Days': 1600, '91-180 Days': 800, '180+ Days': 700, conversions: 10, spend: 8000, cpa: 800 },
+  ],
+  Google: [
+    { month: '2025-10-01', 'Last 7 Days': 800, '8-14 Days': 700, '15-30 Days': 1000, '31-90 Days': 1000, '91-180 Days': 800, '180+ Days': 700, conversions: 22, spend: 5000, cpa: 227 },
+    { month: '2025-11-01', 'Last 7 Days': 800, '8-14 Days': 600, '15-30 Days': 1000, '31-90 Days': 1000, '91-180 Days': 600, '180+ Days': 1000, conversions: 24, spend: 5000, cpa: 208 },
+    { month: '2025-12-01', 'Last 7 Days': 800, '8-14 Days': 700, '15-30 Days': 1000, '31-90 Days': 700, '91-180 Days': 600, '180+ Days': 600, conversions: 20, spend: 4400, cpa: 220 },
+    { month: '2026-01-01', 'Last 7 Days': 700, '8-14 Days': 800, '15-30 Days': 1000, '31-90 Days': 1200, '91-180 Days': 800, '180+ Days': 500, conversions: 26, spend: 5000, cpa: 192 },
+    { month: '2026-02-01', 'Last 7 Days': 800, '8-14 Days': 600, '15-30 Days': 1000, '31-90 Days': 1100, '91-180 Days': 700, '180+ Days': 800, conversions: 25, spend: 5000, cpa: 200 },
+    { month: '2026-03-01', 'Last 7 Days': 1000, '8-14 Days': 800, '15-30 Days': 1000, '31-90 Days': 1200, '91-180 Days': 700, '180+ Days': 300, conversions: 28, spend: 5000, cpa: 179 },
+  ],
+};
+
+// Combined (all platforms) for backward compat
+export const adChurnData = adChurnDataByPlatform.Meta;
+
+// ─── Ad Churn Campaign-Level Data ───
+export const adChurnCampaigns: Record<string, Array<{
+  campaign: string; platform: string; spend: number; conversions: number; cpa: number; ncCpa: number;
+  ageBreakdown: { 'Last 7 Days': number; '8-14 Days': number; '15-30 Days': number; '31-90 Days': number; '91-180 Days': number; '180+ Days': number };
+  status: 'Active' | 'Paused';
+}>> = {
+  Meta: [
+    { campaign: 'AY - Meta - GLP1 - Scale', platform: 'Meta', spend: 45200, conversions: 69, cpa: 655, ncCpa: 752, ageBreakdown: { 'Last 7 Days': 12000, '8-14 Days': 8500, '15-30 Days': 10200, '31-90 Days': 8500, '91-180 Days': 4000, '180+ Days': 2000 }, status: 'Active' },
+    { campaign: 'AY - Meta - Hair - Scale', platform: 'Meta', spend: 38100, conversions: 66, cpa: 577, ncCpa: 680, ageBreakdown: { 'Last 7 Days': 9200, '8-14 Days': 4700, '15-30 Days': 6600, '31-90 Days': 9000, '91-180 Days': 5200, '180+ Days': 3400 }, status: 'Active' },
+    { campaign: 'AY - Meta - UGC - Testing', platform: 'Meta', spend: 32400, conversions: 45, cpa: 720, ncCpa: 860, ageBreakdown: { 'Last 7 Days': 18000, '8-14 Days': 8200, '15-30 Days': 3200, '31-90 Days': 2000, '91-180 Days': 800, '180+ Days': 200 }, status: 'Active' },
+    { campaign: 'AY - Meta - Semaglutide - Learn', platform: 'Meta', spend: 41500, conversions: 62, cpa: 669, ncCpa: 790, ageBreakdown: { 'Last 7 Days': 6000, '8-14 Days': 5000, '15-30 Days': 8800, '31-90 Days': 10500, '91-180 Days': 7200, '180+ Days': 4000 }, status: 'Active' },
+  ],
+  TikTok: [
+    { campaign: 'AY - TikTok - Weight Loss - Scale', platform: 'TikTok', spend: 28300, conversions: 41, cpa: 690, ncCpa: 820, ageBreakdown: { 'Last 7 Days': 8000, '8-14 Days': 5200, '15-30 Days': 6500, '31-90 Days': 5000, '91-180 Days': 2400, '180+ Days': 1200 }, status: 'Active' },
+    { campaign: 'AY - TikTok - Hair - Testing', platform: 'TikTok', spend: 22100, conversions: 36, cpa: 614, ncCpa: 740, ageBreakdown: { 'Last 7 Days': 12000, '8-14 Days': 5500, '15-30 Days': 2800, '31-90 Days': 1200, '91-180 Days': 500, '180+ Days': 100 }, status: 'Active' },
+  ],
+  Reddit: [
+    { campaign: 'AY - Reddit - GLP1 - Testing', platform: 'Reddit', spend: 4000, conversions: 4, cpa: 1000, ncCpa: 1200, ageBreakdown: { 'Last 7 Days': 2200, '8-14 Days': 1000, '15-30 Days': 500, '31-90 Days': 200, '91-180 Days': 100, '180+ Days': 0 }, status: 'Active' },
+  ],
+  Google: [
+    { campaign: 'AY - Google - Brand - Scale', platform: 'Google', spend: 52100, conversions: 124, cpa: 420, ncCpa: 510, ageBreakdown: { 'Last 7 Days': 500, '8-14 Days': 400, '15-30 Days': 600, '31-90 Days': 800, '91-180 Days': 500, '180+ Days': 200 }, status: 'Active' },
+    { campaign: 'AY - Google - Competitor - Scale', platform: 'Google', spend: 35200, conversions: 40, cpa: 880, ncCpa: 1050, ageBreakdown: { 'Last 7 Days': 500, '8-14 Days': 400, '15-30 Days': 400, '31-90 Days': 400, '91-180 Days': 200, '180+ Days': 100 }, status: 'Active' },
+  ],
+};
 
 // ─── Creative Churn by Cohort (Stacked Area) ───
 export const creativeChurnCohorts = [
@@ -327,12 +395,12 @@ export const creativeChurnCohorts = [
 
 // ─── Production & Slugging Rate ───
 export const productionSlugging = [
-  { month: 'Oct', launched: 12, hits: 3, hitRate: 25.0 },
-  { month: 'Nov', launched: 18, hits: 5, hitRate: 27.8 },
-  { month: 'Dec', launched: 15, hits: 4, hitRate: 26.7 },
-  { month: 'Jan', launched: 22, hits: 7, hitRate: 31.8 },
-  { month: 'Feb', launched: 25, hits: 6, hitRate: 24.0 },
-  { month: 'Mar', launched: 20, hits: 8, hitRate: 40.0 },
+  { month: '2025-10-01', launched: 12, hits: 3, hitRate: 25.0 },
+  { month: '2025-11-01', launched: 18, hits: 5, hitRate: 27.8 },
+  { month: '2025-12-01', launched: 15, hits: 4, hitRate: 26.7 },
+  { month: '2026-01-01', launched: 22, hits: 7, hitRate: 31.8 },
+  { month: '2026-02-01', launched: 25, hits: 6, hitRate: 24.0 },
+  { month: '2026-03-01', launched: 20, hits: 8, hitRate: 40.0 },
 ];
 
 // ─── Demographics / Gender+Age Analysis ───
@@ -390,13 +458,13 @@ export const creativeAISuggestions = [
 
 // ─── Cohort Analysis ───
 export const cohortRetention = [
-  { cohort: 'Sep 2025', customers: 380, cac: 820, firstOrder: 1580, periods: [100, 28.5, 22.1, 18.4, 15.8, 13.2, 11.5] },
-  { cohort: 'Oct 2025', customers: 420, cac: 795, firstOrder: 1620, periods: [100, 30.2, 23.8, 19.5, 16.8, 14.1, 0] },
-  { cohort: 'Nov 2025', customers: 465, cac: 780, firstOrder: 1685, periods: [100, 31.5, 24.7, 20.2, 17.1, 0, 0] },
-  { cohort: 'Dec 2025', customers: 510, cac: 770, firstOrder: 1710, periods: [100, 32.8, 25.9, 21.0, 0, 0, 0] },
-  { cohort: 'Jan 2026', customers: 545, cac: 800, firstOrder: 1750, periods: [100, 29.8, 23.5, 0, 0, 0, 0] },
-  { cohort: 'Feb 2026', customers: 590, cac: 790, firstOrder: 1820, periods: [100, 31.2, 0, 0, 0, 0, 0] },
-  { cohort: 'Mar 2026', customers: 635, cac: 787, firstOrder: 1850, periods: [100, 0, 0, 0, 0, 0, 0] },
+  { cohort: 'Sep 2025', customers: 380, cac: 820, nccpa: 985, firstOrder: 1580, periods: [100, 28.5, 22.1, 18.4, 15.8, 13.2, 11.5] },
+  { cohort: 'Oct 2025', customers: 420, cac: 795, nccpa: 950, firstOrder: 1620, periods: [100, 30.2, 23.8, 19.5, 16.8, 14.1, 0] },
+  { cohort: 'Nov 2025', customers: 465, cac: 780, nccpa: 920, firstOrder: 1685, periods: [100, 31.5, 24.7, 20.2, 17.1, 0, 0] },
+  { cohort: 'Dec 2025', customers: 510, cac: 770, nccpa: 895, firstOrder: 1710, periods: [100, 32.8, 25.9, 21.0, 0, 0, 0] },
+  { cohort: 'Jan 2026', customers: 545, cac: 800, nccpa: 940, firstOrder: 1750, periods: [100, 29.8, 23.5, 0, 0, 0, 0] },
+  { cohort: 'Feb 2026', customers: 590, cac: 790, nccpa: 910, firstOrder: 1820, periods: [100, 31.2, 0, 0, 0, 0, 0] },
+  { cohort: 'Mar 2026', customers: 635, cac: 787, nccpa: 880, firstOrder: 1850, periods: [100, 0, 0, 0, 0, 0, 0] },
 ];
 
 export const clvExtension = [
@@ -432,12 +500,12 @@ export const targets = [
 ];
 
 export const targetTrend = [
-  { month: 'Oct', revenue: 1600000, target: 1800000, cm3: 380000, cm3Target: 450000 },
-  { month: 'Nov', revenue: 1760000, target: 1900000, cm3: 430000, cm3Target: 480000 },
-  { month: 'Dec', revenue: 2010000, target: 2100000, cm3: 510000, cm3Target: 550000 },
-  { month: 'Jan', revenue: 2000000, target: 2200000, cm3: 490000, cm3Target: 600000 },
-  { month: 'Feb', revenue: 2150000, target: 2350000, cm3: 560000, cm3Target: 650000 },
-  { month: 'Mar', revenue: 2253000, target: 2500000, cm3: 626150, cm3Target: 700000 },
+  { month: '2025-10-01', revenue: 1600000, target: 1800000, cm3: 380000, cm3Target: 450000 },
+  { month: '2025-11-01', revenue: 1760000, target: 1900000, cm3: 430000, cm3Target: 480000 },
+  { month: '2025-12-01', revenue: 2010000, target: 2100000, cm3: 510000, cm3Target: 550000 },
+  { month: '2026-01-01', revenue: 2000000, target: 2200000, cm3: 490000, cm3Target: 600000 },
+  { month: '2026-02-01', revenue: 2150000, target: 2350000, cm3: 560000, cm3Target: 650000 },
+  { month: '2026-03-01', revenue: 2253000, target: 2500000, cm3: 626150, cm3Target: 700000 },
 ];
 
 export const targetAISuggestions = [

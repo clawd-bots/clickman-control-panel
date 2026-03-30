@@ -4,6 +4,7 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 import DataSource from '@/components/ui/DataSource';
 import AIIntelligenceControls from '@/components/ui/AIIntelligenceControls';
 import { useCurrency } from '@/components/CurrencyProvider';
+import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
 import { attributionSurvey, trackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
 import { Star, GitBranch, Activity, Database, Layers, Sparkles, ChevronDown } from 'lucide-react';
@@ -38,6 +39,7 @@ interface LayerInsights {
 
 export default function AttributionPage() {
   const { currency, convertValue } = useCurrency();
+  const { dateRange } = useDateRange();
   const [activeLayer, setActiveLayer] = useState<string>('star');
   const [cohortAttrModel, setCohortAttrModel] = useState('First Click');
   const [cohortAttrWindow, setCohortAttrWindow] = useState('7-day click / 1-day view');
@@ -156,7 +158,7 @@ export default function AttributionPage() {
             </h3>
             <DataSource source="TripleWhale" className="shrink-0" />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary flex items-center gap-1">
                 <span>MER</span>
@@ -174,7 +176,7 @@ export default function AttributionPage() {
               <div className="text-xs text-success mt-2">↓ 2.6% MoM</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
-              <div className="text-xs text-text-secondary">Max Mktg Spend</div>
+              <div className="text-xs text-text-secondary">Marketing Costs</div>
               <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(680000)}</div>
               <div className="text-xs text-text-secondary mt-2">At 25% CM3 target</div>
             </div>
@@ -182,6 +184,22 @@ export default function AttributionPage() {
               <div className="text-xs text-text-secondary">Target CPA</div>
               <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(750)}</div>
               <div className="text-xs text-text-secondary mt-2">Based on 3.15x LTV:CAC</div>
+            </div>
+            <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
+              <div className="text-xs text-text-secondary flex items-center gap-1">
+                <span>Target NCCPA</span>
+                <InfoTooltip metric="Target NCCPA" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(850)}</div>
+              <div className="text-xs text-text-secondary mt-2">New customer target</div>
+            </div>
+            <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
+              <div className="text-xs text-text-secondary flex items-center gap-1">
+                <span>aMER</span>
+                <InfoTooltip metric="aMER" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">4.12x</div>
+              <div className="text-xs text-success mt-2">↑ 1.8% MoM</div>
             </div>
           </div>
         </div>
@@ -410,6 +428,16 @@ export default function AttributionPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-text-secondary">
                     <span>Events: {item.events}</span>
                     <span>Match Quality: {item.matchRate}</span>
+                    {item.source && (
+                      <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                        item.source === 'Browser' ? 'bg-blue-500/15 text-blue-500' :
+                        item.source === 'Server' ? 'bg-purple-500/15 text-purple-500' :
+                        item.source === 'Multiple Sources' ? 'bg-orange-500/15 text-orange-500' :
+                        'bg-text-tertiary/15 text-text-tertiary'
+                      }`}>
+                        Source: {item.source}
+                      </span>
+                    )}
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium self-start sm:self-auto ${
                       item.status === 'healthy' ? 'bg-success/15 text-success' :
                       item.status === 'warning' ? 'bg-warm-gold/15 text-warm-gold' :
@@ -449,6 +477,7 @@ export default function AttributionPage() {
                         <div className="flex items-center gap-4 text-xs text-text-secondary">
                           <span>Count: {event.count}/day</span>
                           <span>Match Quality: {event.matchRate}</span>
+                          {event.type && <span>Source: {event.type === 'Multiple' ? 'Multiple Sources' : event.type}</span>}
                         </div>
                       </div>
                     ))}

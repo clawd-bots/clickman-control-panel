@@ -19,6 +19,7 @@ const datePresets = [
 ];
 
 const comparisonOptions = [
+  { label: 'No Comparison', value: 'none' },
   { label: 'Previous Period', value: 'prev-period' },
   { label: 'Previous Year', value: 'prev-year' },
   { label: 'Custom', value: 'custom' },
@@ -177,31 +178,11 @@ export default function TopBar() {
                       {p.label}
                     </button>
                   ))}
-                  <div className="border-t border-border mt-1 pt-1">
-                    <button
-                      onClick={() => {
-                        const newEnabled = !comparisonEnabled;
-                        setComparisonEnabled(newEnabled);
-                        // Dispatch date change event for global consumption
-                        const event = new CustomEvent('dateRangeChanged', { 
-                          detail: { preset: datePreset, comparison, comparisonEnabled: newEnabled }
-                        });
-                        window.dispatchEvent(event);
-                      }}
-                      className="w-full flex items-center justify-between px-3 py-2 text-xs text-text-secondary hover:bg-bg-surface hover:text-text-primary transition-colors"
-                    >
-                      <span>Compare to previous period</span>
-                      <div className={`w-8 h-4 rounded-full transition-colors ${comparisonEnabled ? 'bg-brand-blue' : 'bg-border'}`}>
-                        <div className={`w-3 h-3 bg-bg-surface rounded-full shadow transition-transform mt-0.5 ${comparisonEnabled ? 'translate-x-4 ml-0.5' : 'translate-x-0.5'}`} />
-                      </div>
-                    </button>
-                  </div>
                 </div>
               )}
             </div>
 
-            {/* Comparison Period - hidden on small screens and when comparison is disabled */}
-            {comparisonEnabled && (
+            {/* Comparison Period - hidden on small screens */}
               <div ref={compRef} className="relative hidden sm:block">
                 <button
                   onClick={() => { setShowCompDropdown(!showCompDropdown); setShowDateDropdown(false); }}
@@ -219,9 +200,11 @@ export default function TopBar() {
                         onClick={() => { 
                           setComparison(o.value); 
                           setShowCompDropdown(false);
+                          const newEnabled = o.value !== 'none';
+                          setComparisonEnabled(newEnabled);
                           // Dispatch date change event for global consumption
                           const event = new CustomEvent('dateRangeChanged', { 
-                            detail: { preset: datePreset, comparison: o.value, comparisonEnabled }
+                            detail: { preset: datePreset, comparison: o.value, comparisonEnabled: newEnabled }
                           });
                           window.dispatchEvent(event);
                         }}
@@ -237,7 +220,6 @@ export default function TopBar() {
                   </div>
                 )}
               </div>
-            )}
           </>
         )}
 

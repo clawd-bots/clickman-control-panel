@@ -5,6 +5,7 @@ import DataSource from '@/components/ui/DataSource';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { pnlData, pnlTrend } from '@/lib/sample-data';
 import { formatCurrency } from '@/lib/utils';
+import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { ChevronRight, ChevronDown, ChevronsUpDown } from 'lucide-react';
@@ -240,11 +241,16 @@ export default function PnLPage() {
     // Calculate date range in days
     const rangeDays = Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24));
     
+    // Filter pnlTrend by date range
+    const filtered = filterByDateRange(pnlTrend, 'month', dateRange.startDate, dateRange.endDate);
+    // If nothing in range, use all data
+    const trendData = filtered.length > 0 ? filtered : pnlTrend;
+    
     if (rangeDays <= 14) {
       // Daily data - expand existing monthly data into daily points
       const dailyData = [];
-      for (let i = 0; i < Math.min(14, rangeDays); i++) {
-        const baseData = pnlTrend[i % pnlTrend.length];
+      for (let i = 0; i < 14; i++) {
+        const baseData = trendData[i % trendData.length];
         dailyData.push({
           period: `Day ${i + 1}`,
           cm1: ((baseData.cm1 / baseData.netRevenue) * 100),
@@ -255,23 +261,22 @@ export default function PnLPage() {
       return dailyData;
     } else if (rangeDays <= 90) {
       // Weekly data - aggregate monthly into weekly
-      return pnlTrend.map((item, index) => ({
+      return trendData.map((item, index) => ({
         period: `W${index + 1}`,
         cm1: ((item.cm1 / item.netRevenue) * 100),
         cm2: ((item.cm2 / item.netRevenue) * 100),
         cm3: ((item.cm3 / item.netRevenue) * 100),
       }));
     } else {
-      // Monthly data (original)
-      return pnlTrend.map(item => ({
-        period: item.month,
+      // Monthly data - use formatted labels
+      return trendData.map(item => ({
+        period: formatDateLabel(item.month, 'month'),
         cm1: ((item.cm1 / item.netRevenue) * 100),
         cm2: ((item.cm2 / item.netRevenue) * 100),
         cm3: ((item.cm3 / item.netRevenue) * 100),
       }));
     }
-  }, [dateRange]);
-
+  }, [timePeriod, customDateRange, dateRange]);
 
 
   const toggle = (label: string) => setExpanded(prev => ({ ...prev, [label]: !prev[label] }));
@@ -304,33 +309,33 @@ export default function PnLPage() {
 
       {/* KPI Cards - PNL-1: EBITDA shows currency value, not percentage */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mx-1">
-        <KPICard label="Net Revenue" value={formatCurrencyValue(getCurrentPnLData.netRevenue.value)} change={9.5} sparkline={pnlTrend.map(t => t.netRevenue / 1000)} />
+        <KPICard label="Net Revenue" value={formatCurrencyValue(getCurrentPnLData.netRevenue.value)} change={9.5} sparkline={[]} />
         <KPICard 
           label="CM1" 
           value={`${getCurrentPnLData.cm1.pct}%`} 
           change={8.2} 
-          sparkline={pnlTrend.map(t => (t.cm1 / t.netRevenue) * 100)} 
+          sparkline={[]} 
           secondary={formatCurrencyValue(getCurrentPnLData.cm1.value)}
         />
         <KPICard 
           label="CM2" 
           value={`${getCurrentPnLData.cm2.pct}%`} 
           change={6.1} 
-          sparkline={pnlTrend.map(t => (t.cm2 / t.netRevenue) * 100)} 
+          sparkline={[]} 
           secondary={formatCurrencyValue(getCurrentPnLData.cm2.value)}
         />
         <KPICard 
           label="CM3" 
           value={`${getCurrentPnLData.cm3.pct}%`} 
           change={11.8} 
-          sparkline={pnlTrend.map(t => (t.cm3 / t.netRevenue) * 100)} 
+          sparkline={[]} 
           secondary={formatCurrencyValue(getCurrentPnLData.cm3.value)}
         />
         <KPICard 
           label="EBITDA" 
           value={formatCurrencyValue(getCurrentPnLData.ebitda.value)}
           change={14.2} 
-          sparkline={pnlTrend.map(t => ((t.cm3 * 0.76) / t.netRevenue) * 100)}
+          sparkline={[]}
         />
       </div>
 

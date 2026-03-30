@@ -4,6 +4,7 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { targets as initialTargets, targetTrend, targetAISuggestions } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
+import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
 import { Pencil, Check, X, Users as UsersIcon } from 'lucide-react';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
@@ -479,14 +480,14 @@ export default function TargetsPage() {
                 </tr>
               ))}
               {/* Column Save Buttons Row - Desktop Only */}
-              <tr className="border-t border-border bg-bg-elevated/30">
-                <td className="py-3 px-3 font-medium text-text-secondary sticky left-0 bg-bg-elevated/30">
+              <tr className="border-t border-border bg-bg-elevated">
+                <td className="py-3 px-3 font-medium text-text-secondary sticky left-0 z-10 bg-bg-elevated border-r border-border">
                   Save Column
                 </td>
                 {currentMonthColumns.map((colKey) => {
                   const columnHasData = monthlyTargets.some(target => (target as any)[colKey] && (target as any)[colKey] !== '');
                   return (
-                    <td key={`save-${colKey}`} className="py-2.5 px-2 text-center">
+                    <td key={`save-${colKey}`} className="py-2.5 px-2 text-center bg-bg-elevated">
                       <button
                         onClick={() => {
                           // Save all values in this column
@@ -512,12 +513,12 @@ export default function TargetsPage() {
                 </td>
               </tr>
               {/* Last Updated Summary Row */}
-              <tr className="border-t border-border/50 bg-bg-elevated/20">
-                <td className="py-2.5 px-3 font-medium text-text-secondary sticky left-0 bg-bg-elevated/20">
+              <tr className="border-t border-border/50 bg-bg-elevated">
+                <td className="py-2.5 px-3 font-medium text-text-secondary sticky left-0 z-10 bg-bg-elevated border-r border-border">
                   Last Updated
                 </td>
                 {currentMonthColumns.map((colKey) => (
-                  <td key={`lastupdate-${colKey}`} className="py-2.5 px-2 text-center text-xs text-text-tertiary">
+                  <td key={`lastupdate-${colKey}`} className="py-2.5 px-2 text-center text-xs text-text-tertiary bg-bg-elevated">
                     {/* Show most recent update time for this column across all metrics */}
                     {monthlyTargets.find(target => (target as any)[colKey] && (target as any)[colKey] !== '')?.lastUpdated || 'Never'}
                   </td>

@@ -5,6 +5,7 @@ import DataSource from '@/components/ui/DataSource';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
+import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { cohortRetention, clvExtension, productComparison, cohortAISuggestions } from '@/lib/sample-data';
 import { getHeatmapClass } from '@/lib/utils';
@@ -15,6 +16,7 @@ import {
 export default function CohortsPage() {
   const { currency, convertValue } = useCurrency();
   const { dateRange } = useDateRange();
+  // dateRange available for future filtering when cohort data gets ISO dates
   const [activeTab, setActiveTab] = useState<'analysis' | 'comparison'>('analysis');
   const [metric, setMetric] = useState('Net Revenue');
   const [format, setFormat] = useState<'%' | '#'>('%');
@@ -140,7 +142,8 @@ export default function CohortsPage() {
                     <th className="text-left py-2 px-2 font-medium">Cohort</th>
                     <th className="text-right py-2 px-2 font-medium">New Cust.</th>
                     <th className="text-right py-2 px-2 font-medium">CAC <InfoTooltip metric="nCAC" /></th>
-                    <th className="text-right py-2 px-2 font-medium">1st Order</th>
+                    <th className="text-right py-2 px-2 font-medium">NCCPA</th>
+                    <th className="text-right py-2 px-2 font-medium">1st Order AOV</th>
                     {['M0', 'M1', 'M2', 'M3', 'M4', 'M5', 'M6'].map(p => (
                       <th key={p} className="text-right py-2 px-2 font-medium">{p}</th>
                     ))}
@@ -152,6 +155,7 @@ export default function CohortsPage() {
                       <td className="py-2.5 px-2 font-medium text-text-primary">{row.cohort}</td>
                       <td className="py-2.5 px-2 text-right text-text-secondary">{row.customers}</td>
                       <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.cac)}</td>
+                      <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue((row as any).nccpa || 0)}</td>
                       <td className="py-2.5 px-2 text-right text-text-secondary">{formatCurrencyValue(row.firstOrder)}</td>
                       {row.periods.map((val, i) => {
                         const displayVal = format === '%' ? `${val.toFixed(1)}%` : Math.round(row.customers * val / 100).toString();
@@ -169,6 +173,7 @@ export default function CohortsPage() {
                     <td className="py-2.5 px-2 text-text-primary">Average</td>
                     <td className="py-2.5 px-2 text-right text-text-primary">{Math.round(transformedData.reduce((s, c) => s + c.customers, 0) / transformedData.length)}</td>
                     <td className="py-2.5 px-2 text-right text-text-primary">{formatCurrencyValue(Math.round(transformedData.reduce((s, c) => s + c.cac, 0) / transformedData.length))}</td>
+                    <td className="py-2.5 px-2 text-right text-text-primary">{formatCurrencyValue(Math.round(transformedData.reduce((s, c) => s + ((c as any).nccpa || 0), 0) / transformedData.length))}</td>
                     <td className="py-2.5 px-2 text-right text-text-primary">{formatCurrencyValue(Math.round(transformedData.reduce((s, c) => s + c.firstOrder, 0) / transformedData.length))}</td>
                     {[0, 1, 2, 3, 4, 5, 6].map(i => {
                       const vals = transformedData.map(c => c.periods[i]).filter(v => v > 0);
@@ -254,7 +259,7 @@ export default function CohortsPage() {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(v: any) => `₱${Number(v).toLocaleString()}`} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="firstOrder" name="First Order" stackId="a" fill="#334FB4" />
+                <Bar dataKey="firstOrder" name="1st Order AOV" stackId="a" fill="#334FB4" />
                 <Bar dataKey="clr90" name="90d CLR" stackId="a" fill="#4A6BD6" />
                 <Bar dataKey="clr365" name="365d CLR" stackId="a" fill="#EDBF63" />
                 <Bar dataKey="beyond365" name=">365d" stackId="a" fill="#34D399" radius={[0, 3, 3, 0]} />

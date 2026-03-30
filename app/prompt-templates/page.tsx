@@ -246,13 +246,7 @@ export default function PromptTemplatesPage() {
             Manage AI analysis prompts used throughout the dashboard
           </p>
         </div>
-        <button
-          onClick={addNewTemplate}
-          className="flex items-center gap-2 px-4 py-2 bg-brand-blue text-white rounded-md text-sm font-medium hover:bg-brand-blue-light transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          New Template
-        </button>
+
       </div>
 
       {/* Category Filter */}
@@ -388,12 +382,7 @@ export default function PromptTemplatesPage() {
               : `No templates in the ${selectedCategory} category`
             }
           </p>
-          <button
-            onClick={addNewTemplate}
-            className="px-4 py-2 bg-brand-blue text-white rounded-md text-sm font-medium hover:bg-brand-blue-light transition-colors"
-          >
-            Create Template
-          </button>
+
         </div>
       )}
 

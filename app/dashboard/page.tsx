@@ -6,6 +6,7 @@ import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import DataSource from '@/components/ui/DataSource';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
+import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
 
 import { kpiCards, dailyMetrics, channelAttribution, productKPIs, revenueInsights } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
@@ -33,16 +34,36 @@ export default function DashboardPage() {
   };
 
   // Generate chart data based on selected date range
+  // Use actual sample data where available, generate synthetic data for dates outside range
   const chartData = useMemo(() => {
     const { startDate, endDate } = dateRange;
+    
+    // First, try to filter actual sample data
+    const filteredSample = filterByDateRange(dailyMetrics, 'date', startDate, endDate);
+    
+    if (filteredSample.length > 0) {
+      // We have real sample data for this range - use it with display labels
+      return filteredSample.map(d => ({
+        date: d.date,
+        displayDate: formatDateLabel(d.date, 'day'),
+        revenue: d.revenue,
+        costs: d.spend,
+        orders: d.orders,
+        newCustomers: d.newCustomers,
+        sessions: d.sessions,
+        profit: d.revenue - d.spend,
+      }));
+    }
+    
+    // No sample data for this range - generate synthetic data
     const data = [];
     const current = new Date(startDate);
     
     while (current <= endDate) {
-      const dateStr = current.toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric' 
-      });
+      const y = current.getFullYear();
+      const m = String(current.getMonth() + 1).padStart(2, '0');
+      const day = String(current.getDate()).padStart(2, '0');
+      const isoDate = `${y}-${m}-${day}`;
       
       // Generate realistic sample data based on the date
       const baseRevenue = 350000 + Math.sin(current.getTime() / (1000 * 60 * 60 * 24)) * 50000;
@@ -52,13 +73,13 @@ export default function DashboardPage() {
       const baseSessions = 4800 + Math.floor(Math.sin(current.getTime() / (1000 * 60 * 60 * 24 * 1.5)) * 800);
       
       data.push({
-        date: dateStr,
+        date: isoDate,
+        displayDate: formatDateLabel(isoDate, 'day'),
         revenue: Math.round(baseRevenue),
         costs: Math.round(baseCosts),
         orders: baseOrders,
         newCustomers: baseNewCustomers,
         sessions: baseSessions,
-        // Adding some variance
         profit: Math.round(baseRevenue - baseCosts),
       });
       
@@ -66,6 +87,17 @@ export default function DashboardPage() {
     }
     
     return data;
+  }, [dateRange]);
+
+  // Revenue composition data filtered by date range
+  const filteredRevenueMonthly = useMemo(() => {
+    const filtered = filterByDateRange(revenueInsights.monthly, 'month', dateRange.startDate, dateRange.endDate);
+    // If no data in range, show all (fallback)
+    const data = filtered.length > 0 ? filtered : revenueInsights.monthly;
+    return data.map(d => ({
+      ...d,
+      displayMonth: formatDateLabel(d.month, 'month'),
+    }));
   }, [dateRange]);
 
   // Calculate aggregated values from date-filtered data
@@ -82,9 +114,9 @@ export default function DashboardPage() {
       totalOrders,
       totalNewCustomers,
       totalSessions,
-      mer: totalRevenue / totalCosts,
-      cac: totalCosts / totalOrders,
-      ncac: totalCosts / totalNewCustomers,
+      mer: totalCosts > 0 ? totalRevenue / totalCosts : 0,
+      cac: totalOrders > 0 ? totalCosts / totalOrders : 0,
+      ncac: totalNewCustomers > 0 ? totalCosts / totalNewCustomers : 0,
     };
   }, [chartData]);
 
@@ -169,7 +201,7 @@ export default function DashboardPage() {
             label="Net Revenue" 
             value={formatCurrencyValue(aggregatedData.totalRevenue)} 
             change={pctChange(aggregatedData.totalRevenue, kpiCards.netRevenue.prev)} 
-            sparkline={chartData.map(d => d.revenue)}
+            sparkline={[]}
             target={formatCurrencyValue(kpiCards.netRevenue.target)}
             targetAchievement={(aggregatedData.totalRevenue / kpiCards.netRevenue.target) * 100}
           />
@@ -179,7 +211,7 @@ export default function DashboardPage() {
             label="Marketing Costs" 
             value={formatCurrencyValue(aggregatedData.totalCosts)} 
             change={pctChange(aggregatedData.totalCosts, kpiCards.marketingCosts.prev)} 
-            sparkline={chartData.map(d => d.costs)}
+            sparkline={[]}
             target={formatCurrencyValue(kpiCards.marketingCosts.target)}
             targetAchievement={(aggregatedData.totalCosts / kpiCards.marketingCosts.target) * 100}
           />
@@ -189,7 +221,7 @@ export default function DashboardPage() {
             label="MER" 
             value={`${aggregatedData.mer.toFixed(2)}x`} 
             change={pctChange(aggregatedData.mer, kpiCards.mer.prev)} 
-            sparkline={chartData.map(d => d.revenue / d.costs)}
+            sparkline={[]}
             target={`${kpiCards.mer.target}x`}
             targetAchievement={(aggregatedData.mer / kpiCards.mer.target) * 100}
           />
@@ -199,7 +231,7 @@ export default function DashboardPage() {
             label="aMER" 
             value={`${kpiCards.nmer.value}x`} 
             change={pctChange(kpiCards.nmer.value, kpiCards.nmer.prev)} 
-            sparkline={kpiCards.nmer.sparkline}
+            sparkline={[]}
             target={`${kpiCards.nmer.target}x`}
             targetAchievement={(kpiCards.nmer.value / kpiCards.nmer.target) * 100}
           />
@@ -213,7 +245,7 @@ export default function DashboardPage() {
             label="Orders" 
             value={formatNumber(aggregatedData.totalOrders)} 
             change={pctChange(aggregatedData.totalOrders, kpiCards.netOrders.prev)} 
-            sparkline={chartData.map(d => d.orders)}
+            sparkline={[]}
             target={formatNumber(kpiCards.netOrders.target)}
             targetAchievement={(aggregatedData.totalOrders / kpiCards.netOrders.target) * 100}
           />
@@ -223,7 +255,7 @@ export default function DashboardPage() {
             label="NC Orders" 
             value={formatNumber(aggregatedData.totalNewCustomers)} 
             change={pctChange(aggregatedData.totalNewCustomers, kpiCards.newCustomers.prev)} 
-            sparkline={chartData.map(d => d.newCustomers)}
+            sparkline={[]}
             target={formatNumber(kpiCards.newCustomers.target)}
             targetAchievement={(aggregatedData.totalNewCustomers / kpiCards.newCustomers.target) * 100}
           />
@@ -233,7 +265,7 @@ export default function DashboardPage() {
             label="CAC" 
             value={formatCurrencyValue(aggregatedData.cac)} 
             change={pctChange(aggregatedData.cac, kpiCards.cac.prev)} 
-            sparkline={chartData.map(d => d.costs / d.orders)}
+            sparkline={[]}
             target={formatCurrencyValue(kpiCards.cac.target)}
             targetAchievement={(kpiCards.cac.target / aggregatedData.cac) * 100}
           />
@@ -243,7 +275,7 @@ export default function DashboardPage() {
             label="ncCAC" 
             value={formatCurrencyValue(aggregatedData.ncac)} 
             change={pctChange(aggregatedData.ncac, kpiCards.ncac.prev)} 
-            sparkline={chartData.map(d => d.costs / d.newCustomers)}
+            sparkline={[]}
             target={formatCurrencyValue(kpiCards.ncac.target)}
             targetAchievement={(kpiCards.ncac.target / aggregatedData.ncac) * 100}
           />
@@ -256,7 +288,7 @@ export default function DashboardPage() {
           label="CAC/LTV Ratio" 
           value="1:3.2" 
           change={8.1} 
-          sparkline={[3.0, 3.1, 2.9, 3.2, 3.4, 3.1, 3.2]}
+          sparkline={[]}
           target="1:3.5"
           targetAchievement={91.4}
         />
@@ -264,7 +296,7 @@ export default function DashboardPage() {
           label="LTV per Customer" 
           value={formatCurrencyValue(2520)} 
           change={12.4} 
-          sparkline={[2300, 2350, 2400, 2480, 2520, 2510, 2520]}
+          sparkline={[]}
           target={formatCurrencyValue(2800)}
           targetAchievement={90.0}
         />
@@ -282,7 +314,7 @@ export default function DashboardPage() {
               <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 40, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
-                  dataKey="date" 
+                  dataKey="displayDate" 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} 
                   angle={-30}
                   textAnchor="end"
@@ -316,7 +348,7 @@ export default function DashboardPage() {
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
-                  dataKey="date" 
+                  dataKey="displayDate" 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
                   angle={-45}
                   textAnchor="end"
@@ -377,7 +409,7 @@ export default function DashboardPage() {
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
-                  dataKey="date" 
+                  dataKey="displayDate" 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
                   angle={-45}
                   textAnchor="end"
@@ -488,10 +520,10 @@ export default function DashboardPage() {
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={revenueInsights.monthly} margin={{ top: 10, right: 20, bottom: 60, left: 20 }}>
+              <BarChart data={filteredRevenueMonthly} margin={{ top: 10, right: 20, bottom: 60, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
-                  dataKey="month" 
+                  dataKey="displayMonth" 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
                   angle={-45}
                   textAnchor="end"

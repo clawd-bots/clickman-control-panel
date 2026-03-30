@@ -1,15 +1,17 @@
 'use client';
 import { useState, useMemo, useCallback } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
-
+import { useDateRange } from '@/components/DateProvider';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import {
   creativePerformance, creativeAISuggestions,
-  accountControlData, adChurnData, creativeChurnCohorts,
+  accountControlData, adChurnDataByPlatform, adChurnCampaigns, creativeChurnCohorts,
   productionSlugging, demographicsAge, demographicsGender, demographicsGenderAge,
+  targets,
 } from '@/lib/sample-data';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/components/CurrencyProvider';
+import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
 import { ChevronDown } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -66,13 +68,50 @@ function getAITitle(tab: string): string {
 
 export default function CreativePage() {
   const { currency, convertValue } = useCurrency();
+  const { dateRange } = useDateRange();
   const [activeTab, setActiveTab] = useState('Performance');
   const [platform, setPlatform] = useState('Meta');
   const [attrModel, setAttrModel] = useState('Linear All');
   const [attrWindow, setAttrWindow] = useState('7-day click / 1-day view');
   const [accountControlFilter, setAccountControlFilter] = useState('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
+  const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [genderFilter, setGenderFilter] = useState('all');
+  const [churnCpaMode, setChurnCpaMode] = useState<'cpa' | 'nccpa'>('cpa');
+  const [churnCampaignFilter, setChurnCampaignFilter] = useState('all');
+
+  // ─── Ad Churn derived data ───
+  const churnPlatformData = useMemo(() => {
+    const raw = adChurnDataByPlatform[platform] || adChurnDataByPlatform.Meta;
+    const filtered = filterByDateRange(raw, 'month', dateRange.startDate, dateRange.endDate);
+    const data = filtered.length > 0 ? filtered : raw;
+    return data.map(d => ({ ...d, displayMonth: formatDateLabel(d.month, 'month') }));
+  }, [platform, dateRange]);
+  const churnCampaignsForPlatform = useMemo(() => {
+    const campaigns = adChurnCampaigns[platform] || [];
+    return campaigns.filter(c => c.status === 'Active');
+  }, [platform]);
+  const churnFilteredCampaigns = useMemo(() => {
+    if (churnCampaignFilter === 'all') return churnCampaignsForPlatform;
+    return churnCampaignsForPlatform.filter(c => c.campaign === churnCampaignFilter);
+  }, [churnCampaignsForPlatform, churnCampaignFilter]);
+
+  // Target CPA values from targets
+  const targetCPA = useMemo(() => targets.find(t => t.metric === 'CAC')?.target || 500, []);
+  const targetNCCPA = useMemo(() => targets.find(t => t.metric === 'nCAC')?.target || 750, []);
+  const churnCpaTarget = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
+
+  // Wasted spend: spend on ads above CPA target
+  const wastedSpend = useMemo(() => {
+    const target = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
+    return churnFilteredCampaigns.reduce((total, c) => {
+      const cpa = churnCpaMode === 'cpa' ? c.cpa : c.ncCpa;
+      if (cpa > target) return total + c.spend;
+      return total;
+    }, 0);
+  }, [churnFilteredCampaigns, churnCpaMode, targetCPA, targetNCCPA]);
+
+  const totalChurnSpend = useMemo(() => churnFilteredCampaigns.reduce((t, c) => t + c.spend, 0), [churnFilteredCampaigns]);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -129,26 +168,54 @@ export default function CreativePage() {
     return suggestions[activeTab] || suggestions['Performance'];
   }, [activeTab, platform, campaignFilter, formatCurrencyValue]);
 
+  // Get active campaign names for the selected platform
+  const activeCampaigns = useMemo(() => {
+    const campaigns = creativePerformance
+      .filter(c => c.platform === platform && c.status === 'Active')
+      .map(c => (c as any).campaignName as string)
+      .filter(Boolean);
+    return [...new Set(campaigns)];
+  }, [platform]);
+
+  // Reset selected campaigns when platform changes
+  const handlePlatformChange = (p: string) => {
+    setPlatform(p);
+    setSelectedCampaigns([]);
+  };
+
   // Memoized filtering for better performance
   const filtered = useMemo(() => {
     return creativePerformance.filter(c => {
       const platformMatch = c.platform === platform;
       const campaignMatch = campaignFilter === 'all' || c.campaign === campaignFilter;
-      return platformMatch && campaignMatch;
+      const campaignNameMatch = selectedCampaigns.length === 0 || selectedCampaigns.includes((c as any).campaignName);
+      return platformMatch && campaignMatch && campaignNameMatch;
     });
-  }, [platform, campaignFilter]);
+  }, [platform, campaignFilter, selectedCampaigns]);
 
-  const paretoData = [...creativePerformance]
-    .filter(c => c.platform === platform) // Apply platform filter
-    .sort((a, b) => b.conversions - a.conversions)
-    .map((c) => ({
-      name: c.name.slice(0, 20),
-      conversions: c.conversions,
-      cumPct: 0,
-    }));
-  const total = paretoData.reduce((s, c) => s + c.conversions, 0);
-  let cum = 0;
-  paretoData.forEach(d => { cum += d.conversions; d.cumPct = Math.round((cum / total) * 100); });
+  // Pareto: group by angle, exclude Google (search ≠ creative angles)
+  const paretoData = useMemo(() => {
+    const nonGoogle = creativePerformance.filter(c => c.platform !== 'Google' && (c as any).angle);
+    const platformFiltered = platform === 'Google'
+      ? nonGoogle // If Google selected, show all non-Google combined
+      : nonGoogle.filter(c => c.platform === platform);
+    // Group by angle
+    const angleMap: Record<string, { conversions: number; spend: number; roas: number; ads: number }> = {};
+    platformFiltered.forEach(c => {
+      const angle = (c as any).angle as string;
+      if (!angleMap[angle]) angleMap[angle] = { conversions: 0, spend: 0, roas: 0, ads: 0 };
+      angleMap[angle].conversions += c.conversions;
+      angleMap[angle].spend += c.spend;
+      angleMap[angle].ads += 1;
+    });
+    const sorted = Object.entries(angleMap)
+      .map(([angle, d]) => ({ angle, ...d, roas: d.spend > 0 ? (d.conversions * 2000) / d.spend : 0 }))
+      .sort((a, b) => b.conversions - a.conversions);
+    const total = sorted.reduce((s, c) => s + c.conversions, 0);
+    let cum = 0;
+    return sorted.map(d => { cum += d.conversions; return { ...d, cumPct: total > 0 ? Math.round((cum / total) * 100) : 0 }; });
+  }, [platform]);
+  const paretoTotal = paretoData.reduce((s, c) => s + c.conversions, 0);
 
   const totalSlugging = productionSlugging.reduce((a, b) => ({ launched: a.launched + b.launched, hits: a.hits + b.hits }), { launched: 0, hits: 0 });
 
@@ -169,8 +236,11 @@ export default function CreativePage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="px-1">
+      <div className="px-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
         <h2 className="text-lg sm:text-xl font-semibold">Creative & MTA Control Panel</h2>
+        <span className="text-xs text-text-tertiary">
+          {dateRange.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {dateRange.endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        </span>
       </div>
 
       {/* Tab Navigation */}
@@ -188,58 +258,86 @@ export default function CreativePage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mx-1">
-        {/* Platform controls - hide for Production & Slugging and Ad Churn */}
-        {!['Slugging Rate', 'Ad Churn'].includes(activeTab) && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
-            <div className="flex gap-1 flex-wrap">
-              {platforms.map(p => (
-                <button key={p} onClick={() => setPlatform(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {/* Campaign Filter - only show for Performance tab */}
-        {activeTab === 'Performance' && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-text-secondary font-medium shrink-0">Campaign:</span>
-            <div className="flex gap-1 flex-wrap">
-              {[
-                { key: 'all', label: 'All' },
-                { key: 'scale', label: 'Scale' },
-                { key: 'kill', label: 'Kill' },
-                { key: 'test', label: 'Test' },
-                { key: 'learn', label: 'Learn' }
-              ].map(f => (
-                <button key={f.key} onClick={() => setCampaignFilter(f.key)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${campaignFilter === f.key ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {/* Attribution controls - hide for Production & Slugging and Ad Churn */}
-        {!['Slugging Rate', 'Ad Churn'].includes(activeTab) && (
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+      <div className="flex flex-col gap-3 mx-1">
+        {/* Row 1: Platform + Attribution */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          {!['Slugging Rate'].includes(activeTab) && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-secondary font-medium shrink-0">Model:</span>
-              <div className="relative">
-                <select value={attrModel} onChange={(e) => setAttrModel(e.target.value)} className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors">
-                  {attributionModels.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+              <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
+              <div className="flex gap-1 flex-wrap">
+                {platforms.map(p => (
+                  <button key={p} onClick={() => handlePlatformChange(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+                    {p}
+                  </button>
+                ))}
               </div>
             </div>
+          )}
+          {!['Slugging Rate'].includes(activeTab) && (
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:ml-auto">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-secondary font-medium shrink-0">Model:</span>
+                <div className="relative">
+                  <select value={attrModel} onChange={(e) => setAttrModel(e.target.value)} className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors">
+                    {attributionModels.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-secondary font-medium shrink-0">Window:</span>
+                <div className="relative">
+                  <select value={attrWindow} onChange={(e) => setAttrWindow(e.target.value)} className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors">
+                    {attributionWindows.map(w => <option key={w} value={w}>{w}</option>)}
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        {/* Row 2: Campaign filters (Performance tab only) */}
+        {activeTab === 'Performance' && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            {activeCampaigns.length > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-secondary font-medium shrink-0">Campaign:</span>
+                <div className="relative">
+                  <select
+                    value={selectedCampaigns.length === 0 ? 'all' : selectedCampaigns.length === 1 ? selectedCampaigns[0] : 'multiple'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === 'all') {
+                        setSelectedCampaigns([]);
+                      } else {
+                        setSelectedCampaigns([val]);
+                      }
+                    }}
+                    className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors"
+                  >
+                    <option value="all">All Campaigns</option>
+                    {activeCampaigns.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+                </div>
+              </div>
+            )}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-text-secondary font-medium shrink-0">Window:</span>
-              <div className="relative">
-                <select value={attrWindow} onChange={(e) => setAttrWindow(e.target.value)} className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors">
-                  {attributionWindows.map(w => <option key={w} value={w}>{w}</option>)}
-                </select>
-                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+              <span className="text-xs text-text-secondary font-medium shrink-0">Strategy:</span>
+              <div className="flex gap-1 flex-wrap">
+                {[
+                  { key: 'all', label: 'All' },
+                  { key: 'scale', label: 'Scale' },
+                  { key: 'kill', label: 'Kill' },
+                  { key: 'test', label: 'Test' },
+                  { key: 'learn', label: 'Learn' }
+                ].map(f => (
+                  <button key={f.key} onClick={() => setCampaignFilter(f.key)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${campaignFilter === f.key ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+                    {f.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -415,12 +513,47 @@ export default function CreativePage() {
       {/* ═══════════════════════ ACCOUNT CONTROL (Scatter Plot) ═══════════════════════ */}
       {activeTab === 'Account Control' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
-              <span className="truncate">Account Control, CPA vs Spend</span>
-              <InfoTooltip metric="Account Control Chart" />
-            </h3>
-            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+          <div className="flex flex-col gap-3 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+                <span className="truncate">Account Control, CPA vs Spend</span>
+                <InfoTooltip metric="Account Control Chart" />
+              </h3>
+              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+            </div>
+            {/* CPA Target Toggle + Wasted Spend */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-end sm:justify-end">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-wider text-text-tertiary font-medium">Target CPA</span>
+                <div className="flex bg-bg-elevated border border-border rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setChurnCpaMode('cpa')}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${churnCpaMode === 'cpa' ? 'bg-brand-blue text-white' : 'text-text-secondary hover:text-text-primary'}`}
+                  >All Customers ({formatCurrencyValue(targetCPA)})</button>
+                  <button
+                    onClick={() => setChurnCpaMode('nccpa')}
+                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${churnCpaMode === 'nccpa' ? 'bg-brand-blue text-white' : 'text-text-secondary hover:text-text-primary'}`}
+                  >New Customers ({formatCurrencyValue(targetNCCPA)})</button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] uppercase tracking-wider text-text-tertiary font-medium">Wasted Spend</span>
+                <div className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 ${wastedSpend > 0 ? 'bg-red-500/10 border-red-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+                  <div className={`w-2 h-2 rounded-full ${wastedSpend > 0 ? 'bg-red-500 animate-pulse' : 'bg-emerald-500'}`} />
+                  <span className={`text-sm font-semibold ${wastedSpend > 0 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {formatCurrencyValue(wastedSpend)}
+                  </span>
+                  {totalChurnSpend > 0 && (
+                    <span className="text-[10px] text-text-tertiary">
+                      ({((wastedSpend / totalChurnSpend) * 100).toFixed(1)}% of spend)
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] text-text-tertiary">
+                  Campaigns above {churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'} target of {formatCurrencyValue(churnCpaTarget)}
+                </span>
+              </div>
+            </div>
           </div>
           <div className="flex gap-2 sm:gap-4 mb-4 flex-wrap">
             {Object.entries(zoneLabels).map(([zone, label]) => (
@@ -719,29 +852,31 @@ export default function CreativePage() {
           </div>
           <div className="min-h-[320px] sm:min-h-[380px]" style={{ width: '100%', height: '380px' }}>
             <ResponsiveContainer width="100%" height={380}>
-              <BarChart data={adChurnData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+              <ComposedChart data={churnPlatformData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
-                <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
+                <XAxis dataKey="displayMonth" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
+                <YAxis yAxisId="spend" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
+                <YAxis yAxisId="cpa" orientation="right" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
                 <Tooltip
                   contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
                   formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
                 />
-                <Bar dataKey="Last 7 Days" stackId="churn" fill="#1e3a5f" />
-                <Bar dataKey="8-14 Days" stackId="churn" fill="#2563EB" />
-                <Bar dataKey="15-30 Days" stackId="churn" fill="#4A6BD6" />
-                <Bar dataKey="31-90 Days" stackId="churn" fill="#6B8DE8" />
-                <Bar dataKey="91-180 Days" stackId="churn" fill="#93B4F5" />
-                <Bar dataKey="180+ Days" stackId="churn" fill="#C5D8FB" radius={[3, 3, 0, 0]} />
-              </BarChart>
+                <Bar yAxisId="spend" dataKey="Last 7 Days" stackId="churn" fill="#1e3a5f" />
+                <Bar yAxisId="spend" dataKey="8-14 Days" stackId="churn" fill="#2563EB" />
+                <Bar yAxisId="spend" dataKey="15-30 Days" stackId="churn" fill="#4A6BD6" />
+                <Bar yAxisId="spend" dataKey="31-90 Days" stackId="churn" fill="#6B8DE8" />
+                <Bar yAxisId="spend" dataKey="91-180 Days" stackId="churn" fill="#93B4F5" />
+                <Bar yAxisId="spend" dataKey="180+ Days" stackId="churn" fill="#C5D8FB" radius={[3, 3, 0, 0]} />
+                <Line yAxisId="cpa" type="monotone" dataKey="cpa" stroke="#EDBF63" strokeWidth={2} dot={{ fill: '#EDBF63', r: 4 }} name={churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'} />
+                <ReferenceLine yAxisId="cpa" y={churnCpaTarget} stroke="#EF4444" strokeDasharray="6 4" strokeWidth={2} label={{ value: `${churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'} Target`, fill: '#EF4444', fontSize: 10, position: 'right' }} />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
             <div className="mt-4 bg-bg-elevated border border-border rounded-lg p-3">
               <p className="text-xs text-text-secondary leading-relaxed">
                 <span className="font-medium text-text-primary">Reading this chart:</span> Dark bars = newest ads (last 7 days). Lighter bars = older ads.
-                A healthy account shows new creative steadily taking over spend from older creative.
-                If the lightest bars (180+ days) dominate, you're running on legacy creative and vulnerable to fatigue.
-                March shows a positive trend, new creative (dark) is gaining share.
+                Gold line = actual {churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'}. Red dotted line = target ({formatCurrencyValue(churnCpaTarget)} from Targets & Goals).
+                A healthy account shows new creative steadily taking over spend from older creative while keeping CPA below target.
               </p>
             </div>
           </div>
@@ -821,9 +956,9 @@ export default function CreativePage() {
           </div>
           <div className="min-h-[320px] sm:min-h-[380px]" style={{ width: '100%', height: '380px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={productionSlugging} margin={{ top: 20, right: 40, bottom: 10, left: 20 }}>
+              <ComposedChart data={productionSlugging.map(d => ({ ...d, displayMonth: formatDateLabel(d.month, 'month') }))} margin={{ top: 20, right: 40, bottom: 10, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
+                <XAxis dataKey="displayMonth" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
                 <YAxis yAxisId="left" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} label={{ value: 'Ads', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${v}%`} domain={[0, 50]} label={{ value: 'Hit Rate', angle: 90, position: 'insideRight', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} />
                 <Tooltip
@@ -875,63 +1010,112 @@ export default function CreativePage() {
 
       {/* ═══════════════════════ PARETO ═══════════════════════ */}
       {activeTab === 'Pareto' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-text-secondary flex items-center gap-2">
-              <span>Pareto Distribution</span>
-              <InfoTooltip metric="Pareto" />
-            </h3>
-            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
-          </div>
-          <div className="flex items-center justify-between mb-4 pb-2 border-b border-border/30">
-            <div className="text-xs text-text-tertiary">
-              Attribution: <strong className="text-text-secondary">{attrModel}</strong> • Window: <strong className="text-text-secondary">{attrWindow}</strong>
+        <div className="space-y-4 sm:space-y-6 mx-1">
+          {/* Note: Google excluded */}
+          {platform === 'Google' && (
+            <div className="bg-warm-gold/10 border border-warm-gold/30 rounded-lg px-4 py-2 text-xs text-warm-gold">
+              Google Search ads don't have creative angles. Showing all non-Google platforms combined.
             </div>
-            <div className="text-xs text-text-tertiary">
-              Platform: <strong className="text-text-secondary">{platform}</strong>
-            </div>
-          </div>
-          <div className="min-h-[320px]">
-            <ResponsiveContainer width="100%" height={320}>
-              <BarChart data={paretoData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="name" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-30} textAnchor="end" height={80} />
-                <YAxis 
-                  yAxisId="left" 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  label={{ value: 'Number of Creatives', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
-                />
-                <YAxis 
-                  yAxisId="right" 
-                  orientation="right" 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  domain={[0, 100]} 
-                  tickFormatter={v => `${v}%`} 
-                  label={{ value: 'Cumulative %', angle: 90, position: 'insideRight', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
-                />
-                <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
-                <Bar yAxisId="left" dataKey="conversions" name="Conversions" fill="#4A6BD6" radius={[3, 3, 0, 0]} />
-                <Bar yAxisId="right" dataKey="cumPct" name="Cumulative %" fill="#EDBF63" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 bg-warm-gold/5 border border-warm-gold/20 rounded-lg p-4">
+          )}
+          <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
             <div className="flex items-center justify-between mb-2">
-              <div className="text-sm font-medium text-warm-gold">80% Rule Analysis</div>
+              <h3 className="text-sm font-medium text-text-secondary flex items-center gap-2">
+                <span>Pareto by Creative Angle</span>
+                <InfoTooltip metric="Pareto" />
+              </h3>
+              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+            </div>
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-border/30">
+              <div className="text-xs text-text-tertiary">
+                Attribution: <strong className="text-text-secondary">{attrModel}</strong> • Window: <strong className="text-text-secondary">{attrWindow}</strong>
+              </div>
+              <div className="text-xs text-text-tertiary">
+                Platform: <strong className="text-text-secondary">{platform === 'Google' ? 'All (excl. Google)' : platform}</strong>
+              </div>
+            </div>
+            <div className="min-h-[320px]">
+              <ResponsiveContainer width="100%" height={360}>
+                <ComposedChart data={paretoData} margin={{ top: 10, right: 20, bottom: 10, left: 10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis dataKey="angle" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
+                    label={{ value: 'Conversions', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
+                    domain={[0, 100]}
+                    tickFormatter={(v: number) => `${v}%`}
+                    label={{ value: 'Cumulative %', angle: 90, position: 'insideRight', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
+                    formatter={(value: any, name: any) => {
+                      if (name === 'Spend') return [formatCurrencyValue(value), name];
+                      if (name === 'Cumulative %') return [`${value}%`, name];
+                      return [value, name];
+                    }}
+                  />
+                  <Bar yAxisId="left" dataKey="conversions" name="Conversions" fill="#4A6BD6" radius={[3, 3, 0, 0]} />
+                  <Line yAxisId="right" type="monotone" dataKey="cumPct" name="Cumulative %" stroke="#EDBF63" strokeWidth={2} dot={{ fill: '#EDBF63', r: 4 }} />
+                  <ReferenceLine yAxisId="right" y={80} stroke="#EF4444" strokeDasharray="6 4" strokeWidth={1.5} label={{ value: '80%', fill: '#EF4444', fontSize: 10, position: 'right' }} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Angle breakdown table */}
+            <div className="overflow-x-auto mt-4">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-2 px-2 text-text-tertiary font-medium">Angle</th>
+                    <th className="text-right py-2 px-2 text-text-tertiary font-medium">Ads</th>
+                    <th className="text-right py-2 px-2 text-text-tertiary font-medium">Conversions</th>
+                    <th className="text-right py-2 px-2 text-text-tertiary font-medium">% of Total</th>
+                    <th className="text-right py-2 px-2 text-text-tertiary font-medium">Spend</th>
+                    <th className="text-right py-2 px-2 text-text-tertiary font-medium">Cum. %</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paretoData.map((d) => (
+                    <tr key={d.angle} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
+                      <td className="py-2 px-2 text-text-primary font-medium">{d.angle}</td>
+                      <td className="py-2 px-2 text-right text-text-secondary">{d.ads}</td>
+                      <td className="py-2 px-2 text-right text-text-secondary">{d.conversions}</td>
+                      <td className="py-2 px-2 text-right text-text-secondary">{paretoTotal > 0 ? ((d.conversions / paretoTotal) * 100).toFixed(1) : 0}%</td>
+                      <td className="py-2 px-2 text-right text-text-secondary">{formatCurrencyValue(d.spend)}</td>
+                      <td className="py-2 px-2 text-right font-semibold text-warm-gold">{d.cumPct}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="bg-warm-gold/5 border border-warm-gold/20 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-medium text-warm-gold">80/20 Rule — Angle Analysis</div>
               <InfoTooltip metric="Pareto 80/20 Analysis" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div>
-                <div className="text-text-secondary mb-1">Top 20% of creatives generate:</div>
-                <div className="text-lg font-bold text-warm-gold">~80% of results</div>
+                <div className="text-text-secondary mb-1">Total Angles</div>
+                <div className="text-lg font-bold text-text-primary">{paretoData.length}</div>
               </div>
               <div>
-                <div className="text-text-secondary mb-1">To improve 80% outcome by 25%:</div>
-                <div className="text-lg font-bold text-text-primary">Focus budget on top 3-4 creatives</div>
+                <div className="text-text-secondary mb-1">Angles driving 80%+ conversions</div>
+                <div className="text-lg font-bold text-warm-gold">{paretoData.filter(d => d.cumPct <= 80 || (paretoData.indexOf(d) === 0)).length}</div>
+              </div>
+              <div>
+                <div className="text-text-secondary mb-1">Top angle share</div>
+                <div className="text-lg font-bold text-brand-blue">{paretoData[0] ? `${paretoData[0].angle} (${paretoTotal > 0 ? ((paretoData[0].conversions / paretoTotal) * 100).toFixed(0) : 0}%)` : '—'}</div>
               </div>
             </div>
             <div className="mt-3 text-xs text-text-secondary">
-              <strong>Action:</strong> Stop spreading budget across weak performers. Double down on your proven winners and create variations of your top 20% performers.
+              <strong>Action:</strong> Identify winning angles and produce more variations within those themes. Kill angles that contribute &lt;5% of conversions and reallocate budget to top performers.
             </div>
           </div>
         </div>
@@ -1046,7 +1230,7 @@ export default function CreativePage() {
             ) : (
               <div className="min-h-[320px]" style={{ width: '100%', height: '320px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={demographicsGenderAge} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                  <BarChart data={demographicsGenderAge} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                     <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
                     <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
@@ -1054,30 +1238,20 @@ export default function CreativePage() {
                       contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11 }}
                       formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
                     />
-                    <Area type="monotone" dataKey="F 18-24" stackId="demo" fill="#fca5a5" stroke="#fca5a5" fillOpacity={0.85} />
-                    <Area type="monotone" dataKey="F 25-34" stackId="demo" fill="#ef4444" stroke="#ef4444" fillOpacity={0.85} />
-                    <Area type="monotone" dataKey="F 35-44" stackId="demo" fill="#dc2626" stroke="#dc2626" fillOpacity={0.85} />
-                    <Area type="monotone" dataKey="F 45-54" stackId="demo" fill="#b91c1c" stroke="#b91c1c" fillOpacity={0.85} />
-                    <Area type="monotone" dataKey="F 55+" stackId="demo" fill="#7f1d1d" stroke="#7f1d1d" fillOpacity={0.85} />
-                    <Area type="monotone" dataKey="M 18-24" stackId="demo" fill="#93c5fd" stroke="#93c5fd" fillOpacity={0.85} />
-                    <Area type="monotone" dataKey="M 25-34" stackId="demo" fill="#3b82f6" stroke="#3b82f6" fillOpacity={0.85} />
-                    <Area type="monotone" dataKey="M 35-44" stackId="demo" fill="#2563eb" stroke="#2563eb" fillOpacity={0.85} />
-                    <Area type="monotone" dataKey="M 45-54" stackId="demo" fill="#1d4ed8" stroke="#1d4ed8" fillOpacity={0.85} />
-                    <Area type="monotone" dataKey="M 55+" stackId="demo" fill="#1e3a8a" stroke="#1e3a8a" fillOpacity={0.85} />
-                  </AreaChart>
+                    <Bar dataKey="F 18-24" stackId="demo" fill="#fca5a5" />
+                    <Bar dataKey="F 25-34" stackId="demo" fill="#ef4444" />
+                    <Bar dataKey="F 35-44" stackId="demo" fill="#dc2626" />
+                    <Bar dataKey="F 45-54" stackId="demo" fill="#b91c1c" />
+                    <Bar dataKey="F 55+" stackId="demo" fill="#7f1d1d" />
+                    <Bar dataKey="M 18-24" stackId="demo" fill="#93c5fd" />
+                    <Bar dataKey="M 25-34" stackId="demo" fill="#3b82f6" />
+                    <Bar dataKey="M 35-44" stackId="demo" fill="#2563eb" />
+                    <Bar dataKey="M 45-54" stackId="demo" fill="#1d4ed8" />
+                    <Bar dataKey="M 55+" stackId="demo" fill="#1e3a8a" radius={[3, 3, 0, 0]} />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             )}
-          </div>
-
-          {/* Insight callout */}
-          <div className="bg-success/5 border border-success/20 rounded-lg p-4">
-            <div className="text-xs font-medium text-success mb-1">💡 Key Insight</div>
-            <p className="text-xs text-text-secondary leading-relaxed">
-              Women 25-44 drive 62% of conversions at the lowest CPA ({formatCurrencyValue(613)}-{formatCurrencyValue(656)} vs {formatCurrencyValue(724)}-{formatCurrencyValue(1250)} for other segments).
-              This is your core buying demographic. Align creative production to this audience, if you're producing TikTok-style Gen Z content
-              but your buyers are 25-44 women, you're misallocating resources.
-            </p>
           </div>
         </div>
       )}

@@ -241,6 +241,28 @@ export const finalItems: FinalItem[] = [
     ],
   },
   {
+    id: 'fi-12',
+    title: 'Medusa API Key',
+    why: 'Medusa is the commerce backend powering AndYou. API access is needed to pull live COGS, unit sales, revenue, product data, and order-level details directly into the dashboard and P&L.',
+    owner: 'jordan',
+    status: 'pending',
+    category: 'integration',
+    pages: ['Dashboard', 'P&L', 'Cash Flow'],
+    actions: [
+      {
+        label: 'Generate a Medusa API key',
+        steps: [
+          'Log in to your Medusa admin panel',
+          'Go to Settings → API Key Management (or equivalent)',
+          'Create a new API key with read-only access',
+          'Ensure the key has access to: Products, Orders, Inventory, and Pricing',
+          'Send the API key and your Medusa backend URL (e.g. https://api.andyou.ph) to Alfred via WhatsApp',
+          'This will replace sample data with live COGS, unit sales, revenue, and product metrics',
+        ],
+      },
+    ],
+  },
+  {
     id: 'fi-11',
     title: 'Anthropic API Key Request',
     why: 'AI Intelligence sections throughout the dashboard need Anthropic Claude API access to generate insights, analyze data, and provide strategic recommendations.',
