@@ -82,11 +82,13 @@ export default function AttributionPage() {
         ...item,
         status: liveTrackingData.status,
         events: `${liveTrackingData.totalEventsPerDay.toLocaleString()}/day`,
+        matchRate: 'N/A' as const,
+        source: undefined as unknown as typeof item.source,
         eventBreakdown: liveTrackingData.events.map((ev) => ({
           event: ev.event,
           count: ev.count,
           matchRate: 'N/A' as const,
-          type: 'Multiple' as const,
+          type: undefined as unknown as 'Multiple',
         })),
       };
     }
@@ -480,8 +482,8 @@ export default function AttributionPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-text-secondary">
                     <span>Events: {item.events}</span>
-                    <span>Match Quality: {item.matchRate}</span>
-                    {item.source && (
+                    {!(item.system === 'Google Ads Tag' && trackingIsLive) && <span>Match Quality: {item.matchRate}</span>}
+                    {!(item.system === 'Google Ads Tag' && trackingIsLive) && item.source && (
                       <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
                         item.source === 'Browser' ? 'bg-blue-500/15 text-blue-500' :
                         item.source === 'Server' ? 'bg-purple-500/15 text-purple-500' :
@@ -516,7 +518,7 @@ export default function AttributionPage() {
                           }`} />
                           <span className="text-sm font-medium text-text-primary">{event.event}</span>
                           {/* @ts-ignore - event.type is added to sample data */}
-                          {event.type && (
+                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && event.type && (
                             <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
                               event.type === 'Browser' ? 'bg-blue-500/15 text-blue-500' :
                               event.type === 'Server' ? 'bg-purple-500/15 text-purple-500' :
@@ -529,8 +531,8 @@ export default function AttributionPage() {
                         </div>
                         <div className="flex items-center gap-4 text-xs text-text-secondary">
                           <span>Count: {event.count}/day</span>
-                          <span>Match Quality: {event.matchRate}</span>
-                          {event.type && <span>Source: {event.type === 'Multiple' ? 'Multiple Sources' : event.type}</span>}
+                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && <span>Match Quality: {event.matchRate}</span>}
+                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && event.type && <span>Source: {event.type === 'Multiple' ? 'Multiple Sources' : event.type}</span>}
                         </div>
                       </div>
                     ))}

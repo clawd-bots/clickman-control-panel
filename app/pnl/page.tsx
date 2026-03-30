@@ -467,7 +467,7 @@ export default function PnLPage() {
                     if (googleAdsIdx !== -1) {
                       children[googleAdsIdx] = {
                         ...children[googleAdsIdx],
-                        value: -Math.round(liveGoogleAdsSpend * 100),  // Convert to cents-style like other values
+                        value: -Math.round(liveGoogleAdsSpend),
                         label: '  Google Ads',
                       };
                     }
