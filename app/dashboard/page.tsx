@@ -6,7 +6,7 @@ import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import DataSource from '@/components/ui/DataSource';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
-import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
+import { filterByDateRange, formatDateLabel, aggregateToWeeks } from '@/lib/dateUtils';
 
 import { kpiCards, dailyMetrics, channelAttribution, productKPIs, revenueInsights } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
@@ -42,8 +42,8 @@ export default function DashboardPage() {
     const filteredSample = filterByDateRange(dailyMetrics, 'date', startDate, endDate);
     
     if (filteredSample.length > 0) {
-      // We have real sample data for this range - use it with display labels
-      return filteredSample.map(d => ({
+      // Map to chart-friendly shape
+      const daily = filteredSample.map(d => ({
         date: d.date,
         displayDate: formatDateLabel(d.date, 'day'),
         revenue: d.revenue,
@@ -53,6 +53,12 @@ export default function DashboardPage() {
         sessions: d.sessions,
         profit: d.revenue - d.spend,
       }));
+
+      // Aggregate to weeks when range > 30 days for readability
+      if (daily.length > 30) {
+        return aggregateToWeeks(daily, 'date');
+      }
+      return daily;
     }
     
     // No sample data for this range - generate synthetic data
