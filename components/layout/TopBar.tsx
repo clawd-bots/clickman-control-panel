@@ -1,7 +1,6 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import Image from 'next/image';
 import { Calendar, ChevronDown, RefreshCw, User, Sun, Moon, Menu, DollarSign } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { useSidebar } from '@/components/layout/SidebarContext';
@@ -164,20 +163,10 @@ export default function TopBar() {
         >
           <Menu size={20} />
         </button>
-        <Image 
-          src="/andyou-logo.png" 
-          alt="AndYou" 
-          width={32}
-          height={24}
-          className="h-6 w-auto shrink-0" 
-        />
-        <Image 
-          src={theme === 'light' ? '/clickman-logo-black.svg' : '/clickman-logo-white.svg'} 
+        <img 
+          src="/clickman-logo-black.png" 
           alt="Click-Man Control Panel" 
-          width={120}
-          height={32}
           className="h-6 sm:h-8 w-auto shrink-0"
-          priority
         />
       </div>
 
