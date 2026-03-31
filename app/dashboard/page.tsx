@@ -411,7 +411,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="revenue-chart">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue & Marketing Costs</h3>
-            <div className="flex items-center gap-2 shrink-0"><div className="flex items-center gap-2"><DataSource source="Triple Whale" /><LiveBadge /></div><LiveBadge /></div>
+            <div className="flex items-center gap-2 shrink-0"><DataSource source="Triple Whale" /><LiveBadge /></div>
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
@@ -445,7 +445,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="orders-chart">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Net Orders & New Customers</h3>
-            <div className="flex items-center gap-2 shrink-0"><div className="flex items-center gap-2"><DataSource source="Triple Whale" /><LiveBadge /></div><LiveBadge /></div>
+            <div className="flex items-center gap-2 shrink-0"><DataSource source="Triple Whale" /><LiveBadge /></div>
           </div>
           <div className="min-h-[260px]">
             <ResponsiveContainer width="100%" height={260}>
@@ -620,7 +620,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="revenue-composition">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue Composition (NC vs RC)</h3>
-            <div className="flex items-center gap-2 shrink-0"><div className="flex items-center gap-2"><DataSource source="Triple Whale" /><LiveBadge /></div><LiveBadge /></div>
+            <div className="flex items-center gap-2 shrink-0"><DataSource source="Triple Whale" /><LiveBadge /></div>
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
