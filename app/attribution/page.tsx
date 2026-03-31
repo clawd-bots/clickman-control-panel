@@ -9,6 +9,7 @@ import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
 import { fetchTripleWhaleData, getMetric, TWData } from '@/lib/triple-whale-client';
+import { fetchGA4Data, getGA4Metric, GA4Data } from '@/lib/ga4-client';
 import { attributionSurvey, trackingHealth as sampleTrackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
 import { Star, GitBranch, Activity, Database, Layers, Sparkles, ChevronDown } from 'lucide-react';
 import {
@@ -46,15 +47,22 @@ export default function AttributionPage() {
   const [activeLayer, setActiveLayer] = useState<string>('star');
   const [twData, setTwData] = useState<TWData | null>(null);
   const [twLoading, setTwLoading] = useState(true);
+  const [ga4Data, setGA4Data] = useState<GA4Data | null>(null);
+  const [ga4Loading, setGA4Loading] = useState(true);
 
   useEffect(() => {
     setTwLoading(true);
+    setGA4Loading(true);
     const startDate = dateRange.startDate.toISOString().split('T')[0];
     const endDate = dateRange.endDate.toISOString().split('T')[0];
     fetchTripleWhaleData(startDate, endDate, 'summary')
       .then(setTwData)
       .catch(console.error)
       .finally(() => setTwLoading(false));
+    fetchGA4Data(startDate, endDate, 'summary')
+      .then(setGA4Data)
+      .catch(console.error)
+      .finally(() => setGA4Loading(false));
   }, [dateRange]);
   const [cohortAttrModel, setCohortAttrModel] = useState('First Click');
   const [cohortAttrWindow, setCohortAttrWindow] = useState('7-day click / 1-day view');
@@ -90,7 +98,7 @@ export default function AttributionPage() {
     fetchTrackingData();
   }, [fetchTrackingData]);
 
-  // Merge live Google Ads data into tracking health array
+  // Merge live Google Ads + GA4 data into tracking health array
   const trackingHealth = sampleTrackingHealth.map((item) => {
     if (item.system === 'Google Ads Tag' && liveTrackingData) {
       return {
@@ -105,6 +113,24 @@ export default function AttributionPage() {
           matchRate: 'N/A' as const,
           type: undefined as unknown as 'Multiple',
         })),
+      };
+    }
+    if (item.system === 'GA4' && ga4Data?.summary) {
+      const totalEvents = getGA4Metric(ga4Data, 'eventCount');
+      const dayCount = Math.max(1, Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24)));
+      const eventsPerDay = Math.round(totalEvents / dayCount);
+      return {
+        ...item,
+        status: 'healthy' as const,
+        events: `${eventsPerDay.toLocaleString()}/day`,
+        matchRate: 'N/A' as const,
+        source: 'Multiple Sources' as const,
+        eventBreakdown: [
+          { event: 'page_view', count: getGA4Metric(ga4Data, 'screenPageViews').toLocaleString(), matchRate: 'N/A' as const, type: 'Multiple' as const },
+          { event: 'add_to_cart', count: getGA4Metric(ga4Data, 'addToCarts').toLocaleString(), matchRate: 'N/A' as const, type: 'Multiple' as const },
+          { event: 'begin_checkout', count: getGA4Metric(ga4Data, 'checkouts').toLocaleString(), matchRate: 'N/A' as const, type: 'Multiple' as const },
+          { event: 'purchase', count: getGA4Metric(ga4Data, 'ecommercePurchases').toLocaleString(), matchRate: 'N/A' as const, type: 'Multiple' as const },
+        ],
       };
     }
     return item;
@@ -147,7 +173,7 @@ export default function AttributionPage() {
       stopDoing: ['Stop trusting individual platform ROAS numbers at face value, always cross-reference with MER'],
     },
     trunk: {
-      working: ['Meta Pixel + CAPI dual setup achieving 89-92% match rates', 'GA4 processing 22,400 events/day with stable tracking'],
+      working: ['Meta Pixel + CAPI dual setup achieving 89-92% match rates', ga4Data ? `GA4 processing ${Math.round(getGA4Metric(ga4Data, 'eventCount') / Math.max(1, Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24)))).toLocaleString()} events/day with stable tracking` : 'GA4 processing 22,400 events/day with stable tracking'],
       notWorking: ['Server-side GTM is completely down (0 events/day), losing ~15% of conversion data', 'TikTok Pixel match rate at 71%, significant data loss'],
       doNext: ['Fix Server-side GTM immediately, this is the #1 priority before any budget decisions', 'Improve TikTok tracking with enhanced match keys (email, phone hashing)'],
       stopDoing: ['Stop making budget allocation decisions while server-side GTM is broken'],
@@ -176,7 +202,7 @@ export default function AttributionPage() {
 
 
 
-  if (twLoading) {
+  if (twLoading || ga4Loading) {
     return (
       <div className="space-y-4 sm:space-y-6">
         <h2 className="text-lg sm:text-xl font-semibold">Attribution Framework</h2>
@@ -501,6 +527,9 @@ export default function AttributionPage() {
                         LIVE
                       </span>
                     )}
+                    {item.system === 'GA4' && ga4Data?.summary && (
+                      <LiveBadge />
+                    )}
                     <InfoTooltip metric={item.system} />
                     <button
                       onClick={() => toggleSystemExpansion(item.system)}
@@ -511,8 +540,8 @@ export default function AttributionPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-text-secondary">
                     <span>Events: {item.events}</span>
-                    {!(item.system === 'Google Ads Tag' && trackingIsLive) && <span>Match Quality: {item.matchRate}</span>}
-                    {!(item.system === 'Google Ads Tag' && trackingIsLive) && item.source && (
+                    {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && <span>Match Quality: {item.matchRate}</span>}
+                    {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && item.source && (
                       <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
                         item.source === 'Browser' ? 'bg-blue-500/15 text-blue-500' :
                         item.source === 'Server' ? 'bg-purple-500/15 text-purple-500' :

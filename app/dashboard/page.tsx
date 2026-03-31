@@ -10,6 +10,7 @@ import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { filterByDateRange, formatDateLabel, aggregateToWeeks } from '@/lib/dateUtils';
 import { fetchTripleWhaleData, getMetric, getDailyData, TWData } from '@/lib/triple-whale-client';
+import { fetchGA4Data, getGA4Metric, GA4Data } from '@/lib/ga4-client';
 
 import { kpiCards, dailyMetrics, channelAttribution, productKPIs, revenueInsights } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
@@ -32,15 +33,22 @@ export default function DashboardPage() {
   const [attributionWindow, setAttributionWindow] = useState('7-day/1-day');
   const [twData, setTwData] = useState<TWData | null>(null);
   const [twLoading, setTwLoading] = useState(true);
+  const [ga4Data, setGA4Data] = useState<GA4Data | null>(null);
+  const [ga4Loading, setGA4Loading] = useState(true);
 
   useEffect(() => {
     setTwLoading(true);
+    setGA4Loading(true);
     const startDate = dateRange.startDate.toISOString().split('T')[0];
     const endDate = dateRange.endDate.toISOString().split('T')[0];
     fetchTripleWhaleData(startDate, endDate, 'all')
       .then(setTwData)
       .catch(console.error)
       .finally(() => setTwLoading(false));
+    fetchGA4Data(startDate, endDate, 'summary')
+      .then(setGA4Data)
+      .catch(console.error)
+      .finally(() => setGA4Loading(false));
   }, [dateRange]);
 
   // Helper function to format currency with current context
@@ -292,7 +300,7 @@ export default function DashboardPage() {
     ];
   };
 
-  if (twLoading) {
+  if (twLoading || ga4Loading) {
     return (
       <div className="space-y-4 sm:space-y-6">
         <div>
@@ -504,14 +512,15 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary">Marketing Insights</h3>
-            <DataSource source="Google Analytics" />
+            <div className="flex items-center gap-2"><DataSource source="Google Analytics" />{ga4Data && <LiveBadge />}</div>
           </div>
           {[
-            { label: 'Sessions', value: twData ? getMetric(twData, 'sessions').toLocaleString() : '33,850', change: 8.2 },
+            { label: 'Sessions', value: ga4Data ? getGA4Metric(ga4Data, 'sessions').toLocaleString() : (twData ? getMetric(twData, 'sessions').toLocaleString() : '33,850'), change: 8.2 },
             { label: 'CVR', value: twData ? `${getMetric(twData, 'conversionRate').toFixed(2)}%` : '3.33%', change: 2.1 },
-            { label: 'EPS', value: twData ? formatCurrencyValue(getMetric(twData, 'costPerSession')) : formatCurrencyValue(66.58), change: 5.4 },
-            { label: 'Bounce Rate', value: twData ? `${getMetric(twData, 'bounceRate').toFixed(1)}%` : '42.7%', change: -3.4 },
-            { label: 'Time on Site', value: '2:34', change: 12.1 },
+            { label: 'Engagement Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'engagementRate') * 100).toFixed(1)}%` : '78.0%', change: 5.4 },
+            { label: 'Bounce Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'bounceRate') * 100).toFixed(1)}%` : (twData ? `${getMetric(twData, 'bounceRate').toFixed(1)}%` : '42.7%'), change: -3.4 },
+            { label: 'Pages/Session', value: ga4Data ? getGA4Metric(ga4Data, 'screenPageViewsPerSession').toFixed(2) : '3.97', change: 2.1 },
+            { label: 'Avg Session', value: ga4Data ? `${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') / 60)}:${String(Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') % 60)).padStart(2, '0')}` : '2:34', change: 12.1 },
           ].map((m) => (
             <div key={m.label} className="flex items-center justify-between">
               <div className="flex items-center text-xs text-text-secondary gap-1">
