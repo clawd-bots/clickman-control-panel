@@ -1,9 +1,6 @@
 /**
  * GA4 API client for front-end data fetching.
- * Calls our internal Next.js API route which proxies to GA4's Data API.
- *
- * All metrics come pre-calculated from GA4 server-side.
- * We do NOT calculate any metrics client-side.
+ * Calls our internal Next.js API route which proxies to GA4 Data API.
  */
 
 export interface GA4Summary {
@@ -24,29 +21,41 @@ export interface GA4Summary {
   purchaseRevenue: number | null;
   addToCarts: number | null;
   checkouts: number | null;
+  itemsViewed: number | null;
   cartToViewRate: number | null;
   purchaseToViewRate: number | null;
-  transactionsPerPurchaser: number | null;
 }
 
-export interface GA4DailyPoint {
+export interface GA4DailyRow {
   date: string;
-  [key: string]: string | number | null;
+  sessions: number;
+  totalUsers: number;
+  newUsers: number;
+  screenPageViews: number;
+  averageSessionDuration: number;
+  bounceRate: number;
+  engagementRate: number;
+  conversions: number;
+  ecommercePurchases: number;
+  purchaseRevenue: number;
 }
 
 export interface GA4TrafficSource {
-  channelGroup: string;
+  channel: string;
   sessions: number;
-  users: number;
+  totalUsers: number;
   newUsers: number;
   engagementRate: number;
+  averageSessionDuration: number;
   conversions: number;
+  ecommercePurchases: number;
+  purchaseRevenue: number;
 }
 
 export interface GA4Data {
   summary?: GA4Summary;
-  daily?: GA4DailyPoint[];
-  traffic?: GA4TrafficSource[];
+  daily?: GA4DailyRow[];
+  trafficSources?: GA4TrafficSource[];
 }
 
 export interface GA4Response {
@@ -77,8 +86,9 @@ export async function fetchGA4Data(
 }
 
 /**
- * Get a GA4 summary metric value with fallback.
+ * Get a GA4 summary metric value.
  */
 export function getGA4Metric(data: GA4Data | null, key: keyof GA4Summary, fallback: number = 0): number {
-  return data?.summary?.[key] ?? fallback;
+  if (!data?.summary) return fallback;
+  return (data.summary[key] as number) ?? fallback;
 }
