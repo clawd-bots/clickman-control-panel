@@ -520,7 +520,8 @@ export default function DashboardPage() {
             { label: 'Engagement Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'engagementRate') * 100).toFixed(1)}%` : '78.0%', change: 5.4 },
             { label: 'Bounce Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'bounceRate') * 100).toFixed(1)}%` : (twData ? `${getMetric(twData, 'bounceRate').toFixed(1)}%` : '42.7%'), change: -3.4 },
             { label: 'Pages/Session', value: ga4Data ? getGA4Metric(ga4Data, 'screenPageViewsPerSession').toFixed(2) : '3.97', change: 2.1 },
-            { label: 'Avg Session', value: ga4Data ? `${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') / 60)}:${String(Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') % 60)).padStart(2, '0')}` : '2:34', change: 12.1 },
+            { label: 'Avg Session', value: ga4Data ? `${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') / 60)}m ${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') % 60)}s` : '2m 34s', change: 12.1 },
+            { label: 'Conversions', value: ga4Data ? getGA4Metric(ga4Data, 'conversions').toLocaleString() : '0', change: 0 },
           ].map((m) => (
             <div key={m.label} className="flex items-center justify-between">
               <div className="flex items-center text-xs text-text-secondary gap-1">
