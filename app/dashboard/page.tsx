@@ -297,7 +297,7 @@ export default function DashboardPage() {
       <div className="space-y-4 sm:space-y-6">
         <div>
           <h2 className="text-lg sm:text-xl font-semibold">Daily Overview</h2>
-          <p className="text-sm text-text-secondary mt-0.5">Loading live data from Triple Whale...</p>
+          <p className="text-sm text-text-secondary mt-0.5">Fetching live data...</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <SkeletonKPICard /><SkeletonKPICard /><SkeletonKPICard /><SkeletonKPICard />

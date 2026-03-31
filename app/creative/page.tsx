@@ -308,7 +308,7 @@ export default function CreativePage() {
     return (
       <div className="space-y-4 sm:space-y-6">
         <h2 className="text-lg sm:text-xl font-semibold">Creative & MTA Control Panel</h2>
-        <p className="text-sm text-text-secondary">Loading live data from Triple Whale...</p>
+        <p className="text-sm text-text-secondary">Fetching live data...</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           <SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard />
         </div>
