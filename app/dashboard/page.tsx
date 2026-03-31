@@ -5,6 +5,7 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import DataSource from '@/components/ui/DataSource';
 import { LiveBadge } from '@/components/ui/LiveBadge';
+import { SkeletonKPICard, SkeletonChart, SkeletonTable } from '@/components/ui/Skeleton';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { filterByDateRange, formatDateLabel, aggregateToWeeks } from '@/lib/dateUtils';
@@ -290,6 +291,30 @@ export default function DashboardPage() {
       }
     ];
   };
+
+  if (twLoading) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <div>
+          <h2 className="text-lg sm:text-xl font-semibold">Daily Overview</h2>
+          <p className="text-sm text-text-secondary mt-0.5">Loading live data from Triple Whale...</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <SkeletonKPICard /><SkeletonKPICard /><SkeletonKPICard /><SkeletonKPICard />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <SkeletonKPICard /><SkeletonKPICard /><SkeletonKPICard /><SkeletonKPICard />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <SkeletonChart /><SkeletonChart />
+        </div>
+        <SkeletonTable rows={5} cols={7} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <SkeletonChart /><SkeletonChart height="h-[200px]" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">

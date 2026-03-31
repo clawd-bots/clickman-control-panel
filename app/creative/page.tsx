@@ -2,6 +2,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { LiveBadge } from '@/components/ui/LiveBadge';
+import { SkeletonMetricCard, SkeletonChart, SkeletonTable } from '@/components/ui/Skeleton';
 import { useDateRange } from '@/components/DateProvider';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { fetchTripleWhaleData, getMetric, TWData } from '@/lib/triple-whale-client';
@@ -302,6 +303,20 @@ export default function CreativePage() {
       spend: Math.round(row.spend * multiplier)
     }));
   };
+
+  if (twLoading) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <h2 className="text-lg sm:text-xl font-semibold">Creative & MTA Control Panel</h2>
+        <p className="text-sm text-text-secondary">Loading live data from Triple Whale...</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+          <SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard />
+        </div>
+        <SkeletonTable rows={6} cols={8} />
+        <SkeletonChart />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">

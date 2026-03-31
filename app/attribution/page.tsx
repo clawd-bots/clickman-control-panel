@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import DataSource from '@/components/ui/DataSource';
 import { LiveBadge } from '@/components/ui/LiveBadge';
+import { SkeletonMetricCard, SkeletonChart, SkeletonTable } from '@/components/ui/Skeleton';
 import AIIntelligenceControls from '@/components/ui/AIIntelligenceControls';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
@@ -174,6 +175,20 @@ export default function AttributionPage() {
   const insights = getLayerInsights()[activeLayer];
 
 
+
+  if (twLoading) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <h2 className="text-lg sm:text-xl font-semibold">Attribution Framework</h2>
+        <p className="text-sm text-text-secondary">Loading live data from Triple Whale...</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard />
+        </div>
+        <SkeletonChart />
+        <SkeletonTable rows={4} cols={5} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">

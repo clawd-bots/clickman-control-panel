@@ -3,6 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import DataSource from '@/components/ui/DataSource';
 import { LiveBadge } from '@/components/ui/LiveBadge';
+import { SkeletonMetricCard, SkeletonTable } from '@/components/ui/Skeleton';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
@@ -95,6 +96,19 @@ export default function CohortsPage() {
 
   const transformedData = getTransformedData();
   const maxRetention = Math.max(...transformedData.flatMap(c => c.periods.filter(p => p > 0 && p < 100)));
+
+  if (twLoading) {
+    return (
+      <div className="space-y-4 sm:space-y-6">
+        <h2 className="text-lg sm:text-xl font-semibold">Cohort Analysis & Retention</h2>
+        <p className="text-sm text-text-secondary">Loading live data from Triple Whale...</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard /><SkeletonMetricCard />
+        </div>
+        <SkeletonTable rows={8} cols={6} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">
