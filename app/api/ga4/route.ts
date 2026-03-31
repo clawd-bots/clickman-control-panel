@@ -112,7 +112,6 @@ export async function GET(request: NextRequest) {
           { name: 'conversions' },
           { name: 'ecommercePurchases' },
           { name: 'purchaseRevenue' },
-          { name: 'addToCarts' },
         ],
         orderBys: [{ dimension: { dimensionName: 'date' } }],
       });
