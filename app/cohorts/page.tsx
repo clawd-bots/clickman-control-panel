@@ -1,12 +1,14 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import DataSource from '@/components/ui/DataSource';
+import { LiveBadge } from '@/components/ui/LiveBadge';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
 import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
+import { fetchTripleWhaleData, getMetric, TWData } from '@/lib/triple-whale-client';
 import { cohortRetention, clvExtension, productComparison, cohortAISuggestions } from '@/lib/sample-data';
 import { getHeatmapClass } from '@/lib/utils';
 import {
@@ -16,7 +18,19 @@ import {
 export default function CohortsPage() {
   const { currency, convertValue } = useCurrency();
   const { dateRange } = useDateRange();
-  // dateRange available for future filtering when cohort data gets ISO dates
+  const [twData, setTwData] = useState<TWData | null>(null);
+  const [twLoading, setTwLoading] = useState(true);
+
+  useEffect(() => {
+    setTwLoading(true);
+    const startDate = dateRange.startDate.toISOString().split('T')[0];
+    const endDate = dateRange.endDate.toISOString().split('T')[0];
+    fetchTripleWhaleData(startDate, endDate, 'summary')
+      .then(setTwData)
+      .catch(console.error)
+      .finally(() => setTwLoading(false));
+  }, [dateRange]);
+
   const [activeTab, setActiveTab] = useState<'analysis' | 'comparison'>('analysis');
   const [metric, setMetric] = useState('Net Revenue');
   const [format, setFormat] = useState<'%' | '#'>('%');
@@ -98,6 +112,46 @@ export default function CohortsPage() {
 
       {activeTab === 'analysis' && (
         <>
+          {/* TW Summary Cards */}
+          {twData && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mx-1">
+              <div className="bg-bg-surface border border-border rounded-lg p-4">
+                <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
+                  <span>LTV</span>
+                  <LiveBadge />
+                </div>
+                <div className="text-xl font-bold text-text-primary">{formatCurrencyValue(getMetric(twData, 'ltv'))}</div>
+              </div>
+              <div className="bg-bg-surface border border-border rounded-lg p-4">
+                <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
+                  <span>Customer Frequency</span>
+                  <LiveBadge />
+                </div>
+                <div className="text-xl font-bold text-text-primary">{getMetric(twData, 'customerFrequency').toFixed(2)}x</div>
+              </div>
+              <div className="bg-bg-surface border border-border rounded-lg p-4">
+                <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
+                  <span>NC Orders</span>
+                  <LiveBadge />
+                </div>
+                <div className="text-xl font-bold text-text-primary">{getMetric(twData, 'newCustomerOrders').toLocaleString()}</div>
+                <div className="text-xs text-text-tertiary mt-1">
+                  NC Rev: {formatCurrencyValue(getMetric(twData, 'newCustomerRevenue'))}
+                </div>
+              </div>
+              <div className="bg-bg-surface border border-border rounded-lg p-4">
+                <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
+                  <span>RC Revenue</span>
+                  <LiveBadge />
+                </div>
+                <div className="text-xl font-bold text-text-primary">{formatCurrencyValue(getMetric(twData, 'returningCustomerRevenue'))}</div>
+                <div className="text-xs text-text-tertiary mt-1">
+                  AOV: {formatCurrencyValue(getMetric(twData, 'aov'))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mx-1">
             <div className="flex items-center gap-2">
@@ -131,7 +185,7 @@ export default function CohortsPage() {
                 <span>Retention by Cohort</span>
                 <InfoTooltip metric="Cohort" />
               </h3>
-              <DataSource source="TripleWhale" className="shrink-0" />
+              <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge /></div>
             </div>
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto -mx-1 sm:mx-0">
@@ -247,7 +301,7 @@ export default function CohortsPage() {
                 <span>Customer Lifetime Value Extension</span>
                 <InfoTooltip metric="CLV" />
               </h3>
-              <DataSource source="TripleWhale" className="shrink-0" />
+              <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge /></div>
             </div>
             <div className="min-h-[300px]">
               <ResponsiveContainer width="100%" height={300}>
@@ -275,7 +329,7 @@ export default function CohortsPage() {
                 <span>Product Comparison</span>
                 <InfoTooltip metric="Repeat Rate" />
               </h3>
-              <DataSource source="TripleWhale" className="shrink-0" />
+              <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge /></div>
             </div>
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto -mx-1 sm:mx-0">

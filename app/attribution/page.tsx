@@ -2,10 +2,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import DataSource from '@/components/ui/DataSource';
+import { LiveBadge } from '@/components/ui/LiveBadge';
 import AIIntelligenceControls from '@/components/ui/AIIntelligenceControls';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
+import { fetchTripleWhaleData, getMetric, TWData } from '@/lib/triple-whale-client';
 import { attributionSurvey, trackingHealth as sampleTrackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
 import { Star, GitBranch, Activity, Database, Layers, Sparkles, ChevronDown } from 'lucide-react';
 import {
@@ -41,6 +43,18 @@ export default function AttributionPage() {
   const { currency, convertValue } = useCurrency();
   const { dateRange } = useDateRange();
   const [activeLayer, setActiveLayer] = useState<string>('star');
+  const [twData, setTwData] = useState<TWData | null>(null);
+  const [twLoading, setTwLoading] = useState(true);
+
+  useEffect(() => {
+    setTwLoading(true);
+    const startDate = dateRange.startDate.toISOString().split('T')[0];
+    const endDate = dateRange.endDate.toISOString().split('T')[0];
+    fetchTripleWhaleData(startDate, endDate, 'summary')
+      .then(setTwData)
+      .catch(console.error)
+      .finally(() => setTwLoading(false));
+  }, [dateRange]);
   const [cohortAttrModel, setCohortAttrModel] = useState('First Click');
   const [cohortAttrWindow, setCohortAttrWindow] = useState('7-day click / 1-day view');
   const [expandedSystems, setExpandedSystems] = useState<Set<string>>(new Set());
@@ -206,7 +220,7 @@ export default function AttributionPage() {
               <Star size={16} className="text-warm-gold shrink-0" />
               <span>MER / nCAC Overview</span>
             </h3>
-            <DataSource source="TripleWhale" className="shrink-0" />
+            <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge /></div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4">
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
@@ -214,7 +228,7 @@ export default function AttributionPage() {
                 <span>MER</span>
                 <InfoTooltip metric="MER" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">3.67x</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{twData ? `${getMetric(twData, 'mer').toFixed(2)}x` : '3.67x'}</div>
               <div className="text-xs text-success mt-2">↑ 3.1% MoM</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
@@ -222,33 +236,33 @@ export default function AttributionPage() {
                 <span>nCAC</span>
                 <InfoTooltip metric="nCAC" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(787)}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(twData ? getMetric(twData, 'ncpa') : 787)}</div>
               <div className="text-xs text-success mt-2">↓ 2.6% MoM</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary">Marketing Costs</div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(680000)}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(twData ? (getMetric(twData, 'metaAdSpend') + getMetric(twData, 'googleAdSpend') + getMetric(twData, 'tiktokAdSpend') + getMetric(twData, 'redditAdSpend')) : 680000)}</div>
               <div className="text-xs text-text-secondary mt-2">At 25% CM3 target</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
-              <div className="text-xs text-text-secondary">Target CPA</div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(750)}</div>
+              <div className="text-xs text-text-secondary">Blended CPA</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(twData ? getMetric(twData, 'blendedCpa') : 750)}</div>
               <div className="text-xs text-text-secondary mt-2">Based on 3.15x LTV:CAC</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary flex items-center gap-1">
-                <span>Target NCCPA</span>
+                <span>ROAS</span>
                 <InfoTooltip metric="Target NCCPA" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(850)}</div>
-              <div className="text-xs text-text-secondary mt-2">New customer target</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{twData ? `${getMetric(twData, 'topRoas').toFixed(2)}x` : `${formatCurrencyValue(850)}`}</div>
+              <div className="text-xs text-text-secondary mt-2">{twData ? 'TW Top ROAS' : 'New customer target'}</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary flex items-center gap-1">
                 <span>aMER</span>
                 <InfoTooltip metric="aMER" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">4.12x</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{twData ? `${getMetric(twData, 'blendedAttributedRoas').toFixed(2)}x` : '4.12x'}</div>
               <div className="text-xs text-success mt-2">↑ 1.8% MoM</div>
             </div>
           </div>
@@ -304,7 +318,7 @@ export default function AttributionPage() {
               <GitBranch size={16} className="text-brand-blue-light shrink-0" />
               <span className="truncate">Channel Allocation, Survey Results</span>
             </h3>
-            <DataSource source="TripleWhale" className="shrink-0" />
+            <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge /></div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="min-h-[280px]">
@@ -641,7 +655,7 @@ export default function AttributionPage() {
                 </div>
               </div>
             </div>
-            <DataSource source="TripleWhale" className="shrink-0" />
+            <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge /></div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {[

@@ -1,12 +1,14 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import KPICard from '@/components/ui/KPICard';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import DataSource from '@/components/ui/DataSource';
+import { LiveBadge } from '@/components/ui/LiveBadge';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { filterByDateRange, formatDateLabel, aggregateToWeeks } from '@/lib/dateUtils';
+import { fetchTripleWhaleData, getMetric, getDailyData, TWData } from '@/lib/triple-whale-client';
 
 import { kpiCards, dailyMetrics, channelAttribution, productKPIs, revenueInsights } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
@@ -27,6 +29,18 @@ export default function DashboardPage() {
   const { dateRange } = useDateRange();
   const [activeAttributionTab, setActiveAttributionTab] = useState('Last Click');
   const [attributionWindow, setAttributionWindow] = useState('7-day/1-day');
+  const [twData, setTwData] = useState<TWData | null>(null);
+  const [twLoading, setTwLoading] = useState(true);
+
+  useEffect(() => {
+    setTwLoading(true);
+    const startDate = dateRange.startDate.toISOString().split('T')[0];
+    const endDate = dateRange.endDate.toISOString().split('T')[0];
+    fetchTripleWhaleData(startDate, endDate, 'all')
+      .then(setTwData)
+      .catch(console.error)
+      .finally(() => setTwLoading(false));
+  }, [dateRange]);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -34,15 +48,73 @@ export default function DashboardPage() {
   };
 
   // Generate chart data based on selected date range
-  // Use actual sample data where available, generate synthetic data for dates outside range
+  // Use TW daily data when available, fall back to sample data
   const chartData = useMemo(() => {
     const { startDate, endDate } = dateRange;
     
-    // First, try to filter actual sample data
+    // If TW daily data is available, use it
+    const twRevDaily = getDailyData(twData, 'orderRevenue');
+    const twOrdersDaily = getDailyData(twData, 'orders');
+    const twNCDaily = getDailyData(twData, 'newCustomerOrders');
+    const twSessionsDaily = getDailyData(twData, 'sessions');
+    
+    if (twRevDaily.length > 0) {
+      // Build a map from all daily series
+      const dateMap: Record<string, { revenue: number; costs: number; orders: number; newCustomers: number; sessions: number }> = {};
+      
+      // Collect spend daily data for costs
+      const twMetaSpendDaily = getDailyData(twData, 'metaAdSpend');
+      const twGoogleSpendDaily = getDailyData(twData, 'googleAdSpend');
+      const twTiktokSpendDaily = getDailyData(twData, 'tiktokAdSpend');
+      const twRedditSpendDaily = getDailyData(twData, 'redditAdSpend');
+      
+      twRevDaily.forEach(d => {
+        if (!dateMap[d.date]) dateMap[d.date] = { revenue: 0, costs: 0, orders: 0, newCustomers: 0, sessions: 0 };
+        dateMap[d.date].revenue = d.value;
+      });
+      twOrdersDaily.forEach(d => {
+        if (!dateMap[d.date]) dateMap[d.date] = { revenue: 0, costs: 0, orders: 0, newCustomers: 0, sessions: 0 };
+        dateMap[d.date].orders = d.value;
+      });
+      twNCDaily.forEach(d => {
+        if (!dateMap[d.date]) dateMap[d.date] = { revenue: 0, costs: 0, orders: 0, newCustomers: 0, sessions: 0 };
+        dateMap[d.date].newCustomers = d.value;
+      });
+      twSessionsDaily.forEach(d => {
+        if (!dateMap[d.date]) dateMap[d.date] = { revenue: 0, costs: 0, orders: 0, newCustomers: 0, sessions: 0 };
+        dateMap[d.date].sessions = d.value;
+      });
+      // Sum up spend across channels per day
+      [twMetaSpendDaily, twGoogleSpendDaily, twTiktokSpendDaily, twRedditSpendDaily].forEach(series => {
+        series.forEach(d => {
+          if (!dateMap[d.date]) dateMap[d.date] = { revenue: 0, costs: 0, orders: 0, newCustomers: 0, sessions: 0 };
+          dateMap[d.date].costs += d.value;
+        });
+      });
+      
+      const daily = Object.entries(dateMap)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, vals]) => ({
+          date,
+          displayDate: formatDateLabel(date, 'day'),
+          revenue: vals.revenue,
+          costs: vals.costs,
+          orders: vals.orders,
+          newCustomers: vals.newCustomers,
+          sessions: vals.sessions,
+          profit: vals.revenue - vals.costs,
+        }));
+      
+      if (daily.length > 30) {
+        return aggregateToWeeks(daily, 'date');
+      }
+      return daily;
+    }
+    
+    // Fallback: use sample data
     const filteredSample = filterByDateRange(dailyMetrics, 'date', startDate, endDate);
     
     if (filteredSample.length > 0) {
-      // Map to chart-friendly shape
       const daily = filteredSample.map(d => ({
         date: d.date,
         displayDate: formatDateLabel(d.date, 'day'),
@@ -54,7 +126,6 @@ export default function DashboardPage() {
         profit: d.revenue - d.spend,
       }));
 
-      // Aggregate to weeks when range > 30 days for readability
       if (daily.length > 30) {
         return aggregateToWeeks(daily, 'date');
       }
@@ -71,7 +142,6 @@ export default function DashboardPage() {
       const day = String(current.getDate()).padStart(2, '0');
       const isoDate = `${y}-${m}-${day}`;
       
-      // Generate realistic sample data based on the date
       const baseRevenue = 350000 + Math.sin(current.getTime() / (1000 * 60 * 60 * 24)) * 50000;
       const baseCosts = 80000 + Math.cos(current.getTime() / (1000 * 60 * 60 * 24)) * 20000;
       const baseOrders = 140 + Math.floor(Math.sin(current.getTime() / (1000 * 60 * 60 * 24 * 2)) * 30);
@@ -93,7 +163,7 @@ export default function DashboardPage() {
     }
     
     return data;
-  }, [dateRange]);
+  }, [dateRange, twData]);
 
   // Revenue composition data filtered by date range
   const filteredRevenueMonthly = useMemo(() => {
@@ -106,8 +176,21 @@ export default function DashboardPage() {
     }));
   }, [dateRange]);
 
-  // Calculate aggregated values from date-filtered data
+  // Calculate aggregated values — use TW summary metrics when available, fallback to chart data
   const aggregatedData = useMemo(() => {
+    if (twData) {
+      const totalRevenue = getMetric(twData, 'orderRevenue');
+      const totalCosts = getMetric(twData, 'metaAdSpend') + getMetric(twData, 'googleAdSpend') + getMetric(twData, 'tiktokAdSpend') + getMetric(twData, 'redditAdSpend');
+      const totalOrders = getMetric(twData, 'orders');
+      const totalNewCustomers = getMetric(twData, 'newCustomerOrders');
+      const totalSessions = getMetric(twData, 'sessions');
+      const mer = getMetric(twData, 'mer');
+      const cac = getMetric(twData, 'blendedCpa');
+      const ncac = getMetric(twData, 'ncpa');
+      
+      return { totalRevenue, totalCosts, totalOrders, totalNewCustomers, totalSessions, mer, cac, ncac };
+    }
+    
     const totalRevenue = chartData.reduce((sum, day) => sum + day.revenue, 0);
     const totalCosts = chartData.reduce((sum, day) => sum + day.costs, 0);
     const totalOrders = chartData.reduce((sum, day) => sum + day.orders, 0);
@@ -124,7 +207,18 @@ export default function DashboardPage() {
       cac: totalOrders > 0 ? totalCosts / totalOrders : 0,
       ncac: totalNewCustomers > 0 ? totalCosts / totalNewCustomers : 0,
     };
-  }, [chartData]);
+  }, [chartData, twData]);
+
+  // TW-powered channel data for the attribution table
+  const twChannelData = useMemo(() => {
+    if (!twData) return null;
+    return [
+      { channel: 'Meta Ads', costs: getMetric(twData, 'metaAdSpend'), revenue: getMetric(twData, 'metaConversionValue'), roas: getMetric(twData, 'metaRoas'), orders: getMetric(twData, 'metaPurchases'), cpo: getMetric(twData, 'metaCpa'), newCustomers: 0, ncPct: 0 },
+      { channel: 'Google Ads', costs: getMetric(twData, 'googleAdSpend'), revenue: getMetric(twData, 'googleConversionValue'), roas: getMetric(twData, 'googleRoas'), orders: 0, cpo: getMetric(twData, 'googleCpa'), newCustomers: 0, ncPct: 0 },
+      { channel: 'TikTok Ads', costs: getMetric(twData, 'tiktokAdSpend'), revenue: getMetric(twData, 'tiktokConversionValue'), roas: getMetric(twData, 'tiktokRoas'), orders: getMetric(twData, 'tiktokPurchases'), cpo: getMetric(twData, 'tiktokCpa'), newCustomers: 0, ncPct: 0 },
+      { channel: 'Reddit Ads', costs: getMetric(twData, 'redditAdSpend'), revenue: getMetric(twData, 'redditConversionValue'), roas: getMetric(twData, 'redditRoas'), orders: getMetric(twData, 'redditConversions'), cpo: getMetric(twData, 'redditCpa'), newCustomers: 0, ncPct: 0 },
+    ].filter(ch => ch.costs > 0 || ch.revenue > 0);
+  }, [twData]);
 
   // Different attribution data sets  
   const channelAttributionData = {
@@ -164,6 +258,10 @@ export default function DashboardPage() {
   };
   
   const getCurrentChannelData = () => {
+    // Use TW live data for Triple tab, fallback sample for others
+    if (activeAttributionTab === 'Triple' && twChannelData) {
+      return twChannelData;
+    }
     return channelAttributionData[activeAttributionTab as keyof typeof channelAttributionData];
   };
 
@@ -235,11 +333,11 @@ export default function DashboardPage() {
         <div data-testid="kpi-amer">
           <KPICard 
             label="aMER" 
-            value={`${kpiCards.nmer.value}x`} 
-            change={pctChange(kpiCards.nmer.value, kpiCards.nmer.prev)} 
+            value={twData ? `${getMetric(twData, 'blendedAttributedRoas').toFixed(2)}x` : `${kpiCards.nmer.value}x`} 
+            change={pctChange(twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value, kpiCards.nmer.prev)} 
             sparkline={[]}
             target={`${kpiCards.nmer.target}x`}
-            targetAchievement={(kpiCards.nmer.value / kpiCards.nmer.target) * 100}
+            targetAchievement={((twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value) / kpiCards.nmer.target) * 100}
           />
         </div>
       </div>
@@ -300,11 +398,11 @@ export default function DashboardPage() {
         />
         <KPICard 
           label="LTV per Customer" 
-          value={formatCurrencyValue(2520)} 
+          value={formatCurrencyValue(twData ? getMetric(twData, 'ltv') : 2520)} 
           change={12.4} 
           sparkline={[]}
           target={formatCurrencyValue(2800)}
-          targetAchievement={90.0}
+          targetAchievement={twData ? (getMetric(twData, 'ltv') / 2800) * 100 : 90.0}
         />
       </div>
 
@@ -313,7 +411,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="revenue-chart">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue & Marketing Costs</h3>
-            <DataSource source="Triple Whale" className="shrink-0" />
+            <div className="flex items-center gap-2 shrink-0"><div className="flex items-center gap-2"><DataSource source="Triple Whale" /><LiveBadge /></div><LiveBadge /></div>
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
@@ -347,7 +445,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="orders-chart">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Net Orders & New Customers</h3>
-            <DataSource source="Triple Whale" className="shrink-0" />
+            <div className="flex items-center gap-2 shrink-0"><div className="flex items-center gap-2"><DataSource source="Triple Whale" /><LiveBadge /></div><LiveBadge /></div>
           </div>
           <div className="min-h-[260px]">
             <ResponsiveContainer width="100%" height={260}>
@@ -384,10 +482,10 @@ export default function DashboardPage() {
             <DataSource source="Google Analytics" />
           </div>
           {[
-            { label: 'Sessions', value: '33,850', change: 8.2 },
-            { label: 'CVR', value: '3.33%', change: 2.1 },
-            { label: 'EPS', value: formatCurrencyValue(66.58), change: 5.4 },
-            { label: 'Bounce Rate', value: '42.7%', change: -3.4 },
+            { label: 'Sessions', value: twData ? getMetric(twData, 'sessions').toLocaleString() : '33,850', change: 8.2 },
+            { label: 'CVR', value: twData ? `${getMetric(twData, 'conversionRate').toFixed(2)}%` : '3.33%', change: 2.1 },
+            { label: 'EPS', value: twData ? formatCurrencyValue(getMetric(twData, 'costPerSession')) : formatCurrencyValue(66.58), change: 5.4 },
+            { label: 'Bounce Rate', value: twData ? `${getMetric(twData, 'bounceRate').toFixed(1)}%` : '42.7%', change: -3.4 },
             { label: 'Time on Site', value: '2:34', change: 12.1 },
           ].map((m) => (
             <div key={m.label} className="flex items-center justify-between">
@@ -408,7 +506,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary">Marketing Metrics Trend</h3>
-            <DataSource source="Triple Whale" />
+            <div className="flex items-center gap-2"><DataSource source="Triple Whale" /><LiveBadge /></div>
           </div>
           <div className="min-h-[180px]">
             <ResponsiveContainer width="100%" height={180}>
@@ -522,7 +620,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="revenue-composition">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue Composition (NC vs RC)</h3>
-            <DataSource source="Triple Whale" className="shrink-0" />
+            <div className="flex items-center gap-2 shrink-0"><div className="flex items-center gap-2"><DataSource source="Triple Whale" /><LiveBadge /></div><LiveBadge /></div>
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
@@ -553,14 +651,14 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary">Revenue Breakdown</h3>
-            <DataSource source="Triple Whale" />
+            <div className="flex items-center gap-2"><DataSource source="Triple Whale" /><LiveBadge /></div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4">
             {[
-              { label: 'NC Revenue', value: formatCurrencyValue(revenueInsights.ncRevenue), metric: 'NC Revenue' },
-              { label: 'RC Revenue', value: formatCurrencyValue(revenueInsights.rcRevenue), metric: 'RC Revenue' },
-              { label: 'NC AOV', value: formatCurrencyValue(revenueInsights.ncAOV), metric: 'NC AOV' },
-              { label: 'RC AOV', value: formatCurrencyValue(revenueInsights.rcAOV), metric: 'RC AOV' },
+              { label: 'NC Revenue', value: formatCurrencyValue(twData ? getMetric(twData, 'newCustomerRevenue') : revenueInsights.ncRevenue), metric: 'NC Revenue' },
+              { label: 'RC Revenue', value: formatCurrencyValue(twData ? getMetric(twData, 'returningCustomerRevenue') : revenueInsights.rcRevenue), metric: 'RC Revenue' },
+              { label: 'NC AOV', value: formatCurrencyValue(twData ? getMetric(twData, 'aov') : revenueInsights.ncAOV), metric: 'NC AOV' },
+              { label: 'RC AOV', value: formatCurrencyValue(twData ? getMetric(twData, 'aov') : revenueInsights.rcAOV), metric: 'RC AOV' },
             ].map((item) => (
               <div key={item.label} className="bg-bg-elevated rounded-md p-3 min-h-[70px] flex flex-col justify-between">
                 <div className="flex items-center text-xs text-text-secondary mb-1 gap-1">

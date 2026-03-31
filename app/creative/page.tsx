@@ -1,8 +1,10 @@
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import { LiveBadge } from '@/components/ui/LiveBadge';
 import { useDateRange } from '@/components/DateProvider';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
+import { fetchTripleWhaleData, getMetric, TWData } from '@/lib/triple-whale-client';
 import {
   creativePerformance, creativeAISuggestions,
   accountControlData, adChurnDataByPlatform, adChurnCampaigns, creativeChurnCohorts,
@@ -70,6 +72,73 @@ export default function CreativePage() {
   const { currency, convertValue } = useCurrency();
   const { dateRange } = useDateRange();
   const [activeTab, setActiveTab] = useState('Performance');
+  const [twData, setTwData] = useState<TWData | null>(null);
+  const [twLoading, setTwLoading] = useState(true);
+
+  useEffect(() => {
+    setTwLoading(true);
+    const startDate = dateRange.startDate.toISOString().split('T')[0];
+    const endDate = dateRange.endDate.toISOString().split('T')[0];
+    fetchTripleWhaleData(startDate, endDate, 'summary')
+      .then(setTwData)
+      .catch(console.error)
+      .finally(() => setTwLoading(false));
+  }, [dateRange]);
+
+  // Platform-level metrics from TW
+  const twPlatformMetrics = useMemo(() => {
+    if (!twData) return null;
+    return {
+      Meta: {
+        spend: getMetric(twData, 'metaAdSpend'),
+        roas: getMetric(twData, 'metaRoas'),
+        cpa: getMetric(twData, 'metaCpa'),
+        impressions: getMetric(twData, 'metaImpressions'),
+        clicks: getMetric(twData, 'metaClicks'),
+        ctr: getMetric(twData, 'metaCtr'),
+        cpm: getMetric(twData, 'metaCpm'),
+        cpc: getMetric(twData, 'metaCpc'),
+        purchases: getMetric(twData, 'metaPurchases'),
+        conversionValue: getMetric(twData, 'metaConversionValue'),
+      },
+      Google: {
+        spend: getMetric(twData, 'googleAdSpend'),
+        roas: getMetric(twData, 'googleRoas'),
+        cpa: getMetric(twData, 'googleCpa'),
+        impressions: getMetric(twData, 'googleImpressions'),
+        clicks: getMetric(twData, 'googleClicks'),
+        ctr: getMetric(twData, 'googleCtr'),
+        cpm: getMetric(twData, 'googleCpm'),
+        cpc: getMetric(twData, 'googleCpc'),
+        purchases: 0,
+        conversionValue: getMetric(twData, 'googleConversionValue'),
+      },
+      TikTok: {
+        spend: getMetric(twData, 'tiktokAdSpend'),
+        roas: getMetric(twData, 'tiktokRoas'),
+        cpa: getMetric(twData, 'tiktokCpa'),
+        impressions: getMetric(twData, 'tiktokImpressions'),
+        clicks: 0,
+        ctr: getMetric(twData, 'tiktokCtr'),
+        cpm: getMetric(twData, 'tiktokCpm'),
+        cpc: getMetric(twData, 'tiktokCpc'),
+        purchases: getMetric(twData, 'tiktokPurchases'),
+        conversionValue: getMetric(twData, 'tiktokConversionValue'),
+      },
+      Reddit: {
+        spend: getMetric(twData, 'redditAdSpend'),
+        roas: getMetric(twData, 'redditRoas'),
+        cpa: getMetric(twData, 'redditCpa'),
+        impressions: getMetric(twData, 'redditImpressions'),
+        clicks: getMetric(twData, 'redditClicks'),
+        ctr: getMetric(twData, 'redditCtr'),
+        cpm: getMetric(twData, 'redditCpm'),
+        cpc: getMetric(twData, 'redditCpc'),
+        purchases: getMetric(twData, 'redditConversions'),
+        conversionValue: getMetric(twData, 'redditConversionValue'),
+      },
+    };
+  }, [twData]);
   const [platform, setPlatform] = useState('Meta');
   const [attrModel, setAttrModel] = useState('Linear All');
   const [attrWindow, setAttrWindow] = useState('7-day click / 1-day view');
@@ -351,10 +420,40 @@ export default function CreativePage() {
             <h3 className="text-sm font-medium text-text-primary">Creative Performance</h3>
             <div className="flex items-center gap-2 text-xs text-text-tertiary">
               <span>[TripleWhale]</span>
+              <LiveBadge />
               <span>+</span>
               <span>[{platform}]</span>
             </div>
           </div>
+          {/* TW Platform Summary */}
+          {twPlatformMetrics && twPlatformMetrics[platform as keyof typeof twPlatformMetrics] && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-4 p-3 bg-bg-elevated rounded-lg border border-border/50">
+              <div>
+                <div className="text-[10px] text-text-tertiary uppercase">Spend</div>
+                <div className="text-sm font-semibold text-text-primary">{formatCurrencyValue(twPlatformMetrics[platform as keyof typeof twPlatformMetrics].spend)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-text-tertiary uppercase">ROAS</div>
+                <div className={`text-sm font-semibold ${twPlatformMetrics[platform as keyof typeof twPlatformMetrics].roas >= 3.0 ? 'text-success' : twPlatformMetrics[platform as keyof typeof twPlatformMetrics].roas >= 2.0 ? 'text-warm-gold' : 'text-danger'}`}>{twPlatformMetrics[platform as keyof typeof twPlatformMetrics].roas.toFixed(2)}x</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-text-tertiary uppercase">CPA</div>
+                <div className="text-sm font-semibold text-text-primary">{formatCurrencyValue(twPlatformMetrics[platform as keyof typeof twPlatformMetrics].cpa)}</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-text-tertiary uppercase">Impressions</div>
+                <div className="text-sm font-semibold text-text-primary">{(twPlatformMetrics[platform as keyof typeof twPlatformMetrics].impressions / 1000).toFixed(0)}K</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-text-tertiary uppercase">CTR</div>
+                <div className="text-sm font-semibold text-text-primary">{twPlatformMetrics[platform as keyof typeof twPlatformMetrics].ctr.toFixed(2)}%</div>
+              </div>
+              <div>
+                <div className="text-[10px] text-text-tertiary uppercase">Conv. Value</div>
+                <div className="text-sm font-semibold text-text-primary">{formatCurrencyValue(twPlatformMetrics[platform as keyof typeof twPlatformMetrics].conversionValue)}</div>
+              </div>
+            </div>
+          )}
           {/* Desktop Table */}
           <div className="hidden lg:block overflow-x-auto -mx-1 sm:mx-0">
             <div className="min-w-[900px]">
