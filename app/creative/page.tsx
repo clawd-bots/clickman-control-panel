@@ -8,6 +8,7 @@ import { useDateRange } from '@/components/DateProvider';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { fetchTripleWhaleData, getMetric, TWData } from '@/lib/triple-whale-client';
 import { fetchTikTokOverview, classifyAdZone, TikTokOverview } from '@/lib/tiktok-client';
+import { fetchMetaOverview, classifyMetaAdZone, MetaOverview } from '@/lib/meta-client';
 import {
   creativePerformance, creativeAISuggestions,
   accountControlData, adChurnDataByPlatform, adChurnCampaigns, creativeChurnCohorts,
@@ -80,10 +81,13 @@ export default function CreativePage() {
   const [twLoading, setTwLoading] = useState(true);
   const [ttData, setTtData] = useState<TikTokOverview | null>(null);
   const [ttLoading, setTtLoading] = useState(true);
+  const [metaData, setMetaData] = useState<MetaOverview | null>(null);
+  const [metaLoading, setMetaLoading] = useState(true);
 
   useEffect(() => {
     setTwLoading(true);
     setTtLoading(true);
+    setMetaLoading(true);
     const startDate = dateRange.startDate.toISOString().split('T')[0];
     const endDate = dateRange.endDate.toISOString().split('T')[0];
     fetchTripleWhaleData(startDate, endDate, 'summary')
@@ -94,6 +98,10 @@ export default function CreativePage() {
       .then(setTtData)
       .catch(console.error)
       .finally(() => setTtLoading(false));
+    fetchMetaOverview(startDate, endDate)
+      .then(setMetaData)
+      .catch(console.error)
+      .finally(() => setMetaLoading(false));
   }, [dateRange]);
 
   // Platform-level metrics from TW
@@ -263,11 +271,16 @@ export default function CreativePage() {
     return [...new Set(campaigns)];
   }, [platform]);
 
-  // Get campaign names for the current platform (real TikTok data or sample)
+  // Get campaign names for the current platform (real data or sample)
   const accountControlCampaigns = useMemo(() => {
     if (platform === 'TikTok' && ttData) {
       return ttData.campaigns
         .filter(c => c.status === 'ENABLE')
+        .map(c => c.name);
+    }
+    if (platform === 'Meta' && metaData) {
+      return metaData.campaigns
+        .filter(c => c.status === 'ACTIVE')
         .map(c => c.name);
     }
     const names = creativePerformance
@@ -275,14 +288,14 @@ export default function CreativePage() {
       .map(c => (c as any).campaignName as string)
       .filter(Boolean);
     return [...new Set(names)];
-  }, [platform, ttData]);
+  }, [platform, ttData, metaData]);
 
-  // Filter account control data by platform and campaign (real TikTok or sample)
+  // Filter account control data by platform and campaign (real data or sample)
   const filteredAccountControlData = useMemo(() => {
+    const cpaTarget = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
+
     if (platform === 'TikTok' && ttData) {
-      // Use real TikTok ad data
-      const cpaTarget = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
-      let ads = ttData.ads.filter(a => a.spend > 0); // Only ads with spend
+      let ads = ttData.ads.filter(a => a.spend > 0);
       if (accountControlCampaign !== 'all') {
         ads = ads.filter(a => a.campaignName === accountControlCampaign);
       }
@@ -295,6 +308,22 @@ export default function CreativePage() {
         previewUrl: '',
       }));
     }
+
+    if (platform === 'Meta' && metaData) {
+      let ads = metaData.ads.filter(a => a.spend > 0);
+      if (accountControlCampaign !== 'all') {
+        ads = ads.filter(a => a.campaignName === accountControlCampaign);
+      }
+      return ads.map(a => ({
+        name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
+        spend: a.spend,
+        cpa: a.cpa,
+        platform: 'Meta' as const,
+        zone: classifyMetaAdZone(a, cpaTarget),
+        previewUrl: '',
+      }));
+    }
+
     let data = accountControlData.filter(d => d.platform === platform);
     if (accountControlCampaign !== 'all') {
       const adsInCampaign = creativePerformance
@@ -303,7 +332,7 @@ export default function CreativePage() {
       data = data.filter(d => adsInCampaign.includes(d.name));
     }
     return data;
-  }, [platform, accountControlCampaign, ttData, churnCpaMode, targetCPA, targetNCCPA]);
+  }, [platform, accountControlCampaign, ttData, metaData, churnCpaMode, targetCPA, targetNCCPA]);
 
   // Reset selected campaigns when platform changes
   const handlePlatformChange = (p: string) => {
