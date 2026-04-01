@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
+import { LiveBadge } from '@/components/ui/LiveBadge';
 import { targets as initialTargets, targetTrend, targetAISuggestions } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
@@ -257,7 +258,10 @@ export default function TargetsPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="px-1">
-        <h2 className="text-lg sm:text-xl font-semibold">Targets & Goals</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg sm:text-xl font-semibold">Targets & Goals</h2>
+          <LiveBadge variant="sample" />
+        </div>
         <p className="text-sm text-text-secondary mt-1">
           Set monthly targets in table format. Each month gets specific goals per metric.
         </p>

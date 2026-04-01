@@ -438,6 +438,7 @@ export default function CreativePage() {
               <LiveBadge />
               <span>+</span>
               <span>[{platform}]</span>
+              <LiveBadge variant="sample" />
             </div>
           </div>
           {/* TW Platform Summary */}

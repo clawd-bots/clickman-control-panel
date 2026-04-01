@@ -737,6 +737,7 @@ export default function DashboardPage() {
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="product-kpis">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-primary">Product KPIs</h3>
+          <LiveBadge variant="sample" />
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[500px]">

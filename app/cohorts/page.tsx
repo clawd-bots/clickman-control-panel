@@ -199,7 +199,7 @@ export default function CohortsPage() {
                 <span>Retention by Cohort</span>
                 <InfoTooltip metric="Cohort" />
               </h3>
-              <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge /></div>
+              <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge variant="sample" /></div>
             </div>
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto -mx-1 sm:mx-0">
@@ -315,7 +315,7 @@ export default function CohortsPage() {
                 <span>Customer Lifetime Value Extension</span>
                 <InfoTooltip metric="CLV" />
               </h3>
-              <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge /></div>
+              <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge variant="sample" /></div>
             </div>
             <div className="min-h-[300px]">
               <ResponsiveContainer width="100%" height={300}>
@@ -343,7 +343,7 @@ export default function CohortsPage() {
                 <span>Product Comparison</span>
                 <InfoTooltip metric="Repeat Rate" />
               </h3>
-              <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge /></div>
+              <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge variant="sample" /></div>
             </div>
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto -mx-1 sm:mx-0">
