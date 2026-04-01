@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { LiveBadge } from '@/components/ui/LiveBadge';
@@ -11,6 +11,7 @@ import { Pencil, Check, X, Users as UsersIcon } from 'lucide-react';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { getPromptById, syncPromptChanges } from '@/lib/prompt-registry';
+import { MonthlyTargetData, loadTargets, saveTargets } from '@/lib/targets';
 
 // Monthly target data structure
 interface MonthlyTarget {
@@ -118,6 +119,59 @@ export default function TargetsPage() {
   const [currentMonthColumns, setCurrentMonthColumns] = useState<string[]>([...monthColumns]);
   const [currentMonthLabels, setCurrentMonthLabels] = useState<string[]>([...monthLabels]);
   const [showAddMonthDialog, setShowAddMonthDialog] = useState(false);
+
+  // Load saved targets from localStorage on mount
+  useEffect(() => {
+    const saved = loadTargets();
+    if (Object.keys(saved).length > 0) {
+      setMonthlyTargets(prev => prev.map(row => {
+        const metricData = saved[row.metric];
+        if (!metricData) return row;
+        const updated = { ...row };
+        for (const [monthKey, value] of Object.entries(metricData)) {
+          if (monthKey in updated && value > 0) {
+            (updated as any)[monthKey] = value.toString();
+          }
+        }
+        if (Object.keys(metricData).length > 0) {
+          updated.lastUpdated = 'Saved';
+        }
+        return updated;
+      }));
+    }
+  }, []);
+
+  // Persist targets to localStorage and dispatch event whenever they change
+  const persistTargets = useCallback((targets: MonthlyTarget[]) => {
+    const data: MonthlyTargetData = {};
+    for (const row of targets) {
+      const metricData: Record<string, number> = {};
+      for (const col of currentMonthColumns) {
+        const val = parseFloat((row as any)[col] as string);
+        if (!isNaN(val) && val > 0) {
+          metricData[col] = val;
+        }
+      }
+      if (Object.keys(metricData).length > 0) {
+        data[row.metric] = metricData;
+      }
+    }
+    saveTargets(data);
+    // Notify other components (e.g., Dashboard) that targets changed
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('targetsUpdated'));
+    }
+  }, [currentMonthColumns]);
+
+  // Auto-persist whenever targets change (skip initial empty state)
+  const [hasLoaded, setHasLoaded] = useState(false);
+  useEffect(() => {
+    if (!hasLoaded) {
+      setHasLoaded(true);
+      return;
+    }
+    persistTargets(monthlyTargets);
+  }, [monthlyTargets, hasLoaded, persistTargets]);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {

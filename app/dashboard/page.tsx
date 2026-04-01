@@ -11,6 +11,7 @@ import { useDateRange } from '@/components/DateProvider';
 import { filterByDateRange, formatDateLabel, aggregateToWeeks } from '@/lib/dateUtils';
 import { fetchTripleWhaleData, getMetric, getDailyData, TWData } from '@/lib/triple-whale-client';
 import { fetchGA4Data, getGA4Metric, GA4Data } from '@/lib/ga4-client';
+import { useTargets } from '@/lib/useTargets';
 
 import { kpiCards, dailyMetrics, channelAttribution, productKPIs, revenueInsights } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
@@ -29,6 +30,7 @@ function pctChange(curr: number, prev: number) {
 export default function DashboardPage() {
   const { currency, convertValue } = useCurrency();
   const { dateRange } = useDateRange();
+  const { getTarget, getTargetAchievement } = useTargets();
   const [activeAttributionTab, setActiveAttributionTab] = useState('Last Click');
   const [attributionWindow, setAttributionWindow] = useState('7-day/1-day');
   const [twData, setTwData] = useState<TWData | null>(null);
@@ -339,8 +341,8 @@ export default function DashboardPage() {
             value={formatCurrencyValue(aggregatedData.totalRevenue)} 
             change={pctChange(aggregatedData.totalRevenue, kpiCards.netRevenue.prev)} 
             sparkline={[]}
-            target={formatCurrencyValue(kpiCards.netRevenue.target)}
-            targetAchievement={(aggregatedData.totalRevenue / kpiCards.netRevenue.target) * 100}
+            target={formatCurrencyValue(getTarget('Net Revenue') ?? kpiCards.netRevenue.target)}
+            targetAchievement={getTargetAchievement('Net Revenue', aggregatedData.totalRevenue) ?? (aggregatedData.totalRevenue / kpiCards.netRevenue.target) * 100}
           />
         </div>
         <div data-testid="kpi-marketing-costs">
@@ -349,8 +351,8 @@ export default function DashboardPage() {
             value={formatCurrencyValue(aggregatedData.totalCosts)} 
             change={pctChange(aggregatedData.totalCosts, kpiCards.marketingCosts.prev)} 
             sparkline={[]}
-            target={formatCurrencyValue(kpiCards.marketingCosts.target)}
-            targetAchievement={(aggregatedData.totalCosts / kpiCards.marketingCosts.target) * 100}
+            target={formatCurrencyValue(getTarget('Marketing Costs') ?? kpiCards.marketingCosts.target)}
+            targetAchievement={getTargetAchievement('Marketing Costs', aggregatedData.totalCosts) ?? (aggregatedData.totalCosts / kpiCards.marketingCosts.target) * 100}
           />
         </div>
         <div data-testid="kpi-mer">
@@ -359,8 +361,8 @@ export default function DashboardPage() {
             value={`${aggregatedData.mer.toFixed(2)}x`} 
             change={pctChange(aggregatedData.mer, kpiCards.mer.prev)} 
             sparkline={[]}
-            target={`${kpiCards.mer.target}x`}
-            targetAchievement={(aggregatedData.mer / kpiCards.mer.target) * 100}
+            target={`${(getTarget('MER') ?? kpiCards.mer.target).toFixed?.(2) ?? kpiCards.mer.target}x`}
+            targetAchievement={getTargetAchievement('MER', aggregatedData.mer) ?? (aggregatedData.mer / kpiCards.mer.target) * 100}
           />
         </div>
         <div data-testid="kpi-amer">
@@ -369,8 +371,8 @@ export default function DashboardPage() {
             value={twData ? `${getMetric(twData, 'blendedAttributedRoas').toFixed(2)}x` : `${kpiCards.nmer.value}x`} 
             change={pctChange(twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value, kpiCards.nmer.prev)} 
             sparkline={[]}
-            target={`${kpiCards.nmer.target}x`}
-            targetAchievement={((twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value) / kpiCards.nmer.target) * 100}
+            target={`${(getTarget('aMER') ?? kpiCards.nmer.target).toFixed?.(2) ?? kpiCards.nmer.target}x`}
+            targetAchievement={getTargetAchievement('aMER', twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value) ?? ((twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value) / kpiCards.nmer.target) * 100}
           />
         </div>
       </div>
@@ -383,8 +385,8 @@ export default function DashboardPage() {
             value={formatNumber(aggregatedData.totalOrders)} 
             change={pctChange(aggregatedData.totalOrders, kpiCards.netOrders.prev)} 
             sparkline={[]}
-            target={formatNumber(kpiCards.netOrders.target)}
-            targetAchievement={(aggregatedData.totalOrders / kpiCards.netOrders.target) * 100}
+            target={formatNumber(Math.round(getTarget('Orders') ?? kpiCards.netOrders.target))}
+            targetAchievement={getTargetAchievement('Orders', aggregatedData.totalOrders) ?? (aggregatedData.totalOrders / kpiCards.netOrders.target) * 100}
           />
         </div>
         <div data-testid="kpi-nc-orders">
@@ -393,8 +395,8 @@ export default function DashboardPage() {
             value={formatNumber(aggregatedData.totalNewCustomers)} 
             change={pctChange(aggregatedData.totalNewCustomers, kpiCards.newCustomers.prev)} 
             sparkline={[]}
-            target={formatNumber(kpiCards.newCustomers.target)}
-            targetAchievement={(aggregatedData.totalNewCustomers / kpiCards.newCustomers.target) * 100}
+            target={formatNumber(Math.round(getTarget('NC Orders') ?? kpiCards.newCustomers.target))}
+            targetAchievement={getTargetAchievement('NC Orders', aggregatedData.totalNewCustomers) ?? (aggregatedData.totalNewCustomers / kpiCards.newCustomers.target) * 100}
           />
         </div>
         <div data-testid="kpi-cac">
@@ -403,8 +405,8 @@ export default function DashboardPage() {
             value={formatCurrencyValue(aggregatedData.cac)} 
             change={pctChange(aggregatedData.cac, kpiCards.cac.prev)} 
             sparkline={[]}
-            target={formatCurrencyValue(kpiCards.cac.target)}
-            targetAchievement={(kpiCards.cac.target / aggregatedData.cac) * 100}
+            target={formatCurrencyValue(getTarget('CAC') ?? kpiCards.cac.target)}
+            targetAchievement={getTargetAchievement('CAC', aggregatedData.cac) ?? (kpiCards.cac.target / aggregatedData.cac) * 100}
           />
         </div>
         <div data-testid="kpi-ncac">
@@ -413,8 +415,8 @@ export default function DashboardPage() {
             value={formatCurrencyValue(aggregatedData.ncac)} 
             change={pctChange(aggregatedData.ncac, kpiCards.ncac.prev)} 
             sparkline={[]}
-            target={formatCurrencyValue(kpiCards.ncac.target)}
-            targetAchievement={(kpiCards.ncac.target / aggregatedData.ncac) * 100}
+            target={formatCurrencyValue(getTarget('ncCAC') ?? kpiCards.ncac.target)}
+            targetAchievement={getTargetAchievement('ncCAC', aggregatedData.ncac) ?? (kpiCards.ncac.target / aggregatedData.ncac) * 100}
           />
         </div>
       </div>
@@ -434,8 +436,8 @@ export default function DashboardPage() {
           value={formatCurrencyValue(twData ? getMetric(twData, 'ltv') : 2520)} 
           change={12.4} 
           sparkline={[]}
-          target={formatCurrencyValue(2800)}
-          targetAchievement={twData ? (getMetric(twData, 'ltv') / 2800) * 100 : 90.0}
+          target={formatCurrencyValue(getTarget('AOV') ? (getTarget('AOV')! * 3.5) : 2800)}
+          targetAchievement={twData ? (getMetric(twData, 'ltv') / (getTarget('AOV') ? getTarget('AOV')! * 3.5 : 2800)) * 100 : 90.0}
         />
       </div>
 
