@@ -7,6 +7,7 @@ import { SkeletonMetricCard, SkeletonChart, SkeletonTable } from '@/components/u
 import { useDateRange } from '@/components/DateProvider';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { fetchTripleWhaleData, getMetric, TWData } from '@/lib/triple-whale-client';
+import { fetchTikTokOverview, classifyAdZone, TikTokOverview } from '@/lib/tiktok-client';
 import {
   creativePerformance, creativeAISuggestions,
   accountControlData, adChurnDataByPlatform, adChurnCampaigns, creativeChurnCohorts,
@@ -77,15 +78,22 @@ export default function CreativePage() {
   const [activeTab, setActiveTab] = useState('Ad Churn');
   const [twData, setTwData] = useState<TWData | null>(null);
   const [twLoading, setTwLoading] = useState(true);
+  const [ttData, setTtData] = useState<TikTokOverview | null>(null);
+  const [ttLoading, setTtLoading] = useState(true);
 
   useEffect(() => {
     setTwLoading(true);
+    setTtLoading(true);
     const startDate = dateRange.startDate.toISOString().split('T')[0];
     const endDate = dateRange.endDate.toISOString().split('T')[0];
     fetchTripleWhaleData(startDate, endDate, 'summary')
       .then(setTwData)
       .catch(console.error)
       .finally(() => setTwLoading(false));
+    fetchTikTokOverview(startDate, endDate)
+      .then(setTtData)
+      .catch(console.error)
+      .finally(() => setTtLoading(false));
   }, [dateRange]);
 
   // Platform-level metrics from TW
@@ -255,27 +263,47 @@ export default function CreativePage() {
     return [...new Set(campaigns)];
   }, [platform]);
 
-  // Get campaign names from accountControlData for the current platform
+  // Get campaign names for the current platform (real TikTok data or sample)
   const accountControlCampaigns = useMemo(() => {
+    if (platform === 'TikTok' && ttData) {
+      return ttData.campaigns
+        .filter(c => c.status === 'ENABLE')
+        .map(c => c.name);
+    }
     const names = creativePerformance
       .filter(c => c.platform === platform)
       .map(c => (c as any).campaignName as string)
       .filter(Boolean);
     return [...new Set(names)];
-  }, [platform]);
+  }, [platform, ttData]);
 
-  // Filter account control data by platform and campaign
+  // Filter account control data by platform and campaign (real TikTok or sample)
   const filteredAccountControlData = useMemo(() => {
+    if (platform === 'TikTok' && ttData) {
+      // Use real TikTok ad data
+      const cpaTarget = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
+      let ads = ttData.ads.filter(a => a.spend > 0); // Only ads with spend
+      if (accountControlCampaign !== 'all') {
+        ads = ads.filter(a => a.campaignName === accountControlCampaign);
+      }
+      return ads.map(a => ({
+        name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
+        spend: a.spend,
+        cpa: a.cpa,
+        platform: 'TikTok' as const,
+        zone: classifyAdZone(a, cpaTarget),
+        previewUrl: '',
+      }));
+    }
     let data = accountControlData.filter(d => d.platform === platform);
     if (accountControlCampaign !== 'all') {
-      // Match by ad name — find ads in creativePerformance that belong to the selected campaign
       const adsInCampaign = creativePerformance
         .filter(c => (c as any).campaignName === accountControlCampaign)
         .map(c => c.name);
       data = data.filter(d => adsInCampaign.includes(d.name));
     }
     return data;
-  }, [platform, accountControlCampaign]);
+  }, [platform, accountControlCampaign, ttData, churnCpaMode, targetCPA, targetNCCPA]);
 
   // Reset selected campaigns when platform changes
   const handlePlatformChange = (p: string) => {
