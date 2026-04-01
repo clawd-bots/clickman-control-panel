@@ -326,6 +326,27 @@ export default function CreativePage() {
   }, [sluggingMonths]);
 
   const totalSlugging = filteredSlugging.reduce((a, b) => ({ launched: a.launched + b.launched, hits: a.hits + b.hits }), { launched: 0, hits: 0 });
+
+  // Demographics gender+age data mapped to dates and filtered by universal date range
+  const filteredDemographicsGenderAge = useMemo(() => {
+    // Map week labels to approximate dates for filtering
+    const weekDates: Record<string, string> = {
+      'W1 Feb': '2026-02-02', 'W2 Feb': '2026-02-09', 'W3 Feb': '2026-02-16', 'W4 Feb': '2026-02-23',
+      'W1 Mar': '2026-03-02', 'W2 Mar': '2026-03-09',
+    };
+    const withDates = demographicsGenderAge.map(d => ({
+      ...d,
+      date: weekDates[d.week] || d.week,
+      displayLabel: formatDateLabel(weekDates[d.week] || '2026-02-01', 'day'),
+    }));
+    // Filter by date range
+    const filtered = withDates.filter(d => {
+      const date = new Date(d.date);
+      return date >= dateRange.startDate && date <= dateRange.endDate;
+    });
+    // If nothing in range, show all with original labels
+    return filtered.length > 0 ? filtered : withDates.map(d => ({ ...d, displayLabel: d.week }));
+  }, [dateRange, demographicsGenderAge]);
   const sluggingCpaTarget = sluggingCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
   // Filter demographics data based on gender selection
@@ -1247,7 +1268,15 @@ export default function CreativePage() {
 
       {/* ═══════════════════════ PARETO ═══════════════════════ */}
       {activeTab === 'Pareto' && (
-        <div className="space-y-4 sm:space-y-6 mx-1">
+        <div className="relative mx-1">
+          {/* Coming Soon overlay */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-bg-surface/60 backdrop-blur-sm rounded-lg">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-text-primary mb-2">Coming Soon</div>
+              <div className="text-sm text-text-secondary">Pareto analysis will be available once creative data is connected.</div>
+            </div>
+          </div>
+          <div className="space-y-4 sm:space-y-6 blur-[2px] pointer-events-none select-none">
           {/* Note: Google excluded */}
           {platform === 'Google' && (
             <div className="bg-warm-gold/10 border border-warm-gold/30 rounded-lg px-4 py-2 text-xs text-warm-gold">
@@ -1356,6 +1385,7 @@ export default function CreativePage() {
             </div>
           </div>
         </div>
+        </div>
       )}
 
       {/* ═══════════════════════ DEMOGRAPHICS ═══════════════════════ */}
@@ -1410,7 +1440,6 @@ export default function CreativePage() {
                       <span className={`text-xs font-medium shrink-0 ${row.cpa <= 700 ? 'text-success' : row.cpa <= 800 ? 'text-warm-gold' : 'text-danger'}`}>{formatCurrencyValue(row.cpa)} CPA</span>
                     </div>
                   </div>
-                  <div className="w-12 sm:w-16 text-right text-xs text-text-secondary shrink-0">{row.roas.toFixed(2)}x</div>
                 </div>
               ))}
             </div>
@@ -1467,9 +1496,9 @@ export default function CreativePage() {
             ) : (
               <div className="min-h-[320px]" style={{ width: '100%', height: '320px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={demographicsGenderAge} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                  <BarChart data={filteredDemographicsGenderAge} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                    <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
+                    <XAxis dataKey="displayLabel" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
                     <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
                     <Tooltip
                       contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11 }}
