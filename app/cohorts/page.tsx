@@ -167,7 +167,7 @@ export default function CohortsPage() {
                     <span>Return Customer Orders</span>
                     <DataSource source="TripleWhale" /><LiveBadge />
                   </div>
-                  <div className="text-lg font-bold text-text-primary">{(getMetric(twData, 'totalOrders') - getMetric(twData, 'newCustomerOrders')).toLocaleString()}</div>
+                  <div className="text-lg font-bold text-text-primary">{(getMetric(twData, 'orders') - getMetric(twData, 'newCustomerOrders')).toLocaleString()}</div>
                 </div>
                 <div className="bg-bg-surface border border-border rounded-lg p-3">
                   <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
