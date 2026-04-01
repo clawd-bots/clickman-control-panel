@@ -7,12 +7,14 @@ interface CurrencyContextType {
   currency: Currency;
   setCurrency: (currency: Currency) => void;
   convertValue: (value: number) => number;
+  exchangeRate: number;
+  rateLoading: boolean;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
 
-// Conversion rate: 1 USD = 55 PHP (approximate)
-const USD_TO_PHP_RATE = 55;
+// Fallback rate if API fails
+const FALLBACK_USD_TO_PHP_RATE = 57;
 
 interface CurrencyProviderProps {
   children: ReactNode;
@@ -20,18 +22,42 @@ interface CurrencyProviderProps {
 
 export function CurrencyProvider({ children }: CurrencyProviderProps) {
   const [currency, setCurrency] = useState<Currency>('₱');
+  const [exchangeRate, setExchangeRate] = useState(FALLBACK_USD_TO_PHP_RATE);
+  const [rateLoading, setRateLoading] = useState(true);
+
+  // Fetch live exchange rate on mount
+  useEffect(() => {
+    async function fetchRate() {
+      try {
+        const res = await fetch('/api/exchange-rate');
+        const data = await res.json();
+        if (data.success && data.rate) {
+          setExchangeRate(data.rate);
+        }
+      } catch {
+        // Keep fallback rate
+      } finally {
+        setRateLoading(false);
+      }
+    }
+    fetchRate();
+
+    // Refresh rate every hour
+    const interval = setInterval(fetchRate, 60 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Convert values based on current currency
+  // All data from Triple Whale / dashboard is in PHP (₱), convert to USD when needed
   const convertValue = (value: number): number => {
-    // All data is stored in PHP (₱), so we convert to USD when needed
     if (currency === '$') {
-      return value / USD_TO_PHP_RATE;
+      return value / exchangeRate;
     }
     return value;
   };
 
   return (
-    <CurrencyContext.Provider value={{ currency, setCurrency, convertValue }}>
+    <CurrencyContext.Provider value={{ currency, setCurrency, convertValue, exchangeRate, rateLoading }}>
       {children}
     </CurrencyContext.Provider>
   );
