@@ -23,6 +23,14 @@ export function getDataSourceClass(source: string): string {
     return 'data-source-ga4'; // Use same as GA4
   }
   
+  if (normalized === 'n/a') {
+    return 'data-source-na';
+  }
+  
+  if (normalized.includes('google ads')) {
+    return 'data-source-googleads';
+  }
+  
   return 'data-source-triplewhale'; // default
 }
 
@@ -40,6 +48,14 @@ export function getDataSourceIcon(source: string): string {
   }
   if (normalized.includes('ga4') || normalized.includes('google analytics')) {
     return '📈'; // chart emoji for GA4
+  }
+  
+  if (normalized === 'n/a') {
+    return '—';
+  }
+  
+  if (normalized.includes('google ads')) {
+    return '📢';
   }
   
   return '📊'; // default

@@ -86,6 +86,12 @@ body {
 .data-source-ga4 {
   color: #F9AB00; /* GA4 brand */
 }
+.data-source-na {
+  color: #6B7280; /* Gray for N/A */
+}
+.data-source-googleads {
+  color: #4285F4; /* Google Ads brand */
+}
 
 /* Dark mode data source colors - keep same colors for brand consistency */
 .dark .data-source-triplewhale {
@@ -99,4 +105,10 @@ body {
 }
 .dark .data-source-ga4 {
   color: #F9AB00;
+}
+.dark .data-source-na {
+  color: #6B7280;
+}
+.dark .data-source-googleads {
+  color: #4285F4;
 }

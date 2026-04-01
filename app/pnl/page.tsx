@@ -325,7 +325,7 @@ export default function PnLPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
         <div className="flex items-center gap-2">
           <h2 className="text-lg sm:text-xl font-semibold">Profit & Loss</h2>
-          <LiveBadge variant="sample" />
+          <div className="flex items-center gap-2"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs text-text-secondary font-medium">

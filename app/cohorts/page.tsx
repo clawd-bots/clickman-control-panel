@@ -132,21 +132,21 @@ export default function CohortsPage() {
               <div className="bg-bg-surface border border-border rounded-lg p-4">
                 <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
                   <span>LTV</span>
-                  <LiveBadge />
+                  <DataSource source="TripleWhale" /><LiveBadge />
                 </div>
                 <div className="text-xl font-bold text-text-primary">{formatCurrencyValue(getMetric(twData, 'ltv'))}</div>
               </div>
               <div className="bg-bg-surface border border-border rounded-lg p-4">
                 <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
                   <span>Customer Frequency</span>
-                  <LiveBadge />
+                  <DataSource source="TripleWhale" /><LiveBadge />
                 </div>
                 <div className="text-xl font-bold text-text-primary">{getMetric(twData, 'customerFrequency').toFixed(2)}x</div>
               </div>
               <div className="bg-bg-surface border border-border rounded-lg p-4">
                 <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
                   <span>NC Orders</span>
-                  <LiveBadge />
+                  <DataSource source="TripleWhale" /><LiveBadge />
                 </div>
                 <div className="text-xl font-bold text-text-primary">{getMetric(twData, 'newCustomerOrders').toLocaleString()}</div>
                 <div className="text-xs text-text-tertiary mt-1">
@@ -156,7 +156,7 @@ export default function CohortsPage() {
               <div className="bg-bg-surface border border-border rounded-lg p-4">
                 <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
                   <span>RC Revenue</span>
-                  <LiveBadge />
+                  <DataSource source="TripleWhale" /><LiveBadge />
                 </div>
                 <div className="text-xl font-bold text-text-primary">{formatCurrencyValue(getMetric(twData, 'returningCustomerRevenue'))}</div>
                 <div className="text-xs text-text-tertiary mt-1">

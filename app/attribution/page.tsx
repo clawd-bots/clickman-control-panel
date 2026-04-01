@@ -440,7 +440,7 @@ export default function AttributionPage() {
               <Activity size={16} className="text-brand-blue shrink-0" />
               <span className="truncate">Account Control Chart, CPA vs Spend</span>
             </h3>
-            <div className="flex items-center gap-2 shrink-0"><span className="text-xs text-text-tertiary">Platform Data</span><LiveBadge variant="sample" /></div>
+            <div className="flex items-center gap-2 shrink-0"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
           </div>
           <div className="min-h-[320px]">
             <ResponsiveContainer width="100%" height={320}>

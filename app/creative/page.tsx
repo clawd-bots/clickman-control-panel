@@ -2,6 +2,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { LiveBadge } from '@/components/ui/LiveBadge';
+import DataSource from '@/components/ui/DataSource';
 import { SkeletonMetricCard, SkeletonChart, SkeletonTable } from '@/components/ui/Skeleton';
 import { useDateRange } from '@/components/DateProvider';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
@@ -434,10 +435,10 @@ export default function CreativePage() {
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-primary">Creative Performance</h3>
             <div className="flex items-center gap-2 text-xs text-text-tertiary">
-              <span>[TripleWhale]</span>
+              <DataSource source="TripleWhale" />
               <LiveBadge />
               <span>+</span>
-              <span>[{platform}]</span>
+              <DataSource source="N/A" />
               <LiveBadge variant="sample" />
             </div>
           </div>

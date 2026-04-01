@@ -512,7 +512,7 @@ export default function DashboardPage() {
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary">Marketing Insights</h3>
-            <div className="flex items-center gap-2"><DataSource source="Google Analytics" />{ga4Data && <LiveBadge />}</div>
+            <div className="flex items-center gap-2"><DataSource source="Google Analytics" /><LiveBadge variant={ga4Data ? 'live' : 'sample'} /></div>
           </div>
           {[
             { label: 'Sessions', value: ga4Data ? getGA4Metric(ga4Data, 'sessions').toLocaleString() : (twData ? getMetric(twData, 'sessions').toLocaleString() : '33,850'), change: 8.2 },
@@ -737,7 +737,7 @@ export default function DashboardPage() {
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="product-kpis">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-primary">Product KPIs</h3>
-          <LiveBadge variant="sample" />
+          <div className="flex items-center gap-2"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm min-w-[500px]">

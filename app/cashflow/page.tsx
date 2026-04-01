@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import { LiveBadge } from '@/components/ui/LiveBadge';
+import DataSource from '@/components/ui/DataSource';
 import { useDateRange } from '@/components/DateProvider';
 
 import { cashFlowDefaults, cohortWaterfall, monthlySummary, sensitivityCards } from '@/lib/sample-data';
@@ -163,7 +164,7 @@ export default function CashFlowPage() {
       <div className="px-1">
         <div className="flex items-center gap-2">
           <h2 className="text-lg sm:text-xl font-semibold">Cash Flow Analysis</h2>
-          <LiveBadge variant="sample" />
+          <div className="flex items-center gap-2"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
         </div>
         <p className="text-sm text-text-secondary mt-2 max-w-4xl">
           <strong>Predictor & Modeling Tool:</strong> This cohort-based cash flow model projects your business performance across 12 months using acquisition spend, customer behavior patterns, and revenue composition. Adjust inputs to model different scenarios and understand working capital requirements. Models include subscription attach rates for hybrid revenue strategies.
