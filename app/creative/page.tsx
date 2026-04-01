@@ -153,6 +153,9 @@ export default function CreativePage() {
   const [churnCpaMode, setChurnCpaMode] = useState<'cpa' | 'nccpa'>('cpa');
   const [churnAgePlatform, setChurnAgePlatform] = useState('Meta');
   const [churnCohortPlatform, setChurnCohortPlatform] = useState('Meta');
+  const [sluggingPlatform, setSluggingPlatform] = useState('Meta');
+  const [sluggingMonths, setSluggingMonths] = useState<number>(6);
+  const [sluggingCpaMode, setSluggingCpaMode] = useState<'cpa' | 'nccpa'>('cpa');
   const [churnCampaignFilter, setChurnCampaignFilter] = useState('all');
 
   // ─── Ad Churn derived data ───
@@ -315,7 +318,15 @@ export default function CreativePage() {
   }, [platform]);
   const paretoTotal = paretoData.reduce((s, c) => s + c.conversions, 0);
 
-  const totalSlugging = productionSlugging.reduce((a, b) => ({ launched: a.launched + b.launched, hits: a.hits + b.hits }), { launched: 0, hits: 0 });
+  // Slugging data filtered by selected month range (independent of global date range)
+  const filteredSlugging = useMemo(() => {
+    const cutoff = new Date();
+    cutoff.setMonth(cutoff.getMonth() - sluggingMonths);
+    return productionSlugging.filter(d => new Date(d.month) >= cutoff);
+  }, [sluggingMonths]);
+
+  const totalSlugging = filteredSlugging.reduce((a, b) => ({ launched: a.launched + b.launched, hits: a.hits + b.hits }), { launched: 0, hits: 0 });
+  const sluggingCpaTarget = sluggingCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
   // Filter demographics data based on gender selection
   const getFilteredDemographicsAge = () => {
@@ -1110,12 +1121,61 @@ export default function CreativePage() {
       {/* ═══════════════════════ SLUGGING RATE (Production & Slugging Rate) ═══════════════════════ */}
       {activeTab === 'Slugging Rate' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
-            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
-              <span className="truncate">Production & Slugging Rate</span>
-              <InfoTooltip metric="Production Rate" />
-            </h3>
-            <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+          <div className="flex flex-col gap-3 mb-4">
+            {/* Title row with CPA targets */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+                  <span className="truncate">Production & Slugging Rate</span>
+                  <InfoTooltip metric="Production Rate" />
+                </h3>
+                <div className="flex items-center gap-2">
+                  <div className={`px-2.5 py-1 rounded-md text-xs font-medium ${sluggingCpaMode === 'nccpa' ? 'bg-brand-blue/15 text-brand-blue-light' : 'bg-bg-elevated text-text-secondary border border-border'}`}>
+                    <span className="text-text-tertiary">NC CPA Target:</span> <span className="font-semibold">{formatCurrencyValue(targetNCCPA)}</span>
+                  </div>
+                  <div className={`px-2.5 py-1 rounded-md text-xs font-medium ${sluggingCpaMode === 'cpa' ? 'bg-brand-blue/15 text-brand-blue-light' : 'bg-bg-elevated text-text-secondary border border-border'}`}>
+                    <span className="text-text-tertiary">All CPA Target:</span> <span className="font-semibold">{formatCurrencyValue(targetCPA)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Controls row: Platform + CPA toggle + Date range */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
+              {/* Platform buttons */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
+                <div className="flex gap-1">
+                  {platforms.map(p => (
+                    <button key={p} onClick={() => setSluggingPlatform(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${sluggingPlatform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* CPA Mode toggle */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-text-secondary font-medium shrink-0">Target:</span>
+                <div className="flex bg-bg-elevated border border-border rounded-lg overflow-hidden">
+                  <button onClick={() => setSluggingCpaMode('cpa')} className={`px-3 py-1.5 text-xs font-medium transition-colors ${sluggingCpaMode === 'cpa' ? 'bg-brand-blue text-white' : 'text-text-secondary hover:text-text-primary'}`}>
+                    All Customers
+                  </button>
+                  <button onClick={() => setSluggingCpaMode('nccpa')} className={`px-3 py-1.5 text-xs font-medium transition-colors ${sluggingCpaMode === 'nccpa' ? 'bg-brand-blue text-white' : 'text-text-secondary hover:text-text-primary'}`}>
+                    New Customers
+                  </button>
+                </div>
+              </div>
+              {/* Own date range (not global) */}
+              <div className="flex items-center gap-2 sm:ml-auto">
+                <span className="text-xs text-text-secondary font-medium shrink-0">Period:</span>
+                <div className="flex gap-1">
+                  {[1, 3, 6, 12, 24].map(m => (
+                    <button key={m} onClick={() => setSluggingMonths(m)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${sluggingMonths === m ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+                      {m}mo
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex gap-2 sm:gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-1.5">
@@ -1133,7 +1193,7 @@ export default function CreativePage() {
           </div>
           <div className="min-h-[320px] sm:min-h-[380px]" style={{ width: '100%', height: '380px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={productionSlugging.map(d => ({ ...d, displayMonth: formatDateLabel(d.month, 'month') }))} margin={{ top: 20, right: 40, bottom: 10, left: 20 }}>
+              <ComposedChart data={filteredSlugging.map(d => ({ ...d, displayMonth: formatDateLabel(d.month, 'month') }))} margin={{ top: 20, right: 40, bottom: 10, left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis dataKey="displayMonth" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} angle={-45} textAnchor="end" height={60} />
                 <YAxis yAxisId="left" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} label={{ value: 'Ads', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} />
@@ -1433,13 +1493,13 @@ export default function CreativePage() {
         </div>
       )}
 
-      {/* ═══════════════════════ OTHER TABS (Placeholder) ═══════════════════════ */}
-      {!['Performance', 'Pareto', 'Account Control', 'Ad Churn', 'Top Creatives', 'Demographics'].includes(activeTab) && (
+      {/* ═══════════════════════ OTHER TABS (Placeholder) — COMMENTED OUT per Indro ═══════════════════════ */}
+      {/* {!['Performance', 'Pareto', 'Account Control', 'Ad Churn', 'Top Creatives', 'Demographics', 'Slugging Rate'].includes(activeTab) && (
         <div className="bg-bg-surface border border-border rounded-lg p-8 sm:p-12 text-center mx-1">
           <div className="text-text-secondary text-sm">{activeTab} view</div>
           <div className="text-text-secondary text-xs mt-1">Data will populate when connected to live sources</div>
         </div>
-      )}
+      )} */}
 
 
 
