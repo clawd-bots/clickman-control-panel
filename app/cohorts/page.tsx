@@ -128,39 +128,60 @@ export default function CohortsPage() {
         <>
           {/* TW Summary Cards */}
           {twData && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mx-1">
-              <div className="bg-bg-surface border border-border rounded-lg p-4">
-                <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
-                  <span>LTV</span>
-                  <DataSource source="TripleWhale" /><LiveBadge />
+            <div className="space-y-3 mx-1">
+              {/* Row 1: LTV, Customer Frequency, AOV */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-bg-surface border border-border rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
+                    <span>LTV</span>
+                    <DataSource source="TripleWhale" /><LiveBadge />
+                  </div>
+                  <div className="text-lg font-bold text-text-primary">{formatCurrencyValue(getMetric(twData, 'ltv'))}</div>
                 </div>
-                <div className="text-xl font-bold text-text-primary">{formatCurrencyValue(getMetric(twData, 'ltv'))}</div>
+                <div className="bg-bg-surface border border-border rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
+                    <span>Customer Frequency</span>
+                    <DataSource source="TripleWhale" /><LiveBadge />
+                  </div>
+                  <div className="text-lg font-bold text-text-primary">{getMetric(twData, 'customerFrequency').toFixed(2)}x</div>
+                </div>
+                <div className="bg-bg-surface border border-border rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
+                    <span>AOV</span>
+                    <DataSource source="TripleWhale" /><LiveBadge />
+                  </div>
+                  <div className="text-lg font-bold text-text-primary">{formatCurrencyValue(getMetric(twData, 'aov'))}</div>
+                </div>
               </div>
-              <div className="bg-bg-surface border border-border rounded-lg p-4">
-                <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
-                  <span>Customer Frequency</span>
-                  <DataSource source="TripleWhale" /><LiveBadge />
+              {/* Row 2: NC Orders | RC Orders, NC Revenue | RC Revenue */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-bg-surface border border-border rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
+                    <span>New Customer Orders</span>
+                    <DataSource source="TripleWhale" /><LiveBadge />
+                  </div>
+                  <div className="text-lg font-bold text-text-primary">{getMetric(twData, 'newCustomerOrders').toLocaleString()}</div>
                 </div>
-                <div className="text-xl font-bold text-text-primary">{getMetric(twData, 'customerFrequency').toFixed(2)}x</div>
-              </div>
-              <div className="bg-bg-surface border border-border rounded-lg p-4">
-                <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
-                  <span>NC Orders</span>
-                  <DataSource source="TripleWhale" /><LiveBadge />
+                <div className="bg-bg-surface border border-border rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
+                    <span>Return Customer Orders</span>
+                    <DataSource source="TripleWhale" /><LiveBadge />
+                  </div>
+                  <div className="text-lg font-bold text-text-primary">{(getMetric(twData, 'totalOrders') - getMetric(twData, 'newCustomerOrders')).toLocaleString()}</div>
                 </div>
-                <div className="text-xl font-bold text-text-primary">{getMetric(twData, 'newCustomerOrders').toLocaleString()}</div>
-                <div className="text-xs text-text-tertiary mt-1">
-                  NC Rev: {formatCurrencyValue(getMetric(twData, 'newCustomerRevenue'))}
+                <div className="bg-bg-surface border border-border rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
+                    <span>New Customer Revenue</span>
+                    <DataSource source="TripleWhale" /><LiveBadge />
+                  </div>
+                  <div className="text-lg font-bold text-text-primary">{formatCurrencyValue(getMetric(twData, 'newCustomerRevenue'))}</div>
                 </div>
-              </div>
-              <div className="bg-bg-surface border border-border rounded-lg p-4">
-                <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
-                  <span>RC Revenue</span>
-                  <DataSource source="TripleWhale" /><LiveBadge />
-                </div>
-                <div className="text-xl font-bold text-text-primary">{formatCurrencyValue(getMetric(twData, 'returningCustomerRevenue'))}</div>
-                <div className="text-xs text-text-tertiary mt-1">
-                  AOV: {formatCurrencyValue(getMetric(twData, 'aov'))}
+                <div className="bg-bg-surface border border-border rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-xs text-text-secondary mb-1">
+                    <span>Return Customer Revenue</span>
+                    <DataSource source="TripleWhale" /><LiveBadge />
+                  </div>
+                  <div className="text-lg font-bold text-text-primary">{formatCurrencyValue(getMetric(twData, 'returningCustomerRevenue'))}</div>
                 </div>
               </div>
             </div>
