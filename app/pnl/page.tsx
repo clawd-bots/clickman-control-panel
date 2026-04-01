@@ -372,7 +372,7 @@ export default function PnLPage() {
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-secondary">Margin Levels Over Time</h3>
-          <div className="flex items-center gap-2 shrink-0"><DataSource source="Google Sheets" /><LiveBadge variant="sample" /></div>
+          <div className="flex items-center gap-2 shrink-0"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
         </div>
         <div className="min-h-[300px]">
           <ResponsiveContainer width="100%" height={300}>
@@ -414,7 +414,7 @@ export default function PnLPage() {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center justify-between w-full">
             <h3 className="text-sm font-medium text-text-primary">P&L Breakdown</h3>
-            <div className="flex items-center gap-2 shrink-0"><DataSource source="Google Sheets" /><LiveBadge variant="sample" /></div>
+            <div className="flex items-center gap-2 shrink-0"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
           </div>
         </div>
         <div className="flex items-center justify-end mb-4">

@@ -359,7 +359,7 @@ export default function AttributionPage() {
               <GitBranch size={16} className="text-brand-blue-light shrink-0" />
               <span className="truncate">Channel Allocation, Survey Results</span>
             </h3>
-            <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge variant="sample" /></div>
+            <div className="flex items-center gap-2 shrink-0"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="min-h-[280px]">
@@ -699,7 +699,7 @@ export default function AttributionPage() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0"><DataSource source="TripleWhale" /><LiveBadge variant="sample" /></div>
+            <div className="flex items-center gap-2 shrink-0"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {[
