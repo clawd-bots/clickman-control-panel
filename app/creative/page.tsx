@@ -23,8 +23,9 @@ import {
   AreaChart, Area, LineChart, Line, ComposedChart,
 } from 'recharts';
 
-const tabs = ['Performance', 'Ad Churn', 'Account Control', 'Slugging Rate', 'Pareto', 'Demographics'];
-const platforms = ['Meta', 'TikTok', 'Reddit', 'Google'];
+const tabs = [/* 'Performance', */ 'Ad Churn', 'Account Control', 'Slugging Rate', 'Pareto', 'Demographics'];
+const platforms = ['Meta', 'TikTok', 'Reddit'];
+const platformsWithGoogle = ['Meta', 'TikTok', 'Reddit', 'Google'];
 
 const tabDescriptions: Record<string, string> = {
   'Performance': 'Overview of all active ad creatives with spend, engagement, and conversion metrics. Use this to monitor your live ads and spot issues quickly.',
@@ -73,7 +74,7 @@ function getAITitle(tab: string): string {
 export default function CreativePage() {
   const { currency, convertValue } = useCurrency();
   const { dateRange } = useDateRange();
-  const [activeTab, setActiveTab] = useState('Performance');
+  const [activeTab, setActiveTab] = useState('Ad Churn');
   const [twData, setTwData] = useState<TWData | null>(null);
   const [twLoading, setTwLoading] = useState(true);
 
@@ -145,23 +146,26 @@ export default function CreativePage() {
   const [attrModel, setAttrModel] = useState('Linear All');
   const [attrWindow, setAttrWindow] = useState('7-day click / 1-day view');
   const [accountControlFilter, setAccountControlFilter] = useState('all');
+  const [accountControlCampaign, setAccountControlCampaign] = useState('all');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [genderFilter, setGenderFilter] = useState('all');
   const [churnCpaMode, setChurnCpaMode] = useState<'cpa' | 'nccpa'>('cpa');
+  const [churnAgePlatform, setChurnAgePlatform] = useState('Meta');
+  const [churnCohortPlatform, setChurnCohortPlatform] = useState('Meta');
   const [churnCampaignFilter, setChurnCampaignFilter] = useState('all');
 
   // ─── Ad Churn derived data ───
   const churnPlatformData = useMemo(() => {
-    const raw = adChurnDataByPlatform[platform] || adChurnDataByPlatform.Meta;
+    const raw = adChurnDataByPlatform[churnAgePlatform] || adChurnDataByPlatform.Meta;
     const filtered = filterByDateRange(raw, 'month', dateRange.startDate, dateRange.endDate);
     const data = filtered.length > 0 ? filtered : raw;
     return data.map(d => ({ ...d, displayMonth: formatDateLabel(d.month, 'month') }));
-  }, [platform, dateRange]);
+  }, [churnAgePlatform, dateRange]);
   const churnCampaignsForPlatform = useMemo(() => {
-    const campaigns = adChurnCampaigns[platform] || [];
+    const campaigns = adChurnCampaigns[churnAgePlatform] || [];
     return campaigns.filter(c => c.status === 'Active');
-  }, [platform]);
+  }, [churnAgePlatform]);
   const churnFilteredCampaigns = useMemo(() => {
     if (churnCampaignFilter === 'all') return churnCampaignsForPlatform;
     return churnCampaignsForPlatform.filter(c => c.campaign === churnCampaignFilter);
@@ -248,10 +252,33 @@ export default function CreativePage() {
     return [...new Set(campaigns)];
   }, [platform]);
 
+  // Get campaign names from accountControlData for the current platform
+  const accountControlCampaigns = useMemo(() => {
+    const names = creativePerformance
+      .filter(c => c.platform === platform)
+      .map(c => (c as any).campaignName as string)
+      .filter(Boolean);
+    return [...new Set(names)];
+  }, [platform]);
+
+  // Filter account control data by platform and campaign
+  const filteredAccountControlData = useMemo(() => {
+    let data = accountControlData.filter(d => d.platform === platform);
+    if (accountControlCampaign !== 'all') {
+      // Match by ad name — find ads in creativePerformance that belong to the selected campaign
+      const adsInCampaign = creativePerformance
+        .filter(c => (c as any).campaignName === accountControlCampaign)
+        .map(c => c.name);
+      data = data.filter(d => adsInCampaign.includes(d.name));
+    }
+    return data;
+  }, [platform, accountControlCampaign]);
+
   // Reset selected campaigns when platform changes
   const handlePlatformChange = (p: string) => {
     setPlatform(p);
     setSelectedCampaigns([]);
+    setAccountControlCampaign('all');
   };
 
   // Memoized filtering for better performance
@@ -346,11 +373,11 @@ export default function CreativePage() {
       <div className="flex flex-col gap-3 mx-1">
         {/* Row 1: Platform + Attribution */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-          {!['Slugging Rate'].includes(activeTab) && (
+          {!['Slugging Rate', 'Ad Churn'].includes(activeTab) && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
               <div className="flex gap-1 flex-wrap">
-                {platforms.map(p => (
+                {(['Account Control', 'Demographics'].includes(activeTab) ? platformsWithGoogle : platforms).map(p => (
                   <button key={p} onClick={() => handlePlatformChange(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
                     {p}
                   </button>
@@ -358,7 +385,7 @@ export default function CreativePage() {
               </div>
             </div>
           )}
-          {!['Slugging Rate'].includes(activeTab) && (
+          {!['Slugging Rate', 'Ad Churn'].includes(activeTab) && (
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:ml-auto">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-secondary font-medium shrink-0">Model:</span>
@@ -429,7 +456,7 @@ export default function CreativePage() {
         )}
       </div>
 
-      {/* ═══════════════════════ PERFORMANCE TAB ═══════════════════════ */}
+      {/* ═══════════════════════ PERFORMANCE TAB (commented out per Indro — recoverable) ═══════════════════════ */}
       {activeTab === 'Performance' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex items-center justify-between mb-4">
@@ -443,31 +470,31 @@ export default function CreativePage() {
             </div>
           </div>
           {/* TW Platform Summary */}
-          {twPlatformMetrics && twPlatformMetrics[platform as keyof typeof twPlatformMetrics] && (
+          {twPlatformMetrics && twPlatformMetrics[platform as keyof NonNullable<typeof twPlatformMetrics>] && (
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 mb-4 p-3 bg-bg-elevated rounded-lg border border-border/50">
               <div>
                 <div className="text-[10px] text-text-tertiary uppercase">Spend</div>
-                <div className="text-sm font-semibold text-text-primary">{formatCurrencyValue(twPlatformMetrics[platform as keyof typeof twPlatformMetrics].spend)}</div>
+                <div className="text-sm font-semibold text-text-primary">{formatCurrencyValue(twPlatformMetrics![platform as keyof NonNullable<typeof twPlatformMetrics>].spend)}</div>
               </div>
               <div>
                 <div className="text-[10px] text-text-tertiary uppercase">ROAS</div>
-                <div className={`text-sm font-semibold ${twPlatformMetrics[platform as keyof typeof twPlatformMetrics].roas >= 3.0 ? 'text-success' : twPlatformMetrics[platform as keyof typeof twPlatformMetrics].roas >= 2.0 ? 'text-warm-gold' : 'text-danger'}`}>{twPlatformMetrics[platform as keyof typeof twPlatformMetrics].roas.toFixed(2)}x</div>
+                <div className={`text-sm font-semibold ${twPlatformMetrics![platform as keyof NonNullable<typeof twPlatformMetrics>].roas >= 3.0 ? 'text-success' : twPlatformMetrics![platform as keyof NonNullable<typeof twPlatformMetrics>].roas >= 2.0 ? 'text-warm-gold' : 'text-danger'}`}>{twPlatformMetrics![platform as keyof NonNullable<typeof twPlatformMetrics>].roas.toFixed(2)}x</div>
               </div>
               <div>
                 <div className="text-[10px] text-text-tertiary uppercase">CPA</div>
-                <div className="text-sm font-semibold text-text-primary">{formatCurrencyValue(twPlatformMetrics[platform as keyof typeof twPlatformMetrics].cpa)}</div>
+                <div className="text-sm font-semibold text-text-primary">{formatCurrencyValue(twPlatformMetrics![platform as keyof NonNullable<typeof twPlatformMetrics>].cpa)}</div>
               </div>
               <div>
                 <div className="text-[10px] text-text-tertiary uppercase">Impressions</div>
-                <div className="text-sm font-semibold text-text-primary">{(twPlatformMetrics[platform as keyof typeof twPlatformMetrics].impressions / 1000).toFixed(0)}K</div>
+                <div className="text-sm font-semibold text-text-primary">{(twPlatformMetrics![platform as keyof NonNullable<typeof twPlatformMetrics>].impressions / 1000).toFixed(0)}K</div>
               </div>
               <div>
                 <div className="text-[10px] text-text-tertiary uppercase">CTR</div>
-                <div className="text-sm font-semibold text-text-primary">{twPlatformMetrics[platform as keyof typeof twPlatformMetrics].ctr.toFixed(2)}%</div>
+                <div className="text-sm font-semibold text-text-primary">{twPlatformMetrics![platform as keyof NonNullable<typeof twPlatformMetrics>].ctr.toFixed(2)}%</div>
               </div>
               <div>
                 <div className="text-[10px] text-text-tertiary uppercase">Conv. Value</div>
-                <div className="text-sm font-semibold text-text-primary">{formatCurrencyValue(twPlatformMetrics[platform as keyof typeof twPlatformMetrics].conversionValue)}</div>
+                <div className="text-sm font-semibold text-text-primary">{formatCurrencyValue(twPlatformMetrics![platform as keyof NonNullable<typeof twPlatformMetrics>].conversionValue)}</div>
               </div>
             </div>
           )}
@@ -626,6 +653,7 @@ export default function CreativePage() {
         </div>
       )}
 
+
       {/* ═══════════════════════ ACCOUNT CONTROL (Scatter Plot) ═══════════════════════ */}
       {activeTab === 'Account Control' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
@@ -635,7 +663,26 @@ export default function CreativePage() {
                 <span className="truncate">Account Control, CPA vs Spend</span>
                 <InfoTooltip metric="Account Control Chart" />
               </h3>
-              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+              <div className="flex items-center gap-3">
+                {accountControlCampaigns.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-secondary font-medium shrink-0">Campaign:</span>
+                    <div className="relative">
+                      <select
+                        value={accountControlCampaign}
+                        onChange={(e) => setAccountControlCampaign(e.target.value)}
+                        className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors max-w-[280px]"
+                      >
+                        <option value="all">All Campaigns</option>
+                        {accountControlCampaigns.map(c => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                      <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             {/* CPA Target Toggle + Wasted Spend */}
             <div className="flex flex-col sm:flex-row gap-3 sm:items-end sm:justify-end">
@@ -753,7 +800,7 @@ export default function CreativePage() {
                 }}
               />
               <Scatter 
-                data={accountControlData} 
+                data={filteredAccountControlData} 
                 name="Ads"
                 onClick={(data) => {
                   if (data && data.payload && data.payload.previewUrl) {
@@ -761,7 +808,7 @@ export default function CreativePage() {
                   }
                 }}
               >
-                {accountControlData.map((entry, i) => (
+                {filteredAccountControlData.map((entry, i) => (
                   <Cell 
                     key={i} 
                     fill={zoneColors[entry.zone]} 
@@ -874,8 +921,7 @@ export default function CreativePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {accountControlData
-                      .filter(ad => ad.platform === platform)
+                    {filteredAccountControlData
                       .filter(ad => accountControlFilter === 'all' || ad.zone === accountControlFilter)
                       .sort((a, b) => b.spend - a.spend)
                       .map((ad) => (
@@ -956,7 +1002,15 @@ export default function CreativePage() {
                 <span className="truncate">Churn & Retesting Control, Spend by Creative Age</span>
                 <InfoTooltip metric="Ad Churn" />
               </h3>
-              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  {platforms.map(p => (
+                    <button key={p} onClick={() => setChurnAgePlatform(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${churnAgePlatform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
             {churnAgeKeys.map((key, i) => (
@@ -984,15 +1038,14 @@ export default function CreativePage() {
                 <Bar yAxisId="spend" dataKey="91-180 Days" stackId="churn" fill="#93B4F5" />
                 <Bar yAxisId="spend" dataKey="180+ Days" stackId="churn" fill="#C5D8FB" radius={[3, 3, 0, 0]} />
                 <Line yAxisId="cpa" type="monotone" dataKey="cpa" stroke="#EDBF63" strokeWidth={2} dot={{ fill: '#EDBF63', r: 4 }} name={churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'} />
-                <ReferenceLine yAxisId="cpa" y={churnCpaTarget} stroke="#EF4444" strokeDasharray="6 4" strokeWidth={2} label={{ value: `${churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'} Target`, fill: '#EF4444', fontSize: 10, position: 'right' }} />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
             <div className="mt-4 bg-bg-elevated border border-border rounded-lg p-3">
               <p className="text-xs text-text-secondary leading-relaxed">
                 <span className="font-medium text-text-primary">Reading this chart:</span> Dark bars = newest ads (last 7 days). Lighter bars = older ads.
-                Gold line = actual {churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'}. Red dotted line = target ({formatCurrencyValue(churnCpaTarget)} from Targets & Goals).
-                A healthy account shows new creative steadily taking over spend from older creative while keeping CPA below target.
+                Gold line = actual {churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'}.
+                A healthy account shows new creative steadily taking over spend from older creative.
               </p>
             </div>
           </div>
@@ -1004,7 +1057,15 @@ export default function CreativePage() {
                 <span className="truncate">Creative Churn, Spend by Launch Cohort</span>
                 <InfoTooltip metric="Creative Churn Cohorts" />
               </h3>
-              <span className="text-xs text-text-tertiary shrink-0">TripleWhale</span>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-1">
+                  {platforms.map(p => (
+                    <button key={p} onClick={() => setChurnCohortPlatform(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${churnCohortPlatform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
               {cohortKeys.map((key) => (
