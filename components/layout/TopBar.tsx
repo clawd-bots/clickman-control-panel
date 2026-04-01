@@ -92,7 +92,7 @@ function getShortDisplayDate(preset: string): string {
 }
 
 // Pages where date picker should NOT show
-const hideDatePickerPages = ['/cohorts'];
+const hideDatePickerPages: string[] = [];
 
 export default function TopBar() {
   const pathname = usePathname();
