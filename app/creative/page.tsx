@@ -327,25 +327,51 @@ export default function CreativePage() {
 
   const totalSlugging = filteredSlugging.reduce((a, b) => ({ launched: a.launched + b.launched, hits: a.hits + b.hits }), { launched: 0, hits: 0 });
 
-  // Demographics gender+age data mapped to dates and filtered by universal date range
+  // Demographics gender+age data — generated to match the universal date range
   const filteredDemographicsGenderAge = useMemo(() => {
-    // Map week labels to approximate dates for filtering
-    const weekDates: Record<string, string> = {
-      'W1 Feb': '2026-02-02', 'W2 Feb': '2026-02-09', 'W3 Feb': '2026-02-16', 'W4 Feb': '2026-02-23',
-      'W1 Mar': '2026-03-02', 'W2 Mar': '2026-03-09',
-    };
-    const withDates = demographicsGenderAge.map(d => ({
-      ...d,
-      date: weekDates[d.week] || d.week,
-      displayLabel: formatDateLabel(weekDates[d.week] || '2026-02-01', 'day'),
-    }));
-    // Filter by date range
-    const filtered = withDates.filter(d => {
-      const date = new Date(d.date);
-      return date >= dateRange.startDate && date <= dateRange.endDate;
-    });
-    // If nothing in range, show all with original labels
-    return filtered.length > 0 ? filtered : withDates.map(d => ({ ...d, displayLabel: d.week }));
+    const demoKeys = ['F 18-24', 'F 25-34', 'F 35-44', 'F 45-54', 'F 55+', 'M 18-24', 'M 25-34', 'M 35-44', 'M 45-54', 'M 55+'] as const;
+    // Use the last entry from sample data as a baseline for generating values
+    const baseline = demographicsGenderAge[demographicsGenderAge.length - 1];
+    
+    const start = new Date(dateRange.startDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(dateRange.endDate);
+    end.setHours(23, 59, 59, 999);
+    const rangeDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+    
+    // Determine bucket size based on range
+    let bucketDays: number;
+    let labelFn: (d: Date) => string;
+    if (rangeDays <= 7) {
+      bucketDays = 1;
+      labelFn = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } else if (rangeDays <= 31) {
+      bucketDays = 7;
+      labelFn = (d) => `W${Math.ceil(d.getDate() / 7)} ${d.toLocaleDateString('en-US', { month: 'short' })}`;
+    } else {
+      bucketDays = 30;
+      labelFn = (d) => d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    }
+    
+    const buckets: Array<Record<string, any>> = [];
+    const cursor = new Date(start);
+    let idx = 0;
+    while (cursor <= end) {
+      const label = labelFn(cursor);
+      // Generate slightly varied data based on baseline + index
+      const entry: Record<string, any> = { displayLabel: label };
+      for (const key of demoKeys) {
+        const base = (baseline as any)[key] || 5000;
+        // Add some variance: ±15% seeded by index
+        const variance = 1 + (((idx * 7 + key.charCodeAt(0)) % 30) - 15) / 100;
+        entry[key] = Math.round(base * variance * (bucketDays / 7)); // scale by bucket size relative to weekly
+      }
+      buckets.push(entry);
+      cursor.setDate(cursor.getDate() + bucketDays);
+      idx++;
+    }
+    
+    return buckets;
   }, [dateRange, demographicsGenderAge]);
   const sluggingCpaTarget = sluggingCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
