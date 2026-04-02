@@ -420,7 +420,7 @@ export default function TargetsPage() {
                               <div 
                                 className={`w-full py-1 px-2 rounded text-xs cursor-not-allowed ${
                                   cellValue 
-                                    ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                                    ? 'text-brand-blue-light bg-brand-blue/10 border border-brand-blue/25' 
                                     : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
                                 }`}
                                 title={cellValue ? `Auto-calculated: ${prefix}${cellValue}${suffix}` : `Will be auto-calculated`}
@@ -428,7 +428,7 @@ export default function TargetsPage() {
                                 {cellValue ? (
                                   <span className="flex items-center justify-center gap-1">
                                     <span>{prefix}{cellValue}{suffix}</span>
-                                    <span className="text-blue-500 text-[8px]">⚙</span>
+                                    <span className="text-brand-blue-light text-[8px]">⚙</span>
                                   </span>
                                 ) : (
                                   <span className="text-text-tertiary">Auto</span>
@@ -535,7 +535,7 @@ export default function TargetsPage() {
                             <div 
                               className={`w-full py-1.5 px-3 rounded text-xs cursor-not-allowed ${
                                 cellValue 
-                                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                                  ? 'text-brand-blue-light bg-brand-blue/10 border border-brand-blue/25' 
                                   : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
                               }`}
                               title={cellValue 
@@ -546,7 +546,7 @@ export default function TargetsPage() {
                               {cellValue ? (
                                 <span className="flex items-center justify-center gap-1">
                                   <span>{prefix}{cellValue}{suffix}</span>
-                                  <span className="text-blue-500 text-[10px]">⚙</span>
+                                  <span className="text-brand-blue-light text-[10px]">⚙</span>
                                 </span>
                               ) : (
                                 <span className="text-text-tertiary">Auto-calc</span>

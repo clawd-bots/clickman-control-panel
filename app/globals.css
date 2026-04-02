@@ -73,9 +73,27 @@ body {
 .dark .heatmap-8 { background: rgba(52, 211, 153, 0.50); }
 .dark .heatmap-9 { background: rgba(52, 211, 153, 0.70); }
 
-/* Recharts tooltip override for light mode */
+/* Recharts tooltip override */
 .recharts-default-tooltip {
   transition: background-color 0.2s ease;
+  color: var(--color-text-primary) !important;
+}
+
+.recharts-tooltip-label {
+  color: var(--color-text-primary) !important;
+}
+
+.recharts-tooltip-item {
+  color: var(--color-text-secondary) !important;
+}
+
+.recharts-legend-item-text {
+  color: var(--color-text-secondary) !important;
+}
+
+/* Recharts cartesian grid */
+.recharts-cartesian-grid line {
+  stroke: var(--color-border);
 }
 
 /* Data source color indicators */

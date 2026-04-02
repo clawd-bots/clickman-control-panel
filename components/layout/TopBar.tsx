@@ -164,7 +164,7 @@ export default function TopBar() {
           <Menu size={20} />
         </button>
         <img 
-          src="/clickman-logo-black.png" 
+          src={theme === 'dark' ? '/clickman-logo-white.png' : '/clickman-logo-black.png'} 
           alt="Click-Man Control Panel" 
           className="h-6 sm:h-8 w-auto shrink-0"
         />

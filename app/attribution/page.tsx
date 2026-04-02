@@ -376,7 +376,7 @@ export default function AttributionPage() {
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }} />
+                  <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -459,7 +459,7 @@ export default function AttributionPage() {
                 <YAxis dataKey="cpa" name="CPA" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${currency}${convertValue(v)}`} />
                 <ZAxis dataKey="spend" range={[60, 400]} />
                 <Tooltip
-                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
+                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(value: any, name: any) => [name === 'Spend' ? `${currency}${(convertValue(Number(value))/1000).toFixed(1)}K` : `${currency}${convertValue(value)}`, name || '']}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.name || ''}

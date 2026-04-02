@@ -279,7 +279,7 @@ export default function PnLPage() {
                   tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
                 />
                 <Tooltip 
-                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
+                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
                   formatter={(value: any) => [`$${Number(value).toLocaleString()}`, '']}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -314,7 +314,7 @@ export default function PnLPage() {
                   tickFormatter={(v) => `${v.toFixed(0)}%`}
                 />
                 <Tooltip 
-                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
+                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
                   formatter={(value: any) => [`${Number(value).toFixed(1)}%`, '']}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />

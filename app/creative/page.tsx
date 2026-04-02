@@ -966,7 +966,8 @@ export default function CreativePage() {
                   border: '1px solid var(--color-border)', 
                   borderRadius: 8, 
                   fontSize: 12,
-                  padding: '8px 12px'
+                  padding: '8px 12px',
+                  color: 'var(--color-text-primary)'
                 }}
                 content={({ active, payload }) => {
                   if (active && payload && payload[0] && payload[0].payload) {
@@ -1313,7 +1314,7 @@ export default function CreativePage() {
                 <YAxis yAxisId="spend" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
                 <YAxis yAxisId="cpa" orientation="right" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
                 <Tooltip
-                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
+                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
                   formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
                 />
                 <Bar yAxisId="spend" dataKey="Last 7 Days" stackId="churn" fill="#1e3a5f" />
@@ -1367,7 +1368,7 @@ export default function CreativePage() {
                   <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-30} textAnchor="end" height={60} />
                   <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
                   <Tooltip
-                    contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
+                    contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
                     formatter={(value: any, name: any) => [value > 0 ? formatCurrencyValue(value) : ',', cohortLabels[name] || name]}
                   />
                   <Area type="monotone" dataKey="oct" stackId="cohort" fill="#C5D8FB" stroke="#C5D8FB" fillOpacity={0.85} />
@@ -1479,7 +1480,7 @@ export default function CreativePage() {
                 <YAxis yAxisId="left" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} label={{ value: 'Ads', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} />
                 <YAxis yAxisId="right" orientation="right" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => `${v}%`} domain={[0, 50]} label={{ value: 'Hit Rate', angle: 90, position: 'insideRight', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} />
                 <Tooltip
-                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
+                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
                   formatter={(value: any, name: any) => {
                     if (name === 'hitRate') return [`${value.toFixed(1)}%`, 'Hit Rate'];
                     if (name === 'hits') return [value, 'Hits (Scaled)'];
@@ -1577,7 +1578,7 @@ export default function CreativePage() {
                     label={{ value: 'Cumulative %', angle: 90, position: 'insideRight', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }}
                   />
                   <Tooltip
-                    contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12 }}
+                    contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
                     formatter={(value: any, name: any) => {
                       if (name === 'Spend') return [formatCurrencyValue(value), name];
                       if (name === 'Cumulative %') return [`${value}%`, name];
@@ -1760,7 +1761,7 @@ export default function CreativePage() {
                     <XAxis dataKey="displayLabel" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
                     <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
                     <Tooltip
-                      contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11 }}
+                      contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11, color: 'var(--color-text-primary)' }}
                       formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
                     />
                     <Bar dataKey="F 18-24" stackId="demo" fill="#fca5a5" />
