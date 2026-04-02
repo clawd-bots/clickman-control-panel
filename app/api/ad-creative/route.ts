@@ -53,9 +53,12 @@ async function fetchMetaCreative(adId: string) {
     });
   }
 
-  // Step 2: Get creative details (image, video, text)
-  // Request image_crops and image_hash for higher resolution
-  const creativeUrl = `${GRAPH_BASE}/${creativeId}?fields=name,title,body,image_url,image_hash,thumbnail_url,object_story_spec,asset_feed_spec,effective_object_story_id&access_token=${accessToken}`;
+  // Step 2: Get creative details — request large thumbnail (600px) + small thumbnail (128px)
+  // Also fetch fields for full creative data
+  const creativeUrl = `${GRAPH_BASE}/${creativeId}?fields=name,title,body,image_url,image_hash,thumbnail_url,object_story_spec,asset_feed_spec,effective_object_story_id&thumbnail_width=600&thumbnail_height=600&access_token=${accessToken}`;
+  
+  // Also fetch a small thumbnail version separately
+  const thumbCreativeUrl = `${GRAPH_BASE}/${creativeId}?fields=thumbnail_url&thumbnail_width=128&thumbnail_height=128&access_token=${accessToken}`;
   const creativeRes = await fetch(creativeUrl);
   if (!creativeRes.ok) {
     const err = await creativeRes.json().catch(() => ({}));
@@ -63,8 +66,19 @@ async function fetchMetaCreative(adId: string) {
   }
   const creative = await creativeRes.json();
 
+  // Fetch small thumbnail in parallel
+  let smallThumbUrl: string | null = null;
+  try {
+    const thumbRes = await fetch(thumbCreativeUrl);
+    if (thumbRes.ok) {
+      const thumbData = await thumbRes.json();
+      smallThumbUrl = thumbData.thumbnail_url || null;
+    }
+  } catch (e) { /* ignore */ }
+
   // Extract image URL from various possible fields
-  let imageUrl = creative.image_url || creative.thumbnail_url || null;
+  // thumbnail_url here is the 600px version (from our request params)
+  let imageUrl = creative.thumbnail_url || creative.image_url || null;
   let headline = creative.title || null;
   let body = creative.body || null;
   let videoUrl = null;
@@ -109,36 +123,14 @@ async function fetchMetaCreative(adId: string) {
     }
   }
 
-  // Fetch a larger version of the image using the creative's image_hash via adimages endpoint
-  // The default image_url from adcreatives is a 64x64 thumbnail with a signed URL
-  let fullImageUrl = imageUrl;
-  if (creative.image_hash) {
-    try {
-      const adAccountId = process.env.META_AD_ACCOUNT_ID?.trim();
-      const accountId = adAccountId?.startsWith('act_') ? adAccountId : `act_${adAccountId}`;
-      const imgUrl = `${GRAPH_BASE}/${accountId}/adimages?hashes=["${creative.image_hash}"]&fields=url,url_128,permalink_url&access_token=${accessToken}`;
-      const imgRes = await fetch(imgUrl);
-      if (imgRes.ok) {
-        const imgData = await imgRes.json();
-        const imgEntry = imgData.data?.[0];
-        if (imgEntry) {
-          // permalink_url is full resolution, url is medium, url_128 is thumbnail
-          fullImageUrl = imgEntry.permalink_url || imgEntry.url || fullImageUrl;
-        }
-      }
-    } catch (e) {
-      // Fall back to existing imageUrl
-    }
-  }
-
   return NextResponse.json({
     success: true,
     data: {
       platform: 'Meta',
       adId,
       creativeId,
-      imageUrl: fullImageUrl,
-      thumbnailUrl: imageUrl, // The original 64x64 signed URL works as thumbnail
+      imageUrl,                          // 600px version from thumbnail_width=600
+      thumbnailUrl: smallThumbUrl || imageUrl,  // 128px version for table
       videoUrl,
       headline,
       body,
