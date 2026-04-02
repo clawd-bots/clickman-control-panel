@@ -164,6 +164,8 @@ export default function CreativePage() {
   const [attrWindow, setAttrWindow] = useState('7-day click / 1-day view');
   const [accountControlFilter, setAccountControlFilter] = useState('all');
   const [accountControlCampaign, setAccountControlCampaign] = useState('all');
+  const [acPageSize, setAcPageSize] = useState(10);
+  const [acCurrentPage, setAcCurrentPage] = useState(1);
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [genderFilter, setGenderFilter] = useState('all');
@@ -1047,7 +1049,7 @@ export default function CreativePage() {
               </h4>
               <div className="flex gap-2 flex-wrap">
                 <button
-                  onClick={() => setAccountControlFilter('all')}
+                  onClick={() => { setAccountControlFilter('all'); setAcCurrentPage(1); }}
                   className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                     accountControlFilter === 'all'
                       ? 'bg-brand-blue text-white'
@@ -1057,7 +1059,7 @@ export default function CreativePage() {
                   All
                 </button>
                 <button
-                  onClick={() => setAccountControlFilter('scaling')}
+                  onClick={() => { setAccountControlFilter('scaling'); setAcCurrentPage(1); }}
                   className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                     accountControlFilter === 'scaling'
                       ? 'bg-success text-white'
@@ -1067,7 +1069,7 @@ export default function CreativePage() {
                   Scale
                 </button>
                 <button
-                  onClick={() => setAccountControlFilter('testing')}
+                  onClick={() => { setAccountControlFilter('testing'); setAcCurrentPage(1); }}
                   className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                     accountControlFilter === 'testing'
                       ? 'bg-brand-blue text-white'
@@ -1077,7 +1079,7 @@ export default function CreativePage() {
                   Testing
                 </button>
                 <button
-                  onClick={() => setAccountControlFilter('zombie')}
+                  onClick={() => { setAccountControlFilter('zombie'); setAcCurrentPage(1); }}
                   className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                     accountControlFilter === 'zombie'
                       ? 'bg-danger text-white'
@@ -1087,7 +1089,7 @@ export default function CreativePage() {
                   Zombies
                 </button>
                 <button
-                  onClick={() => setAccountControlFilter('untapped')}
+                  onClick={() => { setAccountControlFilter('untapped'); setAcCurrentPage(1); }}
                   className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                     accountControlFilter === 'untapped'
                       ? 'bg-warm-gold text-white'
@@ -1118,6 +1120,7 @@ export default function CreativePage() {
                     {filteredAccountControlData
                       .filter(ad => accountControlFilter === 'all' || ad.zone === accountControlFilter)
                       .sort((a, b) => b.spend - a.spend)
+                      .slice((acCurrentPage - 1) * acPageSize, acCurrentPage * acPageSize)
                       .map((ad) => (
                       <tr key={ad.name} className="border-b border-border/30 hover:bg-bg-elevated/50 transition-colors">
                         <td className="py-2.5 px-2">
@@ -1169,7 +1172,20 @@ export default function CreativePage() {
                         </td>
                         <td className="py-2.5 px-2 text-center">
                           <button 
-                            onClick={() => window.open(`/api/ad-preview/${ad.name.replace(/\s+/g, '-').toLowerCase()}`, '_blank')}
+                            onClick={() => {
+                              const params = new URLSearchParams({
+                                name: ad.name,
+                                platform: ad.platform,
+                                spend: String(ad.spend),
+                                cpa: String(ad.cpa),
+                                zone: ad.zone,
+                                roas: String((ad as any).roas || 0),
+                                nccpa: String((ad as any).nccpa || 0),
+                                ncroas: String((ad as any).ncroas || 0),
+                                previewUrl: (ad as any).previewUrl || '',
+                              });
+                              window.open(`/api/ad-preview/${ad.name.replace(/\s+/g, '-').toLowerCase()}?${params.toString()}`, '_blank');
+                            }}
                             className="text-brand-blue-light hover:text-brand-blue text-xs font-medium px-2 py-1 rounded-md border border-brand-blue/30 hover:border-brand-blue/50 transition-colors"
                             title="Preview ad creative, headline, and performance metrics"
                           >
@@ -1182,6 +1198,62 @@ export default function CreativePage() {
                 </table>
               </div>
             </div>
+
+            {/* Pagination Controls */}
+            {(() => {
+              const totalFiltered = filteredAccountControlData
+                .filter(ad => accountControlFilter === 'all' || ad.zone === accountControlFilter).length;
+              const totalPages = Math.ceil(totalFiltered / acPageSize);
+              if (totalFiltered <= 10) return null;
+              return (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-3 border-t border-border">
+                  <div className="flex items-center gap-2 text-xs text-text-secondary">
+                    <span>Show</span>
+                    {[10, 20, 50].map(size => (
+                      <button
+                        key={size}
+                        onClick={() => { setAcPageSize(size); setAcCurrentPage(1); }}
+                        className={`px-2 py-1 rounded text-xs transition-colors ${acPageSize === size ? 'bg-brand-blue/15 text-brand-blue-light font-medium' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                    <span>entries</span>
+                    <span className="ml-2 text-text-tertiary">({totalFiltered} total)</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setAcCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={acCurrentPage <= 1}
+                      className="px-2 py-1 rounded text-xs text-text-secondary hover:text-text-primary hover:bg-bg-elevated disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      ← Prev
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || Math.abs(p - acCurrentPage) <= 1)
+                      .map((page, idx, arr) => (
+                        <span key={page}>
+                          {idx > 0 && arr[idx - 1] !== page - 1 && <span className="text-text-tertiary px-1">…</span>}
+                          <button
+                            onClick={() => setAcCurrentPage(page)}
+                            className={`px-2.5 py-1 rounded text-xs transition-colors ${acCurrentPage === page ? 'bg-brand-blue/15 text-brand-blue-light font-medium' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}
+                          >
+                            {page}
+                          </button>
+                        </span>
+                      ))
+                    }
+                    <button
+                      onClick={() => setAcCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={acCurrentPage >= totalPages}
+                      className="px-2 py-1 rounded text-xs text-text-secondary hover:text-text-primary hover:bg-bg-elevated disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
