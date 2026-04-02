@@ -54,7 +54,8 @@ async function fetchMetaCreative(adId: string) {
   }
 
   // Step 2: Get creative details (image, video, text)
-  const creativeUrl = `${GRAPH_BASE}/${creativeId}?fields=name,title,body,image_url,thumbnail_url,object_story_spec,asset_feed_spec,effective_object_story_id&access_token=${accessToken}`;
+  // Request image_crops and image_hash for higher resolution
+  const creativeUrl = `${GRAPH_BASE}/${creativeId}?fields=name,title,body,image_url,image_hash,thumbnail_url,object_story_spec,asset_feed_spec,effective_object_story_id&access_token=${accessToken}`;
   const creativeRes = await fetch(creativeUrl);
   if (!creativeRes.ok) {
     const err = await creativeRes.json().catch(() => ({}));
@@ -64,10 +65,32 @@ async function fetchMetaCreative(adId: string) {
 
   // Extract image URL from various possible fields
   let imageUrl = creative.image_url || creative.thumbnail_url || null;
+  let thumbnailUrl = creative.thumbnail_url || creative.image_url || null;
   let headline = creative.title || null;
   let body = creative.body || null;
   let videoUrl = null;
   let callToAction = null;
+
+  // If we have an image_hash, fetch the full-size image from adimages
+  if (creative.image_hash) {
+    try {
+      const adAccountId = process.env.META_AD_ACCOUNT_ID?.trim();
+      const accountId = adAccountId?.startsWith('act_') ? adAccountId : `act_${adAccountId}`;
+      const imgUrl = `${GRAPH_BASE}/${accountId}/adimages?hashes=["${creative.image_hash}"]&fields=url,url_128,url_256,url_256_height,permalink_url&access_token=${accessToken}`;
+      const imgRes = await fetch(imgUrl);
+      if (imgRes.ok) {
+        const imgData = await imgRes.json();
+        const imgEntry = imgData.data?.[0];
+        if (imgEntry) {
+          // url is full resolution, url_128/url_256 are smaller versions
+          imageUrl = imgEntry.permalink_url || imgEntry.url || imageUrl;
+          thumbnailUrl = imgEntry.url_128 || thumbnailUrl;
+        }
+      }
+    } catch (e) {
+      // Fall back to existing imageUrl
+    }
+  }
 
   // Try to get from object_story_spec (richer data)
   const storySpec = creative.object_story_spec;
@@ -113,6 +136,7 @@ async function fetchMetaCreative(adId: string) {
       adId,
       creativeId,
       imageUrl,
+      thumbnailUrl,
       videoUrl,
       headline,
       body,

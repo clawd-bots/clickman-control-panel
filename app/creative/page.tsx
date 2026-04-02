@@ -19,6 +19,7 @@ import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
 import { ChevronDown } from 'lucide-react';
+import AdThumbnail from '@/components/ui/AdThumbnail';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ScatterChart, Scatter, Cell, ReferenceLine, ZAxis, Legend,
@@ -1110,6 +1111,7 @@ export default function CreativePage() {
                   <thead>
                     <tr className="border-b border-border text-text-secondary uppercase">
                       <th className="text-left py-2 px-2 font-medium min-w-[80px]">Color</th>
+                      <th className="text-center py-2 px-2 font-medium min-w-[50px]">Image</th>
                       <th className="text-left py-2 px-2 font-medium min-w-[160px]">Ad Name</th>
                       <th className="text-center py-2 px-2 font-medium min-w-[80px]">Platform</th>
                       <th className="text-right py-2 px-2 font-medium min-w-[80px]">Spend</th>
@@ -1139,6 +1141,9 @@ export default function CreativePage() {
                                ad.zone === 'testing' ? 'Test' : 'Learn'}
                             </span>
                           </div>
+                        </td>
+                        <td className="py-2.5 px-2 text-center">
+                          <AdThumbnail adId={(ad as any).adId} platform={ad.platform} size={36} />
                         </td>
                         <td className="py-2.5 px-2 font-medium text-text-primary">
                           <div className="max-w-[150px] truncate" title={ad.name}>
