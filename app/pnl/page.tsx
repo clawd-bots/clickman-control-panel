@@ -31,32 +31,32 @@ interface SheetData {
 // Key P&L line items we want to display, in order
 const PNL_STRUCTURE = [
   // Income
-  { key: 'total_for_income', label: 'Total Income', color: '#34D399', isHeader: true },
+  { key: 'total_income', label: 'Total Income', color: '#34D399', isHeader: true },
   { key: 'affiliate_income', label: 'Affiliate Income', color: '#94A3B8', indent: true },
   { key: 'discounts_given', label: 'Discounts Given', color: '#EF4444', indent: true },
-  { key: 'total_for_service_fee_income', label: 'Service/Fee Income', color: '#4A6BD6', indent: true },
-  { key: 'total_for_services_sales', label: 'Services Sales', color: '#4A6BD6', indent: true },
+  { key: 'total_service_fee_income', label: 'Service/Fee Income', color: '#4A6BD6', indent: true },
+  { key: 'total_services_sales', label: 'Services Sales', color: '#4A6BD6', indent: true },
   { key: 'unapplied_cash_payment_income', label: 'Unapplied Cash Payment', color: '#94A3B8', indent: true },
   
   // COGS
-  { key: 'total_for_cost_of_goods_sold', label: 'Cost of Goods Sold', color: '#EF4444', isHeader: true },
+  { key: 'total_cost_of_goods_sold', label: 'Cost of Goods Sold', color: '#EF4444', isHeader: true },
   { key: 'client_ad_budget_spend', label: 'Client Ad Budget Spend', color: '#EF4444', indent: true },
   
   // Gross Profit
   { key: 'gross_profit', label: 'Gross Profit', color: '#EDBF63', isHeader: true },
 
   // Expenses
-  { key: 'total_for_expenses', label: 'Total Expenses', color: '#F97316', isHeader: true },
-  { key: 'advertising___marketing', label: 'Advertising & Marketing', color: '#F97316', indent: true },
-  { key: 'company_req__softwares_tools', label: 'Software/Tools', color: '#F97316', indent: true },
-  { key: 'total_for_contractors', label: 'Total Contractors', color: '#8B5CF6', indent: true },
-  { key: 'legal___professional_services', label: 'Legal & Professional', color: '#F97316', indent: true },
+  { key: 'total_expenses', label: 'Total Expenses', color: '#F97316', isHeader: true },
+  { key: 'advertising_marketing', label: 'Advertising & Marketing', color: '#F97316', indent: true },
+  { key: 'company_req_softwares_tools', label: 'Software/Tools', color: '#F97316', indent: true },
+  { key: 'total_contractors', label: 'Total Contractors', color: '#8B5CF6', indent: true },
+  { key: 'legal_professional_services', label: 'Legal & Professional', color: '#F97316', indent: true },
   { key: 'quickbooks_payments_fees', label: 'QuickBooks Fees', color: '#F97316', indent: true },
-  { key: 'total_for_sde', label: 'SDE (Owner)', color: '#F97316', indent: true },
+  { key: 'total_sde', label: 'SDE (Owner)', color: '#F97316', indent: true },
 
   // Bottom line
   { key: 'net_operating_income', label: 'Net Operating Income', color: '#34D399', isHeader: true },
-  { key: 'total_for_other_income', label: 'Other Income', color: '#94A3B8' },
+  { key: 'total_other_income', label: 'Other Income', color: '#94A3B8' },
   { key: 'net_income', label: 'Net Income', color: '#22C55E', isHeader: true },
 ];
 
@@ -119,7 +119,7 @@ export default function PnLPage() {
 
   // % of Net Revenue
   const getPctOfRevenue = (row: MomRow | undefined): number | null => {
-    const netRevRow = sheetData?.rows?.total_for_income;
+    const netRevRow = sheetData?.rows?.total_income;
     if (!netRevRow || !row) return null;
     const revenue = getVal(netRevRow);
     if (revenue === 0) return null;
@@ -151,8 +151,8 @@ export default function PnLPage() {
     if (!sheetData) return [];
     return sheetData.months.map(month => ({
       month: month.replace(' 2025', "'25").replace(' 2026', "'26").replace('Mar 1 - Mar 29 2026', "Mar'26"),
-      income: sheetData.rows.total_for_income?.monthly[month] ?? 0,
-      expenses: sheetData.rows.total_for_expenses?.monthly[month] ?? 0,
+      income: sheetData.rows.total_income?.monthly[month] ?? 0,
+      expenses: sheetData.rows.total_expenses?.monthly[month] ?? 0,
       netIncome: sheetData.rows.net_income?.monthly[month] ?? 0,
       grossProfit: sheetData.rows.gross_profit?.monthly[month] ?? 0,
     }));
@@ -162,7 +162,7 @@ export default function PnLPage() {
   const marginChartData = useMemo(() => {
     if (!sheetData) return [];
     return sheetData.months.map(month => {
-      const income = sheetData.rows.total_for_income?.monthly[month] ?? 0;
+      const income = sheetData.rows.total_income?.monthly[month] ?? 0;
       const grossProfit = sheetData.rows.gross_profit?.monthly[month] ?? 0;
       const netIncome = sheetData.rows.net_income?.monthly[month] ?? 0;
       return {
@@ -176,9 +176,9 @@ export default function PnLPage() {
   const isLive = sheetData !== null && !sheetError;
 
   // KPI summary values
-  const totalIncome = sheetData ? getVal(sheetData.rows.total_for_income) : 0;
+  const totalIncome = sheetData ? getVal(sheetData.rows.total_income) : 0;
   const grossProfit = sheetData ? getVal(sheetData.rows.gross_profit) : 0;
-  const totalExpenses = sheetData ? getVal(sheetData.rows.total_for_expenses) : 0;
+  const totalExpenses = sheetData ? getVal(sheetData.rows.total_expenses) : 0;
   const netIncome = sheetData ? getVal(sheetData.rows.net_income) : 0;
   const grossMarginPct = totalIncome > 0 ? (grossProfit / totalIncome) * 100 : 0;
 
@@ -226,7 +226,7 @@ export default function PnLPage() {
             <KPICard 
               label="Total Income" 
               value={formatCurrencyValue(totalIncome)} 
-              change={getMomChange(sheetData.rows.total_for_income) ?? 0} 
+              change={getMomChange(sheetData.rows.total_income) ?? 0} 
               sparkline={[]} 
               dataSource="Google Sheets"
             />
@@ -241,7 +241,7 @@ export default function PnLPage() {
             <KPICard 
               label="Total Expenses" 
               value={formatCurrencyValue(totalExpenses)} 
-              change={getMomChange(sheetData.rows.total_for_expenses) ?? 0} 
+              change={getMomChange(sheetData.rows.total_expenses) ?? 0} 
               sparkline={[]} 
               dataSource="Google Sheets"
             />
