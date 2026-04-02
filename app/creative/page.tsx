@@ -28,6 +28,7 @@ import {
 const tabs = [/* 'Performance', */ 'Ad Churn', 'Account Control', 'Slugging Rate', 'Pareto', 'Demographics'];
 const platforms = ['Meta', 'TikTok', 'Reddit'];
 const platformsWithGoogle = ['Meta', 'TikTok', 'Reddit', 'Google'];
+const sluggingPlatforms = ['All', 'Meta', 'Google', 'TikTok'];
 
 const tabDescriptions: Record<string, string> = {
   'Performance': 'Overview of all active ad creatives with spend, engagement, and conversion metrics. Use this to monitor your live ads and spot issues quickly.',
@@ -169,7 +170,7 @@ export default function CreativePage() {
   const [churnCpaMode, setChurnCpaMode] = useState<'cpa' | 'nccpa'>('cpa');
   const [churnAgePlatform, setChurnAgePlatform] = useState('Meta');
   const [churnCohortPlatform, setChurnCohortPlatform] = useState('Meta');
-  const [sluggingPlatform, setSluggingPlatform] = useState('Meta');
+  const [sluggingPlatform, setSluggingPlatform] = useState('All');
   const [sluggingMonths, setSluggingMonths] = useState<number>(6);
   const [sluggingCpaMode, setSluggingCpaMode] = useState<'cpa' | 'nccpa'>('cpa');
   const [churnCampaignFilter, setChurnCampaignFilter] = useState('all');
@@ -375,12 +376,38 @@ export default function CreativePage() {
   }, [platform]);
   const paretoTotal = paretoData.reduce((s, c) => s + c.conversions, 0);
 
-  // Slugging data filtered by selected month range (independent of global date range)
+  // Slugging data filtered by platform and selected month range (independent of global date range)
   const filteredSlugging = useMemo(() => {
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - sluggingMonths);
-    return productionSlugging.filter(d => new Date(d.month) >= cutoff);
-  }, [sluggingMonths]);
+    cutoff.setDate(1); // Start from the 1st of the cutoff month to include that month's data
+    cutoff.setHours(0, 0, 0, 0);
+    
+    // Filter by platform first, then by date
+    const platformFiltered = sluggingPlatform === 'All'
+      ? productionSlugging
+      : productionSlugging.filter(d => d.platform === sluggingPlatform);
+    
+    // Filter by date range
+    const dateFiltered = platformFiltered.filter(d => new Date(d.month) >= cutoff);
+    
+    // If platform is 'All', aggregate by month
+    if (sluggingPlatform === 'All') {
+      const byMonth: Record<string, { month: string; platform: string; launched: number; hits: number; hitRate: number }> = {};
+      for (const d of dateFiltered) {
+        if (!byMonth[d.month]) {
+          byMonth[d.month] = { month: d.month, platform: 'All', launched: 0, hits: 0, hitRate: 0 };
+        }
+        byMonth[d.month].launched += d.launched;
+        byMonth[d.month].hits += d.hits;
+      }
+      return Object.values(byMonth)
+        .map(d => ({ ...d, hitRate: d.launched > 0 ? (d.hits / d.launched) * 100 : 0 }))
+        .sort((a, b) => a.month.localeCompare(b.month));
+    }
+    
+    return dateFiltered.sort((a, b) => a.month.localeCompare(b.month));
+  }, [sluggingMonths, sluggingPlatform]);
 
   const totalSlugging = filteredSlugging.reduce((a, b) => ({ launched: a.launched + b.launched, hits: a.hits + b.hits }), { launched: 0, hits: 0 });
 
@@ -1249,7 +1276,7 @@ export default function CreativePage() {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
                 <div className="flex gap-1">
-                  {platforms.map(p => (
+                  {sluggingPlatforms.map(p => (
                     <button key={p} onClick={() => setSluggingPlatform(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${sluggingPlatform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
                       {p}
                     </button>
