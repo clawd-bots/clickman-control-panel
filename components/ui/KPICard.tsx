@@ -2,6 +2,7 @@
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { useState, useEffect } from 'react';
 import InfoTooltip from './InfoTooltip';
+import DataSource from './DataSource';
 
 interface KPICardProps {
   label: string;
@@ -14,9 +15,10 @@ interface KPICardProps {
   targetAchievement?: number; // percentage of target achieved
   secondary?: string; // secondary value displayed below main value
   testId?: string; // for PDF export selectors
+  dataSource?: string; // e.g. "Triple Whale", "Google Analytics"
 }
 
-export default function KPICard({ label, value, change, sparkline, target, targetAchievement, secondary, testId }: KPICardProps) {
+export default function KPICard({ label, value, change, sparkline, target, targetAchievement, secondary, testId, dataSource }: KPICardProps) {
   const isPositive = change >= 0;
   const data = sparkline.map((v, i) => ({ v, i }));
   const [comparisonEnabled, setComparisonEnabled] = useState(true);
@@ -53,21 +55,24 @@ export default function KPICard({ label, value, change, sparkline, target, targe
           {label}
           <InfoTooltip metric={label} />
         </div>
-        {data.length > 0 && (
-          <div className="w-16 h-8">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={data}>
-                <Line
-                  type="monotone"
-                  dataKey="v"
-                  stroke={isPositive ? '#34D399' : '#EF4444'}
-                  strokeWidth={1.5}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {dataSource && <DataSource source={dataSource} />}
+          {data.length > 0 && (
+            <div className="w-16 h-8">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data}>
+                  <Line
+                    type="monotone"
+                    dataKey="v"
+                    stroke={isPositive ? '#34D399' : '#EF4444'}
+                    strokeWidth={1.5}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
       </div>
       <div className="text-2xl font-bold text-text-primary">{value}</div>
       {secondary && (

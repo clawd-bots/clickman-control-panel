@@ -257,6 +257,7 @@ export default function PnLPage() {
               value={formatCurrencyValue(getVal(sheetData.pnl.netRevenue, viewPeriod))} 
               change={sheetData.pnl.netRevenue?.changePct ?? 0} 
               sparkline={[]} 
+              dataSource="Google Sheets"
             />
             <KPICard 
               label="CM1" 
@@ -264,6 +265,7 @@ export default function PnLPage() {
               change={sheetData.pnl.cm1?.changePct ?? 0} 
               sparkline={[]} 
               secondary={formatCurrencyValue(getVal(sheetData.pnl.cm1, viewPeriod))}
+              dataSource="Google Sheets"
             />
             <KPICard 
               label="CM2" 
@@ -271,6 +273,7 @@ export default function PnLPage() {
               change={sheetData.pnl.cm2?.changePct ?? 0} 
               sparkline={[]} 
               secondary={formatCurrencyValue(getVal(sheetData.pnl.cm2, viewPeriod))}
+              dataSource="Google Sheets"
             />
             <KPICard 
               label="CM3" 
@@ -278,6 +281,7 @@ export default function PnLPage() {
               change={sheetData.pnl.cm3?.changePct ?? 0} 
               sparkline={[]} 
               secondary={formatCurrencyValue(getVal(sheetData.pnl.cm3, viewPeriod))}
+              dataSource="Google Sheets"
             />
             <KPICard 
               label="EBITDA" 
@@ -285,6 +289,7 @@ export default function PnLPage() {
               change={sheetData.pnl.ebitda?.changePct ?? 0} 
               sparkline={[]}
               secondary={`${(getPct(sheetData.pnl.ebitda, viewPeriod) ?? 0).toFixed(1)}% of Net Rev`}
+              dataSource="Google Sheets"
             />
           </>
         ) : null}

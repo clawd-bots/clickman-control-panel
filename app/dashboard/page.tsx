@@ -343,6 +343,7 @@ export default function DashboardPage() {
             sparkline={[]}
             target={getTarget('Net Revenue') !== null ? formatCurrencyValue(getTarget('Net Revenue')!) : undefined}
             targetAchievement={getTargetAchievement('Net Revenue', aggregatedData.totalRevenue) ?? undefined}
+            dataSource="Triple Whale"
           />
         </div>
         <div data-testid="kpi-marketing-costs">
@@ -353,6 +354,7 @@ export default function DashboardPage() {
             sparkline={[]}
             target={getTarget('Marketing Costs') !== null ? formatCurrencyValue(getTarget('Marketing Costs')!) : undefined}
             targetAchievement={getTargetAchievement('Marketing Costs', aggregatedData.totalCosts) ?? undefined}
+            dataSource="Triple Whale"
           />
         </div>
         <div data-testid="kpi-mer">
@@ -363,6 +365,7 @@ export default function DashboardPage() {
             sparkline={[]}
             target={getTarget('MER') !== null ? `${getTarget('MER')!.toFixed(2)}x` : undefined}
             targetAchievement={getTargetAchievement('MER', aggregatedData.mer) ?? undefined}
+            dataSource="Triple Whale"
           />
         </div>
         <div data-testid="kpi-amer">
@@ -373,6 +376,7 @@ export default function DashboardPage() {
             sparkline={[]}
             target={getTarget('aMER') !== null ? `${getTarget('aMER')!.toFixed(2)}x` : undefined}
             targetAchievement={getTargetAchievement('aMER', twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value) ?? undefined}
+            dataSource="Triple Whale"
           />
         </div>
       </div>
@@ -387,6 +391,7 @@ export default function DashboardPage() {
             sparkline={[]}
             target={getTarget('Orders') !== null ? formatNumber(Math.round(getTarget('Orders')!)) : undefined}
             targetAchievement={getTargetAchievement('Orders', aggregatedData.totalOrders) ?? undefined}
+            dataSource="Triple Whale"
           />
         </div>
         <div data-testid="kpi-nc-orders">
@@ -397,6 +402,7 @@ export default function DashboardPage() {
             sparkline={[]}
             target={getTarget('NC Orders') !== null ? formatNumber(Math.round(getTarget('NC Orders')!)) : undefined}
             targetAchievement={getTargetAchievement('NC Orders', aggregatedData.totalNewCustomers) ?? undefined}
+            dataSource="Triple Whale"
           />
         </div>
         <div data-testid="kpi-cac">
@@ -407,6 +413,7 @@ export default function DashboardPage() {
             sparkline={[]}
             target={getTarget('CAC') !== null ? formatCurrencyValue(getTarget('CAC')!) : undefined}
             targetAchievement={getTargetAchievement('CAC', aggregatedData.cac) ?? undefined}
+            dataSource="Triple Whale"
           />
         </div>
         <div data-testid="kpi-ncac">
@@ -417,6 +424,7 @@ export default function DashboardPage() {
             sparkline={[]}
             target={getTarget('ncCAC') !== null ? formatCurrencyValue(getTarget('ncCAC')!) : undefined}
             targetAchievement={getTargetAchievement('ncCAC', aggregatedData.ncac) ?? undefined}
+            dataSource="Triple Whale"
           />
         </div>
       </div>
@@ -428,6 +436,7 @@ export default function DashboardPage() {
           value="1:3.2" 
           change={8.1} 
           sparkline={[]}
+          dataSource="Triple Whale"
         />
         <KPICard 
           label="LTV per Customer" 
@@ -436,6 +445,7 @@ export default function DashboardPage() {
           sparkline={[]}
           target={getTarget('AOV') !== null ? formatCurrencyValue(getTarget('AOV')! * 3.5) : undefined}
           targetAchievement={getTarget('AOV') !== null && twData ? (getMetric(twData, 'ltv') / (getTarget('AOV')! * 3.5)) * 100 : undefined}
+          dataSource="Triple Whale"
         />
       </div>
 
