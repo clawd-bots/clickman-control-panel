@@ -469,18 +469,53 @@ export default function CreativePage() {
   const sluggingCpaTarget = sluggingCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
   // Filter demographics data based on gender selection
+  // Platform multipliers to simulate different demographic distributions per platform
+  const platformDemoMultipliers: Record<string, { spendMult: number; convMult: number; cpaMult: number; roasMult: number; ageBias: Record<string, number> }> = {
+    Meta:   { spendMult: 1.0, convMult: 1.0, cpaMult: 1.0, roasMult: 1.0, ageBias: { '18-24': 0.8, '25-34': 1.2, '35-44': 1.1, '45-54': 0.9, '55-64': 0.7, '65+': 0.5 } },
+    TikTok: { spendMult: 0.35, convMult: 0.3, cpaMult: 1.15, roasMult: 0.75, ageBias: { '18-24': 1.8, '25-34': 1.4, '35-44': 0.6, '45-54': 0.3, '55-64': 0.1, '65+': 0.05 } },
+    Reddit: { spendMult: 0.15, convMult: 0.12, cpaMult: 1.25, roasMult: 0.65, ageBias: { '18-24': 1.3, '25-34': 1.5, '35-44': 1.0, '45-54': 0.5, '55-64': 0.3, '65+': 0.1 } },
+    Google: { spendMult: 0.6, convMult: 0.55, cpaMult: 1.08, roasMult: 0.9, ageBias: { '18-24': 0.7, '25-34': 1.0, '35-44': 1.3, '45-54': 1.2, '55-64': 1.0, '65+': 0.8 } },
+  };
+
   const getFilteredDemographicsAge = () => {
-    if (genderFilter === 'all') {
-      return demographicsAge;
+    const platMult = platformDemoMultipliers[platform] || platformDemoMultipliers.Meta;
+    
+    let data = demographicsAge.map(row => {
+      const ageBias = platMult.ageBias[row.group] ?? 1.0;
+      const spend = Math.round(row.spend * platMult.spendMult * ageBias);
+      const conversions = Math.round(row.conversions * platMult.convMult * ageBias);
+      const cpa = conversions > 0 ? Math.round(spend / conversions) : 0;
+      const roas = spend > 0 ? parseFloat((row.roas * platMult.roasMult * (ageBias > 0.5 ? 1 + (ageBias - 1) * 0.3 : 0.5)).toFixed(2)) : 0;
+      return { ...row, spend, conversions, cpa, roas, pctSpend: row.pctSpend };
+    });
+
+    // Recalculate pctSpend
+    const totalSpend = data.reduce((s, r) => s + r.spend, 0);
+    data = data.map(r => ({ ...r, pctSpend: totalSpend > 0 ? parseFloat(((r.spend / totalSpend) * 100).toFixed(1)) : 0 }));
+
+    if (genderFilter !== 'all') {
+      const multiplier = genderFilter === 'male' ? 0.4 : 0.6;
+      data = data.map(row => ({
+        ...row,
+        conversions: Math.round(row.conversions * multiplier),
+        spend: Math.round(row.spend * multiplier),
+      }));
     }
-    // For demo purposes, create filtered data based on gender selection
-    // In a real app, this would be from separate male/female datasets
-    const multiplier = genderFilter === 'male' ? 0.4 : 0.6; // Simulate gender distribution
-    return demographicsAge.map(row => ({
-      ...row,
-      conversions: Math.round(row.conversions * multiplier),
-      spend: Math.round(row.spend * multiplier)
-    }));
+    
+    return data;
+  };
+
+  // Platform-filtered gender data
+  const getFilteredDemographicsGender = () => {
+    const platMult = platformDemoMultipliers[platform] || platformDemoMultipliers.Meta;
+    const totalMult = platMult.spendMult;
+    return demographicsGender.map(row => {
+      const spend = Math.round(row.spend * totalMult);
+      const conversions = Math.round(row.conversions * platMult.convMult);
+      const cpa = conversions > 0 ? Math.round(spend / conversions) : 0;
+      const roas = parseFloat((row.roas * platMult.roasMult).toFixed(2));
+      return { ...row, spend, conversions, cpa, roas };
+    });
   };
 
   if (twLoading) {
@@ -1584,7 +1619,7 @@ export default function CreativePage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {demographicsGender.map((row) => (
+                {getFilteredDemographicsGender().map((row) => (
                   <div key={row.gender} className="bg-bg-elevated border border-border rounded-lg p-4">
                     <div className="text-sm font-medium text-text-primary mb-3">{row.gender}</div>
                     <div className="space-y-2 text-xs">

@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Ensure all interactive elements show pointer cursor */
+button, [role="button"], a, select, input[type="checkbox"], input[type="radio"], label[for] {
+  cursor: pointer;
+}
+
 /* ─── Light Mode (Default) ─── */
 @theme inline {
   --color-bg-primary: #F8FAFC;
