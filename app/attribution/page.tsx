@@ -117,20 +117,24 @@ export default function AttributionPage() {
       };
     }
     if (item.system === 'GA4' && ga4Data?.summary) {
-      const totalEvents = getGA4Metric(ga4Data, 'eventCount');
       const dayCount = Math.max(1, Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24)));
+      const pageViews = getGA4Metric(ga4Data, 'screenPageViews');
+      const addToCarts = getGA4Metric(ga4Data, 'addToCarts');
+      const checkouts = getGA4Metric(ga4Data, 'checkouts');
+      const purchases = getGA4Metric(ga4Data, 'ecommercePurchases');
+      const totalEvents = pageViews + addToCarts + checkouts + purchases;
       const eventsPerDay = Math.round(totalEvents / dayCount);
       return {
         ...item,
         status: 'healthy' as const,
         events: `${eventsPerDay.toLocaleString()}/day`,
-        matchRate: 'N/A' as const,
-        source: 'Multiple Sources' as const,
+        matchRate: undefined as any,
+        source: undefined as any,
         eventBreakdown: [
-          { event: 'page_view', count: getGA4Metric(ga4Data, 'screenPageViews').toLocaleString(), matchRate: 'N/A' as const, type: 'Multiple' as const },
-          { event: 'add_to_cart', count: getGA4Metric(ga4Data, 'addToCarts').toLocaleString(), matchRate: 'N/A' as const, type: 'Multiple' as const },
-          { event: 'begin_checkout', count: getGA4Metric(ga4Data, 'checkouts').toLocaleString(), matchRate: 'N/A' as const, type: 'Multiple' as const },
-          { event: 'purchase', count: getGA4Metric(ga4Data, 'ecommercePurchases').toLocaleString(), matchRate: 'N/A' as const, type: 'Multiple' as const },
+          { event: 'page_view', count: Math.round(pageViews / dayCount).toLocaleString(), matchRate: undefined as any, type: undefined as any },
+          { event: 'add_to_cart', count: Math.round(addToCarts / dayCount).toLocaleString(), matchRate: undefined as any, type: undefined as any },
+          { event: 'begin_checkout', count: Math.round(checkouts / dayCount).toLocaleString(), matchRate: undefined as any, type: undefined as any },
+          { event: 'purchase', count: Math.round(purchases / dayCount).toLocaleString(), matchRate: undefined as any, type: undefined as any },
         ],
       };
     }
@@ -595,8 +599,8 @@ export default function AttributionPage() {
                         </div>
                         <div className="flex items-center gap-4 text-xs text-text-secondary">
                           <span>Count: {event.count}/day</span>
-                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && <span>Match Quality: {event.matchRate}</span>}
-                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && event.type && <span>Source: {event.type === 'Multiple' ? 'Multiple Sources' : event.type}</span>}
+                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && event.matchRate && <span>Match Quality: {event.matchRate}</span>}
+                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && event.type && <span>Source: {event.type === 'Multiple' ? 'Multiple Sources' : event.type}</span>}
                         </div>
                       </div>
                     ))}
