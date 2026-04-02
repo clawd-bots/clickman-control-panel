@@ -1,12 +1,11 @@
 'use client';
-import { useState } from 'react';
-import { Download, FileText, Check, ChevronDown, ChevronRight } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Download, FileText, ChevronDown, ChevronRight, Minus } from 'lucide-react';
 
 interface ExportSection {
   id: string;
   name: string;
   children?: ExportSection[];
-  excluded?: boolean;
 }
 
 const exportSections: ExportSection[] = [
@@ -14,265 +13,199 @@ const exportSections: ExportSection[] = [
     id: 'dashboard',
     name: 'Dashboard',
     children: [
-      {
-        id: 'daily-overview',
-        name: 'Daily Overview',
-        children: [
-          { id: 'cac-ltv-ratio', name: 'CAC/LTV Ratio Card' },
-          { id: 'ltv-per-customer', name: 'LTV per Customer Card' },
-          { id: 'net-revenue-card', name: 'Net Revenue KPI' },
-          { id: 'marketing-costs-card', name: 'Marketing Costs KPI' },
-          { id: 'mer-card', name: 'MER KPI' },
-          { id: 'amer-card', name: 'aMER KPI' },
-          { id: 'orders-card', name: 'Orders KPI' },
-          { id: 'nc-orders-card', name: 'NC Orders KPI' },
-          { id: 'cac-card', name: 'CAC KPI' },
-          { id: 'ncac-card', name: 'nCAC KPI' },
-          { id: 'revenue-chart', name: 'Revenue & Marketing Costs Chart' },
-          { id: 'orders-chart', name: 'Net Orders & New Customers Chart' },
-          { id: 'marketing-insights', name: 'Marketing Insights' },
-          { id: 'marketing-trend', name: 'Marketing Metrics Trend' },
-          { id: 'channel-attribution', name: 'Channel Attribution Table' },
-          { id: 'revenue-composition', name: 'Revenue Composition Chart' },
-          { id: 'product-kpis', name: 'Product KPIs Table' },
-        ]
-      }
+      { id: 'kpi-cards', name: 'KPI Cards (Revenue, MER, Orders, CAC, etc.)' },
+      { id: 'revenue-chart', name: 'Revenue & Marketing Costs Chart' },
+      { id: 'orders-chart', name: 'Net Orders & New Customers Chart' },
+      { id: 'unique-sessions', name: 'Unique Sessions (GA4)' },
+      { id: 'channel-attribution', name: 'Channel Attribution Table' },
+      { id: 'revenue-composition', name: 'Revenue Composition Chart' },
+      { id: 'product-kpis', name: 'Product KPIs Table' },
     ]
   },
   {
-    id: 'attribution-tree',
-    name: 'Attribution Tree',
+    id: 'pnl',
+    name: 'Profit & Loss',
     children: [
-      {
-        id: 'mer-ncac',
-        name: 'MER/nCAC Overview',
-        children: [
-          { id: 'mer-cards', name: 'MER & nCAC Cards' },
-          { id: 'max-spend', name: 'Max Marketing Spend' },
-          { id: 'target-cpa', name: 'Target CPA' },
-        ]
-      },
-      {
-        id: 'surveys-mmm',
-        name: 'Surveys & MMM Section',
-        children: [
-          { id: 'survey-chart', name: 'Post-Purchase Survey Chart' },
-          { id: 'survey-breakdown', name: 'Channel Attribution Breakdown' },
-        ]
-      },
-      {
-        id: 'tracking-infra',
-        name: 'Tracking Infrastructure',
-        children: [
-          { id: 'tracking-health', name: 'Tracking Health Status' },
-          { id: 'pixel-status', name: 'Pixel & CAPI Status' },
-        ]
-      },
+      { id: 'pnl-summary', name: 'P&L Summary KPIs' },
+      { id: 'pnl-income-expenses', name: 'Income vs Expenses Chart' },
+      { id: 'pnl-margins', name: 'Gross & Net Margin Chart' },
+      { id: 'pnl-breakdown', name: 'P&L Breakdown Table' },
     ]
-  }
+  },
+  {
+    id: 'creative',
+    name: 'Creative & MTA',
+    children: [
+      { id: 'account-control', name: 'Account Control (CPA vs Spend)' },
+      { id: 'ad-churn', name: 'Ad Churn (Spend by Creative Age)' },
+      { id: 'creative-churn-cohort', name: 'Creative Churn Cohort' },
+      { id: 'slugging-rate', name: 'Slugging Rate' },
+      { id: 'pareto', name: 'Pareto Analysis' },
+      { id: 'demographics', name: 'Demographics' },
+    ]
+  },
+  {
+    id: 'cohorts',
+    name: 'Cohorts',
+    children: [
+      { id: 'cohort-retention', name: 'Retention Matrix' },
+      { id: 'cohort-ltv', name: 'LTV Analysis' },
+    ]
+  },
 ];
 
-const excludedSections = [
-  'Intelligence reports',
-  'AI summaries', 
-  'Targets & Goals',
-  'Prompt templates',
-  'Final Items',
-  'P&L',
-  'Cashflow'
-];
+// Collect all leaf IDs from a section
+function getAllIds(sections: ExportSection[]): string[] {
+  return sections.flatMap(s => [s.id, ...(s.children ? getAllIds(s.children) : [])]);
+}
+
+function getChildIds(section: ExportSection): string[] {
+  if (!section.children) return [];
+  return section.children.flatMap(c => [c.id, ...getChildIds(c)]);
+}
 
 export default function PDFExportPage() {
-  const [selectedSections, setSelectedSections] = useState<Set<string>>(new Set());
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['dashboard', 'attribution-tree']));
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set(['dashboard', 'pnl', 'creative', 'cohorts']));
   const [isExporting, setIsExporting] = useState(false);
 
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId);
-      } else {
-        newSet.add(sectionId);
-      }
-      return newSet;
+  const toggleExpand = (id: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
     });
   };
 
-  const toggleSelection = (sectionId: string) => {
-    setSelectedSections(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(sectionId)) {
-        newSet.delete(sectionId);
+  // Parent-child checkbox logic
+  const toggleSelect = useCallback((section: ExportSection) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      const childIds = getChildIds(section);
+      const allIds = [section.id, ...childIds];
+      const allSelected = allIds.every(id => next.has(id));
+
+      if (allSelected) {
+        // Uncheck all
+        allIds.forEach(id => next.delete(id));
       } else {
-        newSet.add(sectionId);
+        // Check all
+        allIds.forEach(id => next.add(id));
       }
-      return newSet;
+
+      // Update parent states upward
+      updateParents(next, exportSections);
+      return next;
     });
+  }, []);
+
+  // Recursively update parent checkbox states
+  function updateParents(sel: Set<string>, sections: ExportSection[]) {
+    for (const section of sections) {
+      if (section.children && section.children.length > 0) {
+        updateParents(sel, section.children);
+        const childIds = getChildIds(section);
+        const allChecked = childIds.length > 0 && childIds.every(id => sel.has(id));
+        if (allChecked) {
+          sel.add(section.id);
+        } else {
+          sel.delete(section.id);
+        }
+      }
+    }
+  }
+
+  // Get checkbox state: 'checked', 'indeterminate', 'unchecked'
+  const getCheckState = (section: ExportSection): 'checked' | 'indeterminate' | 'unchecked' => {
+    if (!section.children || section.children.length === 0) {
+      return selected.has(section.id) ? 'checked' : 'unchecked';
+    }
+    const childIds = getChildIds(section);
+    const checkedCount = childIds.filter(id => selected.has(id)).length;
+    if (checkedCount === 0) return 'unchecked';
+    if (checkedCount === childIds.length) return 'checked';
+    return 'indeterminate';
   };
 
   const selectAll = () => {
-    const getAllIds = (sections: ExportSection[]): string[] => {
-      return sections.flatMap(section => [
-        section.id,
-        ...(section.children ? getAllIds(section.children) : [])
-      ]);
-    };
-    setSelectedSections(new Set(getAllIds(exportSections)));
+    const all = new Set(getAllIds(exportSections));
+    setSelected(all);
   };
 
-  const clearAll = () => {
-    setSelectedSections(new Set());
-  };
+  const clearAll = () => setSelected(new Set());
+
+  const selectedLeafCount = Array.from(selected).filter(id => {
+    // Count only leaf nodes (no children)
+    const find = (sections: ExportSection[]): ExportSection | null => {
+      for (const s of sections) {
+        if (s.id === id) return s;
+        if (s.children) { const f = find(s.children); if (f) return f; }
+      }
+      return null;
+    };
+    const section = find(exportSections);
+    return section && (!section.children || section.children.length === 0);
+  }).length;
 
   const exportPDF = async () => {
     setIsExporting(true);
-    
     try {
-      const selectedItems = Array.from(selectedSections);
-      
-      // Show progress message
-      const progressDiv = document.createElement('div');
-      progressDiv.id = 'pdf-progress';
-      progressDiv.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0,0,0,0.8);
-        color: white;
-        padding: 20px 40px;
-        border-radius: 8px;
-        z-index: 9999;
-        text-align: center;
-        font-family: Arial, sans-serif;
-      `;
-      progressDiv.innerHTML = `
-        <div>📊 Generating PDF Export...</div>
-        <div style="margin-top: 10px; font-size: 14px;">
-          Generating report with live dashboard data
-        </div>
-        <div style="margin-top: 10px; font-size: 12px; opacity: 0.8;">
-          Including KPIs, channel attribution, and tracking health
-        </div>
-      `;
-      document.body.appendChild(progressDiv);
-
-      // Try the advanced DOM capture method first, fallback to data-only PDF
-      try {
-        // Dynamic import for DOM capture
-        const { generateComprehensivePDF } = await import('@/lib/pdf-generator');
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Wait for content to settle
-        await generateComprehensivePDF(selectedItems);
-      } catch (domError) {
-        console.warn('DOM capture failed, falling back to data-only PDF:', domError);
-        
-        // Fallback to data-focused PDF
-        const { generateDataPDF } = await import('@/lib/data-pdf-generator');
-        await generateDataPDF();
-      }
-      
-      // Remove progress indicator
-      const progress = document.getElementById('pdf-progress');
-      if (progress) progress.remove();
-      
-      // Show success message
-      const successDiv = document.createElement('div');
-      successDiv.style.cssText = progressDiv.style.cssText;
-      successDiv.style.background = 'rgba(16, 185, 129, 0.9)'; // Green background
-      successDiv.innerHTML = `
-        <div>✅ PDF Export Complete!</div>
-        <div style="margin-top: 10px; font-size: 14px;">
-          Your Click-Man dashboard report has been downloaded
-        </div>
-        <div style="margin-top: 10px; font-size: 12px; opacity: 0.9;">
-          Contains real KPI values, channel data, and tracking metrics
-        </div>
-        <div style="margin-top: 15px;">
-          <button onclick="this.parentElement.parentElement.remove()" 
-                  style="padding: 8px 16px; background: rgba(0,0,0,0.2); color: white; border: none; border-radius: 4px; cursor: pointer;">
-            Close
-          </button>
-        </div>
-      `;
-      document.body.appendChild(successDiv);
-      setTimeout(() => successDiv.remove(), 5000);
-      
-      setIsExporting(false);
+      const { generateDataPDF } = await import('@/lib/data-pdf-generator');
+      await generateDataPDF(Array.from(selected));
     } catch (error) {
       console.error('PDF generation failed:', error);
-      
-      // Remove progress indicator
-      const progress = document.getElementById('pdf-progress');
-      if (progress) progress.remove();
-      
-      // Show error message
-      const errorDiv = document.createElement('div');
-      errorDiv.style.cssText = `
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(239, 68, 68, 0.9);
-        color: white;
-        padding: 20px 40px;
-        border-radius: 8px;
-        z-index: 9999;
-        text-align: center;
-        font-family: Arial, sans-serif;
-      `;
-      errorDiv.innerHTML = `
-        <div>❌ PDF Export Failed</div>
-        <div style="margin-top: 10px; font-size: 14px;">
-          ${error instanceof Error ? error.message : 'Unable to generate PDF export'}
-        </div>
-        <div style="margin-top: 10px; font-size: 12px; opacity: 0.8;">
-          Please try again or contact support if the issue persists
-        </div>
-        <div style="margin-top: 15px;">
-          <button onclick="this.parentElement.remove()" 
-                  style="padding: 8px 16px; background: rgba(0,0,0,0.3); color: white; border: none; border-radius: 4px; cursor: pointer;">
-            Close
-          </button>
-        </div>
-      `;
-      document.body.appendChild(errorDiv);
-      setTimeout(() => errorDiv.remove(), 10000);
-      
+      alert('PDF export failed. Please try again.');
+    } finally {
       setIsExporting(false);
     }
   };
 
   const renderSection = (section: ExportSection, level: number = 0) => {
-    const isExpanded = expandedSections.has(section.id);
-    const isSelected = selectedSections.has(section.id);
+    const isExpanded = expanded.has(section.id);
     const hasChildren = section.children && section.children.length > 0;
+    const checkState = getCheckState(section);
 
     return (
-      <div key={section.id} className="border border-border rounded-lg mb-2">
-        <div className={`flex items-center p-3 ${level > 0 ? 'bg-bg-elevated' : 'bg-bg-surface'}`}>
-          {hasChildren && (
-            <button
-              onClick={() => toggleSection(section.id)}
-              className="mr-2 text-text-secondary hover:text-text-primary"
-            >
-              {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+      <div key={section.id} className={level === 0 ? 'border border-border rounded-lg mb-2' : 'mb-1'}>
+        <div
+          className={`flex items-center gap-2 px-3 py-2.5 rounded-md transition-colors ${
+            level === 0 ? 'bg-bg-surface' : 'bg-bg-elevated/50 hover:bg-bg-elevated'
+          }`}
+        >
+          {hasChildren ? (
+            <button onClick={() => toggleExpand(section.id)} className="text-text-secondary hover:text-text-primary shrink-0">
+              {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             </button>
+          ) : (
+            <span className="w-[14px] shrink-0" />
           )}
-          
-          <div className="flex items-center flex-1">
-            <input
-              type="checkbox"
-              checked={isSelected}
-              onChange={() => toggleSelection(section.id)}
-              className="mr-3 w-4 h-4 text-brand-blue bg-bg-elevated border-border rounded focus:ring-brand-blue"
-            />
-            <span className="text-sm font-medium text-text-primary">{section.name}</span>
-          </div>
+
+          <button
+            onClick={() => toggleSelect(section)}
+            className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-colors ${
+              checkState === 'checked'
+                ? 'bg-brand-blue border-brand-blue text-white'
+                : checkState === 'indeterminate'
+                ? 'bg-brand-blue/30 border-brand-blue text-brand-blue'
+                : 'bg-bg-elevated border-border hover:border-text-secondary'
+            }`}
+          >
+            {checkState === 'checked' && <span className="text-[10px]">✓</span>}
+            {checkState === 'indeterminate' && <Minus size={10} />}
+          </button>
+
+          <span
+            className={`text-sm cursor-pointer select-none ${
+              level === 0 ? 'font-semibold text-text-primary' : 'text-text-primary'
+            }`}
+            onClick={() => toggleSelect(section)}
+          >
+            {section.name}
+          </span>
         </div>
-        
+
         {hasChildren && isExpanded && (
-          <div className="border-t border-border bg-bg-elevated/30 p-2">
+          <div className={`${level === 0 ? 'border-t border-border p-2 bg-bg-elevated/30' : 'pl-5'}`}>
             {section.children!.map(child => renderSection(child, level + 1))}
           </div>
         )}
@@ -281,42 +214,34 @@ export default function PDFExportPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl">
       <div>
         <h2 className="text-xl font-semibold flex items-center gap-2">
           <Download size={24} />
           PDF Export
         </h2>
         <p className="text-sm text-text-secondary mt-1">
-          Select dashboard sections and individual metrics/charts to export as downloadable PDFs.
+          Select sections to include in your PDF report. Data is pulled live from connected sources.
         </p>
       </div>
 
-
-
       {/* Selection Controls */}
       <div className="flex items-center gap-3">
-        <button
-          onClick={selectAll}
-          className="px-3 py-1.5 text-xs bg-brand-blue text-white rounded-md hover:bg-brand-blue/90 transition-colors"
-        >
+        <button onClick={selectAll} className="px-3 py-1.5 text-xs bg-brand-blue text-white rounded-md hover:bg-brand-blue/90 transition-colors">
           Select All
         </button>
-        <button
-          onClick={clearAll}
-          className="px-3 py-1.5 text-xs bg-bg-elevated text-text-primary border border-border rounded-md hover:bg-bg-surface transition-colors"
-        >
+        <button onClick={clearAll} className="px-3 py-1.5 text-xs bg-bg-elevated text-text-primary border border-border rounded-md hover:bg-bg-surface transition-colors">
           Clear All
         </button>
         <span className="text-xs text-text-secondary">
-          {selectedSections.size} item{selectedSections.size !== 1 ? 's' : ''} selected
+          {selectedLeafCount} item{selectedLeafCount !== 1 ? 's' : ''} selected
         </span>
       </div>
 
       {/* Hierarchical Selection */}
       <div className="bg-bg-surface border border-border rounded-lg p-4">
-        <h3 className="text-sm font-medium text-text-primary mb-4">Select Sections to Export</h3>
-        <div className="space-y-2">
+        <h3 className="text-sm font-medium text-text-primary mb-3">Select Sections to Export</h3>
+        <div className="space-y-1">
           {exportSections.map(section => renderSection(section))}
         </div>
       </div>
@@ -325,8 +250,8 @@ export default function PDFExportPage() {
       <div className="flex items-center gap-4 p-4 bg-bg-surface border border-border rounded-lg">
         <button
           onClick={exportPDF}
-          disabled={selectedSections.size === 0 || isExporting}
-          className="flex items-center gap-2 px-4 py-2 bg-success text-white rounded-md hover:bg-success/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          disabled={selectedLeafCount === 0 || isExporting}
+          className="flex items-center gap-2 px-5 py-2.5 bg-success text-white rounded-md hover:bg-success/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
         >
           {isExporting ? (
             <>
@@ -336,16 +261,10 @@ export default function PDFExportPage() {
           ) : (
             <>
               <FileText size={16} />
-              Export Selected ({selectedSections.size})
+              Export PDF ({selectedLeafCount} sections)
             </>
           )}
         </button>
-        
-        {selectedSections.size > 0 && (
-          <div className="text-xs text-text-secondary">
-            PDF will include {selectedSections.size} selected section{selectedSections.size !== 1 ? 's' : ''}
-          </div>
-        )}
       </div>
     </div>
   );
