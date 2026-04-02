@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [twLoading, setTwLoading] = useState(true);
   const [ga4Data, setGA4Data] = useState<GA4Data | null>(null);
   const [ga4Loading, setGA4Loading] = useState(true);
+  const [ga4DailyData, setGA4DailyData] = useState<Array<{ date: string; sessions: number; totalUsers: number }>>([]);
 
   useEffect(() => {
     setTwLoading(true);
@@ -47,9 +48,21 @@ export default function DashboardPage() {
       .then(setTwData)
       .catch(console.error)
       .finally(() => setTwLoading(false));
-    fetchGA4Data(startDate, endDate, 'summary')
-      .then(setGA4Data)
-      .catch(console.error)
+    // Fetch GA4 summary + daily in parallel
+    Promise.all([
+      fetchGA4Data(startDate, endDate, 'summary'),
+      fetch(`/api/ga4?startDate=${startDate}&endDate=${endDate}&mode=daily`)
+        .then(r => r.json())
+        .then(json => json.success ? json.data.daily : [])
+        .catch(() => []),
+    ]).then(([summary, daily]) => {
+      setGA4Data(summary);
+      setGA4DailyData(daily.map((d: any) => ({
+        date: d.date,
+        sessions: d.sessions ?? 0,
+        totalUsers: d.totalUsers ?? 0,
+      })));
+    }).catch(console.error)
       .finally(() => setGA4Loading(false));
   }, [dateRange]);
 
@@ -550,12 +563,15 @@ export default function DashboardPage() {
 
         <div className="lg:col-span-2 bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-text-secondary">Marketing Metrics Trend</h3>
-            <div className="flex items-center gap-2"><DataSource source="Triple Whale" /><LiveBadge /></div>
+            <h3 className="text-sm font-medium text-text-secondary">Unique Sessions</h3>
+            <div className="flex items-center gap-2"><DataSource source="Google Analytics" /><LiveBadge variant={ga4DailyData.length > 0 ? 'live' : 'sample'} /></div>
           </div>
           <div className="min-h-[180px]">
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={chartData}>
+              <BarChart data={ga4DailyData.length > 0 
+                ? ga4DailyData.map(d => ({ displayDate: formatDateLabel(d.date, 'day'), sessions: d.sessions }))
+                : chartData.map(d => ({ displayDate: d.displayDate, sessions: d.sessions }))
+              }>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
                   dataKey="displayDate" 
@@ -582,7 +598,11 @@ export default function DashboardPage() {
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="attribution-table">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
           <div>
-            <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
+              <DataSource source="Triple Whale" />
+              <LiveBadge />
+            </div>
             <div className="flex gap-2 sm:gap-3 mt-2 flex-wrap">
               {['Last Click', 'Linear', 'First Click', 'Linear Paid', 'Triple'].map((tab) => (
                 <button 
