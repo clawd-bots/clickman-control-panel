@@ -40,7 +40,6 @@ const exportSections: ExportSection[] = [
       { id: 'ad-churn', name: 'Ad Churn (Spend by Creative Age)' },
       { id: 'creative-churn-cohort', name: 'Creative Churn Cohort' },
       { id: 'slugging-rate', name: 'Slugging Rate' },
-      { id: 'pareto', name: 'Pareto Analysis' },
       { id: 'demographics', name: 'Demographics' },
     ]
   },
