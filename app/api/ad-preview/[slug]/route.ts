@@ -40,7 +40,11 @@ export async function GET(
   if (adId && (platformKey === 'Meta' || platformKey === 'TikTok')) {
     try {
       const origin = request.nextUrl.origin;
-      const creativeRes = await fetch(`${origin}/api/ad-creative?platform=${platformKey}&adId=${adId}`);
+      // Pass through the auth header for internal API call (middleware requires it)
+      const authHeader = request.headers.get('authorization') || '';
+      const creativeRes = await fetch(`${origin}/api/ad-creative?platform=${platformKey}&adId=${adId}`, {
+        headers: authHeader ? { 'Authorization': authHeader } : {},
+      });
       const creativeJson = await creativeRes.json();
       if (creativeJson.success) {
         creative = creativeJson.data;
