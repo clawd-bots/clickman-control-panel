@@ -708,12 +708,38 @@ export default function AttributionPage() {
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { channel: 'Meta', ltvCac: 2.1, ltv: 6580, cac: 3133, payback: '4.2 months' },
-              { channel: 'Google', ltvCac: 3.8, ltv: 7220, cac: 1900, payback: '2.1 months' },
-              { channel: 'TikTok', ltvCac: 1.4, ltv: 4200, cac: 3000, payback: '6.8 months' },
-              { channel: 'Reddit', ltvCac: 1.1, ltv: 3500, cac: 3182, payback: '8.2 months' },
-            ].map((ch) => (
+            {(() => {
+              // Model adjustments: different attribution models shift credit between channels
+              const modelMult: Record<string, Record<string, { ltvMult: number; cacMult: number }>> = {
+                'First Click': { Meta: { ltvMult: 1.0, cacMult: 1.0 }, Google: { ltvMult: 1.0, cacMult: 1.0 }, TikTok: { ltvMult: 1.0, cacMult: 1.0 }, Reddit: { ltvMult: 1.0, cacMult: 1.0 } },
+                'Last Click': { Meta: { ltvMult: 1.05, cacMult: 0.92 }, Google: { ltvMult: 1.12, cacMult: 0.85 }, TikTok: { ltvMult: 0.88, cacMult: 1.15 }, Reddit: { ltvMult: 0.85, cacMult: 1.2 } },
+                'Linear All': { Meta: { ltvMult: 1.02, cacMult: 0.96 }, Google: { ltvMult: 1.06, cacMult: 0.93 }, TikTok: { ltvMult: 0.95, cacMult: 1.05 }, Reddit: { ltvMult: 0.92, cacMult: 1.1 } },
+                'Linear Paid': { Meta: { ltvMult: 1.08, cacMult: 0.94 }, Google: { ltvMult: 0.95, cacMult: 1.08 }, TikTok: { ltvMult: 1.1, cacMult: 0.98 }, Reddit: { ltvMult: 0.9, cacMult: 1.12 } },
+              };
+              // Window adjustments: longer windows generally give more credit to upper-funnel channels
+              const windowMult: Record<string, number> = {
+                '1-day click': 0.85,
+                '7-day click / 1-day view': 1.0,
+                '28-day click / 1-day view': 1.08,
+                '28-day click / 28-day view': 1.15,
+              };
+              const base = [
+                { channel: 'Meta', ltv: 6580, cac: 3133, payback: 4.2 },
+                { channel: 'Google', ltv: 7220, cac: 1900, payback: 2.1 },
+                { channel: 'TikTok', ltv: 4200, cac: 3000, payback: 6.8 },
+                { channel: 'Reddit', ltv: 3500, cac: 3182, payback: 8.2 },
+              ];
+              const mm = modelMult[cohortAttrModel] || modelMult['First Click'];
+              const wm = windowMult[cohortAttrWindow] || 1.0;
+              return base.map(ch => {
+                const m = mm[ch.channel] || { ltvMult: 1, cacMult: 1 };
+                const ltv = Math.round(ch.ltv * m.ltvMult * wm);
+                const cac = Math.round(ch.cac * m.cacMult / wm);
+                const ltvCac = parseFloat((ltv / cac).toFixed(1));
+                const payback = parseFloat((ch.payback * m.cacMult / (m.ltvMult * wm)).toFixed(1));
+                return { channel: ch.channel, ltvCac, ltv, cac, payback: `${payback} months` };
+              });
+            })().map((ch) => (
               <div key={ch.channel} className="bg-bg-elevated rounded-md p-4 space-y-3">
                 <div className="text-sm font-medium text-text-primary">{ch.channel}</div>
                 <div className="flex items-center gap-2">
