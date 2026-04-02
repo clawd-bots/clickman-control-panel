@@ -538,39 +538,7 @@ export default function TargetsPage() {
 
                 </tr>
               ))}
-              {/* Column Save Buttons Row - Desktop Only */}
-              <tr className="border-t border-border bg-bg-elevated">
-                <td className="py-3 px-3 font-medium text-text-secondary sticky left-0 z-10 bg-bg-elevated border-r border-border">
-                  Save Column
-                </td>
-                {currentMonthColumns.map((colKey) => {
-                  const columnHasData = monthlyTargets.some(target => (target as any)[colKey] && (target as any)[colKey] !== '');
-                  return (
-                    <td key={`save-${colKey}`} className="py-2.5 px-2 text-center bg-bg-elevated">
-                      <button
-                        onClick={() => {
-                          // Save all values in this column
-                          setMonthlyTargets(prev => prev.map(target => ({
-                            ...target,
-                            lastUpdated: columnHasData ? 'Saved' : 'Never'
-                          })));
-                        }}
-                        className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                          columnHasData 
-                            ? 'bg-success/15 text-success hover:bg-success/25' 
-                            : 'bg-text-tertiary/10 text-text-tertiary cursor-not-allowed'
-                        }`}
-                        disabled={!columnHasData}
-                      >
-                        Save
-                      </button>
-                    </td>
-                  );
-                })}
-                <td className="py-2.5 px-2 text-center">
-                  <div className="w-8 h-8"></div>
-                </td>
-              </tr>
+
               {/* Last Updated Summary Row */}
               <tr className="border-t border-border/50 bg-bg-elevated">
                 <td className="py-2.5 px-3 font-medium text-text-secondary sticky left-0 z-10 bg-bg-elevated border-r border-border">
