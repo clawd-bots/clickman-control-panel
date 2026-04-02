@@ -1,11 +1,5 @@
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
+import autoTable from 'jspdf-autotable';
 
 class PDFBuilder {
   private pdf: jsPDF;
@@ -52,7 +46,7 @@ class PDFBuilder {
 
   table(head: string[], body: string[][], opts?: any) {
     this.checkBreak(30);
-    this.pdf.autoTable({
+    autoTable(this.pdf, {
       head: [head],
       body,
       startY: this.y,
