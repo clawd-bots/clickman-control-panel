@@ -12,7 +12,7 @@ import { fetchMetaOverview, classifyMetaAdZone, MetaOverview } from '@/lib/meta-
 import {
   creativePerformance, creativeAISuggestions,
   accountControlData, adChurnDataByPlatform, adChurnCampaigns, creativeChurnCohorts,
-  productionSlugging, demographicsAge, demographicsGender, demographicsGenderAge,
+  productionSlugging, demographicsAge, demographicsGender, demographicsGenderAge, creativeChurnCohortsByPlatform,
   targets,
 } from '@/lib/sample-data';
 import { formatCurrency } from '@/lib/utils';
@@ -1354,7 +1354,7 @@ export default function CreativePage() {
             </div>
             <div className="min-h-[320px] sm:min-h-[380px]" style={{ width: '100%', height: '380px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={creativeChurnCohorts} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                <AreaChart data={creativeChurnCohortsByPlatform[churnCohortPlatform] || creativeChurnCohorts} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-30} textAnchor="end" height={60} />
                   <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />

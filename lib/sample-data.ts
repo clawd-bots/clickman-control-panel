@@ -450,7 +450,8 @@ export const adChurnCampaigns: Record<string, Array<{
 };
 
 // ─── Creative Churn by Cohort (Stacked Area) ───
-export const creativeChurnCohorts = [
+// Base cohort data — platform-specific versions are derived with multipliers
+const _baseCohorts = [
   { week: 'W1 Oct', oct: 42000, nov: 0, dec: 0, jan: 0, feb: 0, mar: 0 },
   { week: 'W2 Oct', oct: 48000, nov: 0, dec: 0, jan: 0, feb: 0, mar: 0 },
   { week: 'W3 Oct', oct: 52000, nov: 0, dec: 0, jan: 0, feb: 0, mar: 0 },
@@ -476,6 +477,21 @@ export const creativeChurnCohorts = [
   { week: 'W3 Mar', oct: 0, nov: 0, dec: 0, jan: 6000, feb: 30000, mar: 45000 },
   { week: 'W4 Mar', oct: 0, nov: 0, dec: 0, jan: 3000, feb: 25000, mar: 52000 },
 ];
+
+function _scaleCohorts(mult: number) {
+  return _baseCohorts.map(r => ({
+    week: r.week,
+    oct: Math.round(r.oct * mult), nov: Math.round(r.nov * mult), dec: Math.round(r.dec * mult),
+    jan: Math.round(r.jan * mult), feb: Math.round(r.feb * mult), mar: Math.round(r.mar * mult),
+  }));
+}
+
+export const creativeChurnCohorts = _baseCohorts; // default (Meta)
+export const creativeChurnCohortsByPlatform: Record<string, typeof _baseCohorts> = {
+  Meta: _baseCohorts,
+  TikTok: _scaleCohorts(0.3),
+  Reddit: _scaleCohorts(0.12),
+};
 
 // ─── Production & Slugging Rate ───
 // hits = scaled under All CPA target, ncHits = scaled under NC CPA target (stricter)
