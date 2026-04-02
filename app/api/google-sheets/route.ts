@@ -1,4 +1,5 @@
 import { google } from 'googleapis';
+import { getCached, setCache } from '@/lib/api-cache';
 import { NextRequest, NextResponse } from 'next/server';
 
 // Impremis P&L sheet — hardcoded to avoid env var caching issues on Vercel
@@ -33,6 +34,13 @@ interface MomRow {
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const forceRefresh = searchParams.get('refresh') === 'true';
+    if (!forceRefresh) {
+      const cached = await getCached('google-sheets', 'pnl');
+      if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
+    }
+
     const auth = getAuth();
     const client = await auth.getClient();
     const sheets = google.sheets({ version: 'v4', auth: client as any });
@@ -117,7 +125,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    const response = {
       success: true,
       data: {
         title: (rows[1]?.[0] || 'Impremis Marketing') as string,
@@ -127,7 +135,9 @@ export async function GET(request: NextRequest) {
         rows: data,
         sections: sectionRows,
       },
-    });
+    };
+    setCache('google-sheets', 'pnl', response).catch(() => {});
+    return NextResponse.json(response);
   } catch (error: any) {
     console.error('Google Sheets API error:', error);
     return NextResponse.json(

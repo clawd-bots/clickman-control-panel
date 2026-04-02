@@ -30,6 +30,7 @@ const navItems = [
   { href: '/pdf-export', label: 'PDF Export', icon: Download },
   { href: '/prompt-templates', label: 'Prompt Templates', icon: FileText },
   { href: '/final-items', label: 'Final Items', icon: ChevronRight },
+  { href: '/settings', label: 'Settings', icon: ChevronRight },
 ];
 
 export default function Sidebar() {

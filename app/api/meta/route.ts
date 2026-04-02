@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCached, setCache } from '@/lib/api-cache';
 
 const GRAPH_API_VERSION = 'v21.0';
 const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
@@ -72,6 +73,12 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate') || '2026-03-01';
     const endDate = searchParams.get('endDate') || '2026-03-31';
     const timeRange = JSON.stringify({ since: startDate, until: endDate });
+
+    const forceRefresh = searchParams.get('refresh') === 'true';
+    if (mode === 'overview' && !forceRefresh) {
+      const cached = await getCached('meta', `${startDate}_${endDate}_${mode}`);
+      if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
+    }
 
     if (mode === 'account') {
       const data = await metaFetch(`/${accountId}`, {
@@ -149,7 +156,7 @@ export async function GET(request: NextRequest) {
       const totalImpressions = ads.reduce((s: number, a: any) => s + a.impressions, 0);
       const totalClicks = ads.reduce((s: number, a: any) => s + a.clicks, 0);
 
-      return NextResponse.json({
+      const response = {
         success: true,
         data: {
           account: {
@@ -179,7 +186,9 @@ export async function GET(request: NextRequest) {
           ads,
           dateRange: { startDate, endDate },
         },
-      });
+      };
+      setCache('meta', `${startDate}_${endDate}_overview`, response).catch(() => {});
+      return NextResponse.json(response);
     }
 
     return NextResponse.json({ success: false, error: 'Invalid mode. Use: overview | account | campaigns | ad-performance' }, { status: 400 });

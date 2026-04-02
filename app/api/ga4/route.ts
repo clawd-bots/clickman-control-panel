@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCached, setCache } from '@/lib/api-cache';
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
 
 function getClient() {
@@ -45,6 +46,13 @@ export async function GET(request: NextRequest) {
         { success: false, error: 'Dates must be in YYYY-MM-DD format' },
         { status: 400 }
       );
+    }
+
+    const forceRefresh = searchParams.get('refresh') === 'true';
+    const cacheParams = `${startDate}_${endDate}_${mode}`;
+    if (!forceRefresh) {
+      const cached = await getCached('ga4', cacheParams);
+      if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
     }
 
     const { client, propertyId } = getClient();
@@ -188,16 +196,14 @@ export async function GET(request: NextRequest) {
     }
 
     // mode === 'all' — summary already fetched above
-    return NextResponse.json({
+    const response = {
       success: true,
       source: 'ga4',
       dateRange: { startDate, endDate },
-      data: {
-        summary,
-        daily,
-        trafficSources,
-      },
-    });
+      data: { summary, daily, trafficSources },
+    };
+    setCache('ga4', cacheParams, response).catch(() => {});
+    return NextResponse.json(response);
   } catch (error: unknown) {
     const err = error as { message?: string; code?: number };
     console.error('GA4 API error:', err);

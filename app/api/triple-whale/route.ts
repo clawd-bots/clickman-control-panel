@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCached, setCache } from '@/lib/api-cache';
 
 const TW_BASE_URL = 'https://api.triplewhale.com/api/v2';
 
@@ -247,6 +248,17 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const forceRefresh = searchParams.get('refresh') === 'true';
+    const cacheParams = `${startDate}_${endDate}_${mode}`;
+    
+    // Check cache first (unless force refresh)
+    if (!forceRefresh) {
+      const cached = await getCached('triple-whale', cacheParams);
+      if (cached !== null) {
+        return NextResponse.json({ ...cached, _fromCache: true });
+      }
+    }
+
     const { apiKey, shopId } = getConfig();
     const allMetrics = await fetchSummaryPageData(apiKey, shopId, startDate, endDate);
 
@@ -314,12 +326,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (mode === 'all') {
-      return NextResponse.json({
+      const response = {
         success: true,
         source: 'triple-whale',
         dateRange: { startDate, endDate },
         data: { summary, daily },
-      });
+      };
+      // Cache the response
+      setCache('triple-whale', cacheParams, response).catch(() => {});
+      return NextResponse.json(response);
     }
 
     return NextResponse.json(
