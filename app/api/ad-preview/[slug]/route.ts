@@ -31,8 +31,24 @@ export async function GET(
   const ncroas = parseFloat(searchParams.get('ncroas') || '0');
   const previewUrl = searchParams.get('previewUrl') || '';
 
+  const adId = searchParams.get('adId') || '';
   const plat = platformInfo[platformKey] || platformInfo.Meta;
   const zInfo = zoneInfo[zone] || zoneInfo.testing;
+
+  // Fetch creative data if we have an adId and it's a supported platform
+  let creative: { imageUrl?: string | null; headline?: string | null; body?: string | null; callToAction?: string | null } = {};
+  if (adId && (platformKey === 'Meta' || platformKey === 'TikTok')) {
+    try {
+      const origin = request.nextUrl.origin;
+      const creativeRes = await fetch(`${origin}/api/ad-creative?platform=${platformKey}&adId=${adId}`);
+      const creativeJson = await creativeRes.json();
+      if (creativeJson.success) {
+        creative = creativeJson.data;
+      }
+    } catch (e) {
+      // Fail silently — preview still works without creative
+    }
+  }
 
   const estImpressions = Math.round(spend * 18);
   const estClicks = Math.round(spend * 0.28);
@@ -132,6 +148,34 @@ export async function GET(
                 </div>
             </div>
 
+            ${creative.imageUrl || creative.headline || creative.body ? `
+            <div class="card">
+                <div class="section-title">Creative</div>
+                ${creative.imageUrl ? `
+                <div style="margin-bottom: 16px; border-radius: 8px; overflow: hidden; border: 1px solid #334155;">
+                    <img src="${creative.imageUrl}" alt="Ad Creative" style="width: 100%; max-height: 400px; object-fit: contain; background: #0F172A;" onerror="this.parentElement.style.display='none'" />
+                </div>
+                ` : ''}
+                ${creative.headline ? `
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 11px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Headline</div>
+                    <div style="font-size: 15px; font-weight: 600; color: #F8FAFC;">${creative.headline}</div>
+                </div>
+                ` : ''}
+                ${creative.body ? `
+                <div style="margin-bottom: 8px;">
+                    <div style="font-size: 11px; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px;">Body</div>
+                    <div style="font-size: 14px; color: #CBD5E1; line-height: 1.5;">${creative.body}</div>
+                </div>
+                ` : ''}
+                ${creative.callToAction ? `
+                <div style="margin-top: 12px;">
+                    <span style="display: inline-block; background: ${plat.color}; color: white; padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 600;">${creative.callToAction}</span>
+                </div>
+                ` : ''}
+            </div>
+            ` : ''}
+
             ${previewUrl ? `
             <div class="card">
                 <div class="section-title">Ad Manager</div>
@@ -142,7 +186,7 @@ export async function GET(
             ` : ''}
 
             <div class="note">
-                <strong>Note:</strong> Creative preview images require ${platformKey} Ads API integration (ad creative endpoint). 
+                <strong>Note:</strong> ${creative.imageUrl ? 'Creative image loaded from ' + platformKey + ' API.' : 'Creative images require a valid ad ID from ' + platformKey + ' API.'}
                 Impressions, clicks, and CTR are estimated from spend. 
                 CPA, ROAS, and spend are actual values from the dashboard.
             </div>

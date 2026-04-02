@@ -304,8 +304,10 @@ export default function CreativePage() {
       }
       return ads.map(a => ({
         name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
+        adId: (a as any).adId || '',
         spend: a.spend,
         cpa: a.cpa,
+        roas: (a as any).roas || 0,
         platform: 'TikTok' as const,
         zone: classifyAdZone(a, cpaTarget),
         previewUrl: '',
@@ -319,8 +321,10 @@ export default function CreativePage() {
       }
       return ads.map(a => ({
         name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
+        adId: (a as any).adId || '',
         spend: a.spend,
         cpa: a.cpa,
+        roas: (a as any).roas || 0,
         platform: 'Meta' as const,
         zone: classifyMetaAdZone(a, cpaTarget),
         previewUrl: '',
@@ -1183,6 +1187,7 @@ export default function CreativePage() {
                                 nccpa: String((ad as any).nccpa || 0),
                                 ncroas: String((ad as any).ncroas || 0),
                                 previewUrl: (ad as any).previewUrl || '',
+                                adId: String((ad as any).adId || ''),
                               });
                               window.open(`/api/ad-preview/${ad.name.replace(/\s+/g, '-').toLowerCase()}?${params.toString()}`, '_blank');
                             }}
