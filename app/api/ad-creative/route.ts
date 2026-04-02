@@ -129,14 +129,47 @@ async function fetchMetaCreative(adId: string) {
     }
   }
 
+  // Meta CDN URLs often have an stp= param that forces a tiny thumbnail (e.g. p64x64).
+  // Strip it to get full resolution, and create a medium thumbnail from it.
+  const stripStpParam = (url: string | null): string | null => {
+    if (!url) return null;
+    try {
+      const u = new URL(url);
+      const stp = u.searchParams.get('stp');
+      if (stp && stp.includes('p64x64')) {
+        // Remove the stp param entirely for full res
+        u.searchParams.delete('stp');
+        return u.toString();
+      }
+      return url;
+    } catch {
+      return url;
+    }
+  };
+
+  const makeThumbnailUrl = (url: string | null): string | null => {
+    if (!url) return null;
+    try {
+      const u = new URL(url);
+      // Set stp to a reasonable thumbnail size
+      u.searchParams.set('stp', 'dst-emg0_p128x128_q75');
+      return u.toString();
+    } catch {
+      return url;
+    }
+  };
+
+  const fullImageUrl = stripStpParam(imageUrl) || imageUrl;
+  const thumbUrl = makeThumbnailUrl(imageUrl) || thumbnailUrl;
+
   return NextResponse.json({
     success: true,
     data: {
       platform: 'Meta',
       adId,
       creativeId,
-      imageUrl,
-      thumbnailUrl,
+      imageUrl: fullImageUrl,
+      thumbnailUrl: thumbUrl,
       videoUrl,
       headline,
       body,
