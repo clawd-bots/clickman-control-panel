@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google-analytics/data": "^5.2.1",
+    "@vercel/blob": "^2.3.2",
     "google-ads-api": "^23.0.0",
     "googleapis": "^171.4.0",
     "html2canvas": "^1.4.1",

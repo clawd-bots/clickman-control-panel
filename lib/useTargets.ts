@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useDateRange } from '@/components/DateProvider';
-import { MonthlyTargetData, loadTargets, saveTargets, getProratedTarget, resolveMetricName } from './targets';
+import { MonthlyTargetData, loadTargets, loadTargetsFromServer, saveTargets, getProratedTarget, resolveMetricName } from './targets';
 
 /**
  * Hook for consuming prorated targets based on the current date range.
@@ -15,9 +15,16 @@ export function useTargets() {
   const { dateRange } = useDateRange();
   const [targets, setTargets] = useState<MonthlyTargetData>({});
 
-  // Load from localStorage on mount
+  // Load from server on mount (falls back to localStorage)
   useEffect(() => {
+    // Show localStorage cache immediately for fast paint
     setTargets(loadTargets());
+    // Then hydrate from server (source of truth)
+    loadTargetsFromServer().then((serverTargets) => {
+      if (Object.keys(serverTargets).length > 0) {
+        setTargets(serverTargets);
+      }
+    });
   }, []);
 
   // Listen for target updates (from Targets page)

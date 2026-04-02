@@ -21,18 +21,61 @@ export interface MonthlyTargetData {
 const RATIO_METRICS = new Set(['MER', 'aMER', 'CAC', 'nCAC', 'CM3%', 'AOV', 'Repeat Rate (30d)']);
 
 /**
- * Save all monthly targets to localStorage
+ * Save all monthly targets to localStorage AND to the server (Vercel Blob).
+ * localStorage acts as immediate cache; server is the source of truth.
  */
 export function saveTargets(data: MonthlyTargetData): void {
   if (typeof window !== 'undefined') {
+    // Immediate local cache
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    
+    // Persist to server (fire-and-forget with retry)
+    saveTargetsToServer(data).catch((err) => {
+      console.error('Failed to save targets to server:', err);
+    });
   }
 }
 
 /**
- * Load all monthly targets from localStorage
+ * Save targets to the server API (Vercel Blob).
  */
-export function loadTargets(): MonthlyTargetData {
+export async function saveTargetsToServer(data: MonthlyTargetData): Promise<void> {
+  const res = await fetch('/api/targets', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ targets: data }),
+  });
+  if (!res.ok) {
+    throw new Error(`Server save failed: ${res.status}`);
+  }
+}
+
+/**
+ * Load targets from the server API (Vercel Blob).
+ * Falls back to localStorage if server is unreachable.
+ */
+export async function loadTargetsFromServer(): Promise<MonthlyTargetData> {
+  try {
+    const res = await fetch('/api/targets', { cache: 'no-store' });
+    if (!res.ok) throw new Error(`Server load failed: ${res.status}`);
+    const { targets } = await res.json();
+    
+    // Update local cache with server data
+    if (typeof window !== 'undefined' && targets && Object.keys(targets).length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(targets));
+    }
+    
+    return targets || {};
+  } catch (err) {
+    console.warn('Failed to load targets from server, falling back to localStorage:', err);
+    return loadTargetsLocal();
+  }
+}
+
+/**
+ * Load all monthly targets from localStorage only (sync, for immediate use).
+ */
+export function loadTargetsLocal(): MonthlyTargetData {
   if (typeof window === 'undefined') return {};
   const raw = localStorage.getItem(STORAGE_KEY);
   if (!raw) return {};
@@ -41,6 +84,15 @@ export function loadTargets(): MonthlyTargetData {
   } catch {
     return {};
   }
+}
+
+/**
+ * Load targets — tries server first, falls back to localStorage.
+ * For synchronous contexts, use loadTargetsLocal() instead.
+ */
+export function loadTargets(): MonthlyTargetData {
+  // Synchronous version returns localStorage cache immediately
+  return loadTargetsLocal();
 }
 
 /**

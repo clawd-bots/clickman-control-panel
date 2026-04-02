@@ -11,7 +11,7 @@ import { Pencil, Check, X, Users as UsersIcon } from 'lucide-react';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { getPromptById, syncPromptChanges } from '@/lib/prompt-registry';
-import { MonthlyTargetData, loadTargets, saveTargets } from '@/lib/targets';
+import { MonthlyTargetData, loadTargets, loadTargetsFromServer, saveTargets } from '@/lib/targets';
 
 // Monthly target data structure
 interface MonthlyTarget {
@@ -120,9 +120,8 @@ export default function TargetsPage() {
   const [currentMonthLabels, setCurrentMonthLabels] = useState<string[]>([...monthLabels]);
   const [showAddMonthDialog, setShowAddMonthDialog] = useState(false);
 
-  // Load saved targets from localStorage on mount
-  useEffect(() => {
-    const saved = loadTargets();
+  // Helper to apply saved data to the target rows
+  const applyTargetData = useCallback((saved: MonthlyTargetData) => {
     if (Object.keys(saved).length > 0) {
       setMonthlyTargets(prev => prev.map(row => {
         const metricData = saved[row.metric];
@@ -140,6 +139,20 @@ export default function TargetsPage() {
       }));
     }
   }, []);
+
+  // Load saved targets from server on mount (falls back to localStorage)
+  useEffect(() => {
+    // Show localStorage cache immediately
+    const localData = loadTargets();
+    applyTargetData(localData);
+    
+    // Then hydrate from server (source of truth)
+    loadTargetsFromServer().then((serverData) => {
+      if (Object.keys(serverData).length > 0) {
+        applyTargetData(serverData);
+      }
+    });
+  }, [applyTargetData]);
 
   // Persist targets to localStorage and dispatch event whenever they change
   const persistTargets = useCallback((targets: MonthlyTarget[]) => {
