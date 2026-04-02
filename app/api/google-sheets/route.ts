@@ -1,7 +1,8 @@
 import { google } from 'googleapis';
 import { NextRequest, NextResponse } from 'next/server';
 
-const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_PNL_SPREADSHEET_ID || '1CKnqlTVXN06CX8ApVpqFzQ1NnDesIPW7zdx-TBcA7uo';
+// Impremis P&L sheet — hardcoded to avoid env var caching issues on Vercel
+const SPREADSHEET_ID = '1CKnqlTVXN06CX8ApVpqFzQ1NnDesIPW7zdx-TBcA7uo';
 const SHEET_NAME = 'MoM P&L 25-26';
 
 function getAuth() {
