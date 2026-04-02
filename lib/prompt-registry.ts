@@ -1,8 +1,8 @@
 /**
- * Unified Prompt Registry — single source of truth backed by localStorage.
+ * Unified Prompt Registry — server-backed (Vercel Blob) with localStorage cache.
  * 
  * Every Intelligence panel and the Prompt Templates page use these functions.
- * Prompts are keyed by ID. History is stored per prompt.
+ * Server is the source of truth; localStorage provides fast reads.
  */
 
 export interface PromptTemplate {
@@ -20,7 +20,12 @@ export interface PromptHistoryEntry {
   response: string;
 }
 
-// Default prompts — used when no localStorage data exists
+interface PromptStore {
+  prompts: Record<string, PromptTemplate>;
+  history: Record<string, PromptHistoryEntry[]>;
+}
+
+// Default prompts — used when no saved data exists
 const DEFAULTS: Record<string, PromptTemplate> = {
   'dashboard-intelligence': {
     id: 'dashboard-intelligence',
@@ -64,31 +69,69 @@ const DEFAULTS: Record<string, PromptTemplate> = {
   },
 };
 
-const STORAGE_PREFIX = 'clickman-prompt-';
-const HISTORY_PREFIX = 'clickman-prompt-history-';
+const CACHE_KEY = 'clickman-prompt-store';
+
+// ─── Local cache read/write ───
+
+function readCache(): PromptStore {
+  if (typeof window === 'undefined') return { prompts: {}, history: {} };
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : { prompts: {}, history: {} };
+  } catch { return { prompts: {}, history: {} }; }
+}
+
+function writeCache(store: PromptStore): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(CACHE_KEY, JSON.stringify(store));
+}
+
+// ─── Server sync (fire-and-forget) ───
+
+function saveToServer(store: PromptStore): void {
+  fetch('/api/prompts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(store),
+  }).catch(err => console.error('Failed to save prompts to server:', err));
+}
+
+/** Load from server and merge into cache. Call once on page load. */
+export async function loadPromptsFromServer(): Promise<void> {
+  try {
+    const res = await fetch('/api/prompts', { cache: 'no-store' });
+    if (!res.ok) return;
+    const data: PromptStore = await res.json();
+    if (data.prompts && Object.keys(data.prompts).length > 0) {
+      writeCache(data);
+      // Notify all listeners
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('promptStoreLoaded'));
+      }
+    }
+  } catch { /* ignore — cache is the fallback */ }
+}
 
 // ─── Core CRUD ───
 
 export function getPromptById(id: string): PromptTemplate {
-  if (typeof window === 'undefined') return DEFAULTS[id] || _fallback(id);
-  const raw = localStorage.getItem(STORAGE_PREFIX + id);
-  if (raw) {
-    try { return JSON.parse(raw); } catch { /* fall through */ }
-  }
-  return DEFAULTS[id] || _fallback(id);
+  const store = readCache();
+  return store.prompts[id] || DEFAULTS[id] || _fallback(id);
 }
 
 export function savePrompt(template: PromptTemplate): void {
-  if (typeof window === 'undefined') return;
   template.lastModified = new Date().toISOString().split('T')[0];
-  localStorage.setItem(STORAGE_PREFIX + template.id, JSON.stringify(template));
-  // Notify all listeners
-  window.dispatchEvent(new CustomEvent('promptUpdated', { detail: { id: template.id } }));
+  const store = readCache();
+  store.prompts[template.id] = template;
+  writeCache(store);
+  saveToServer(store);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('promptUpdated', { detail: { id: template.id } }));
+  }
 }
 
 export function updatePromptText(id: string, newPrompt: string): void {
   const template = getPromptById(id);
-  // Save current to history before updating
   addToHistory(id, template.prompt, 'Before edit');
   template.prompt = newPrompt;
   savePrompt(template);
@@ -97,22 +140,21 @@ export function updatePromptText(id: string, newPrompt: string): void {
 // ─── History ───
 
 export function getHistory(id: string): PromptHistoryEntry[] {
-  if (typeof window === 'undefined') return [];
-  const raw = localStorage.getItem(HISTORY_PREFIX + id);
-  if (!raw) return [];
-  try { return JSON.parse(raw); } catch { return []; }
+  const store = readCache();
+  return store.history[id] || [];
 }
 
 export function addToHistory(id: string, prompt: string, response: string = ''): void {
-  if (typeof window === 'undefined') return;
-  const history = getHistory(id);
-  history.unshift({
+  const store = readCache();
+  if (!store.history[id]) store.history[id] = [];
+  store.history[id].unshift({
     prompt,
     timestamp: new Date().toLocaleString('en-US', { timeZone: 'Asia/Singapore' }),
     response,
   });
-  // Keep last 20
-  localStorage.setItem(HISTORY_PREFIX + id, JSON.stringify(history.slice(0, 20)));
+  store.history[id] = store.history[id].slice(0, 20);
+  writeCache(store);
+  saveToServer(store);
 }
 
 export function restoreFromHistory(id: string, historyEntry: PromptHistoryEntry): void {
@@ -125,25 +167,18 @@ export function restoreFromHistory(id: string, historyEntry: PromptHistoryEntry)
 // ─── List ───
 
 export function getAllPrompts(): PromptTemplate[] {
-  const ids = Object.keys(DEFAULTS);
-  return ids.map(id => getPromptById(id));
+  const store = readCache();
+  return Object.keys(DEFAULTS).map(id => store.prompts[id] || DEFAULTS[id]);
 }
 
 export function getPromptsByCategory(category: string): PromptTemplate[] {
   return getAllPrompts().filter(p => p.category === category);
 }
 
-// ─── Compat helpers ───
+// ─── Compat ───
 
 function _fallback(id: string): PromptTemplate {
-  return {
-    id,
-    name: id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-    description: '',
-    prompt: 'Analyze the data and provide actionable insights.',
-    category: 'General',
-    lastModified: '2026-03-01',
-  };
+  return { id, name: id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()), description: '', prompt: 'Analyze the data and provide actionable insights.', category: 'General', lastModified: '2026-03-01' };
 }
 
 /** @deprecated — use updatePromptText */

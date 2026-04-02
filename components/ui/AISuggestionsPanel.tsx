@@ -7,6 +7,7 @@ import {
   getHistory,
   restoreFromHistory as registryRestore,
   addToHistory,
+  loadPromptsFromServer,
   PromptHistoryEntry,
 } from '@/lib/prompt-registry';
 
@@ -41,13 +42,19 @@ export default function AISuggestionsPanel({
 
   useEffect(() => {
     reload();
+    // Hydrate from server, then reload
+    loadPromptsFromServer().then(() => reload());
     // Listen for changes from other panels / Prompt Templates page
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (detail?.id === promptId) reload();
+      if (!detail || detail.id === promptId) reload();
     };
     window.addEventListener('promptUpdated', handler);
-    return () => window.removeEventListener('promptUpdated', handler);
+    window.addEventListener('promptStoreLoaded', reload);
+    return () => {
+      window.removeEventListener('promptUpdated', handler);
+      window.removeEventListener('promptStoreLoaded', reload);
+    };
   }, [promptId, reload]);
 
   const handleSave = () => {

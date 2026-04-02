@@ -7,6 +7,7 @@ import {
   updatePromptText,
   getHistory,
   restoreFromHistory,
+  loadPromptsFromServer,
   PromptTemplate,
   PromptHistoryEntry,
 } from '@/lib/prompt-registry';
@@ -35,9 +36,15 @@ export default function PromptTemplatesPage() {
 
   useEffect(() => {
     reload();
+    // Hydrate from server
+    loadPromptsFromServer().then(() => reload());
     const handler = () => reload();
     window.addEventListener('promptUpdated', handler);
-    return () => window.removeEventListener('promptUpdated', handler);
+    window.addEventListener('promptStoreLoaded', handler);
+    return () => {
+      window.removeEventListener('promptUpdated', handler);
+      window.removeEventListener('promptStoreLoaded', handler);
+    };
   }, [reload]);
 
   const selectPrompt = (id: string) => {
