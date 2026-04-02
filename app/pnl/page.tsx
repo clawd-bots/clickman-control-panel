@@ -333,7 +333,7 @@ export default function PnLPage() {
             <h3 className="text-sm font-medium text-text-primary">
               P&L Breakdown — {selectedMonth || 'All Months Total'}
             </h3>
-            <span className="text-xs text-text-tertiary">(USD)</span>
+            <span className="text-xs text-text-tertiary">({currency === '₱' ? 'PHP' : 'USD'})</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 shrink-0">
