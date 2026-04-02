@@ -64,15 +64,23 @@ const demoColors = ['#fca5a5', '#ef4444', '#dc2626', '#b91c1c', '#7f1d1d', '#93c
 // Function to get tab-specific AI analysis title
 function getAITitle(tab: string): string {
   const aiTitles: Record<string, string> = {
-    'Performance': 'Performance Intelligence',
     'Ad Churn': 'Ad Churn Intelligence',
     'Account Control': 'Account Control Intelligence', 
     'Slugging Rate': 'Slugging Rate Intelligence',
-    'Creative Launches': 'Creative Launch Analysis',
     'Pareto': 'Pareto Analysis Intelligence',
     'Demographics': 'Demographics Intelligence',
   };
   return aiTitles[tab] || 'Creative Intelligence';
+}
+
+function getAIPromptId(tab: string): string {
+  const promptIds: Record<string, string> = {
+    'Ad Churn': 'creative-ad-churn',
+    'Account Control': 'creative-account-control',
+    'Slugging Rate': 'creative-slugging-rate',
+    'Demographics': 'creative-demographics',
+  };
+  return promptIds[tab] || 'creative-ad-churn';
 }
 
 export default function CreativePage() {
@@ -1788,7 +1796,7 @@ export default function CreativePage() {
         <AISuggestionsPanel 
           suggestions={getDynamicAISuggestions()} 
           title={getAITitle(activeTab)}
-          promptId="creative-intelligence"
+          promptId={getAIPromptId(activeTab)}
         />
       </div>
     </div>
