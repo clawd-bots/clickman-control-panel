@@ -1189,7 +1189,8 @@ export default function CreativePage() {
                                 previewUrl: (ad as any).previewUrl || '',
                                 adId: String((ad as any).adId || ''),
                               });
-                              window.open(`/api/ad-preview/${ad.name.replace(/\s+/g, '-').toLowerCase()}?${params.toString()}`, '_blank');
+                              const slug = encodeURIComponent(ad.name.replace(/\s+/g, '-').toLowerCase().replace(/[/\\]/g, '_'));
+                              window.open(`/api/ad-preview/${slug}?${params.toString()}`, '_blank');
                             }}
                             className="text-brand-blue-light hover:text-brand-blue text-xs font-medium px-2 py-1 rounded-md border border-brand-blue/30 hover:border-brand-blue/50 transition-colors"
                             title="Preview ad creative, headline, and performance metrics"
