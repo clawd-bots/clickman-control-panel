@@ -49,6 +49,7 @@ export async function saveCacheConfig(config: CacheConfig): Promise<void> {
   await put(CONFIG_PATH, JSON.stringify(config, null, 2), {
     access: 'public',
     addRandomSuffix: false,
+      allowOverwrite: true,
     contentType: 'application/json',
   });
 }
@@ -100,6 +101,7 @@ export async function setCache(source: string, params: string, data: any): Promi
   await put(key, JSON.stringify(entry), {
     access: 'public',
     addRandomSuffix: false,
+      allowOverwrite: true,
     contentType: 'application/json',
   });
 }

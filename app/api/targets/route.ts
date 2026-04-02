@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
     await put(BLOB_PATH, JSON.stringify(targets, null, 2), {
       access: 'public',
       addRandomSuffix: false,
+      allowOverwrite: true,
       contentType: 'application/json',
     });
 
