@@ -65,32 +65,12 @@ async function fetchMetaCreative(adId: string) {
 
   // Extract image URL from various possible fields
   let imageUrl = creative.image_url || creative.thumbnail_url || null;
-  let thumbnailUrl = creative.thumbnail_url || creative.image_url || null;
   let headline = creative.title || null;
   let body = creative.body || null;
   let videoUrl = null;
   let callToAction = null;
 
-  // If we have an image_hash, fetch the full-size image from adimages
-  if (creative.image_hash) {
-    try {
-      const adAccountId = process.env.META_AD_ACCOUNT_ID?.trim();
-      const accountId = adAccountId?.startsWith('act_') ? adAccountId : `act_${adAccountId}`;
-      const imgUrl = `${GRAPH_BASE}/${accountId}/adimages?hashes=["${creative.image_hash}"]&fields=url,url_128,url_256,url_256_height,permalink_url&access_token=${accessToken}`;
-      const imgRes = await fetch(imgUrl);
-      if (imgRes.ok) {
-        const imgData = await imgRes.json();
-        const imgEntry = imgData.data?.[0];
-        if (imgEntry) {
-          // url is full resolution, url_128/url_256 are smaller versions
-          imageUrl = imgEntry.permalink_url || imgEntry.url || imageUrl;
-          thumbnailUrl = imgEntry.url_128 || thumbnailUrl;
-        }
-      }
-    } catch (e) {
-      // Fall back to existing imageUrl
-    }
-  }
+
 
   // Try to get from object_story_spec (richer data)
   const storySpec = creative.object_story_spec;
@@ -129,38 +109,27 @@ async function fetchMetaCreative(adId: string) {
     }
   }
 
-  // Meta CDN URLs often have an stp= param that forces a tiny thumbnail (e.g. p64x64).
-  // Strip it to get full resolution, and create a medium thumbnail from it.
-  const stripStpParam = (url: string | null): string | null => {
-    if (!url) return null;
+  // Fetch a larger version of the image using the creative's image_hash via adimages endpoint
+  // The default image_url from adcreatives is a 64x64 thumbnail with a signed URL
+  let fullImageUrl = imageUrl;
+  if (creative.image_hash) {
     try {
-      const u = new URL(url);
-      const stp = u.searchParams.get('stp');
-      if (stp && stp.includes('p64x64')) {
-        // Remove the stp param entirely for full res
-        u.searchParams.delete('stp');
-        return u.toString();
+      const adAccountId = process.env.META_AD_ACCOUNT_ID?.trim();
+      const accountId = adAccountId?.startsWith('act_') ? adAccountId : `act_${adAccountId}`;
+      const imgUrl = `${GRAPH_BASE}/${accountId}/adimages?hashes=["${creative.image_hash}"]&fields=url,url_128,permalink_url&access_token=${accessToken}`;
+      const imgRes = await fetch(imgUrl);
+      if (imgRes.ok) {
+        const imgData = await imgRes.json();
+        const imgEntry = imgData.data?.[0];
+        if (imgEntry) {
+          // permalink_url is full resolution, url is medium, url_128 is thumbnail
+          fullImageUrl = imgEntry.permalink_url || imgEntry.url || fullImageUrl;
+        }
       }
-      return url;
-    } catch {
-      return url;
+    } catch (e) {
+      // Fall back to existing imageUrl
     }
-  };
-
-  const makeThumbnailUrl = (url: string | null): string | null => {
-    if (!url) return null;
-    try {
-      const u = new URL(url);
-      // Set stp to a reasonable thumbnail size
-      u.searchParams.set('stp', 'dst-emg0_p128x128_q75');
-      return u.toString();
-    } catch {
-      return url;
-    }
-  };
-
-  const fullImageUrl = stripStpParam(imageUrl) || imageUrl;
-  const thumbUrl = makeThumbnailUrl(imageUrl) || thumbnailUrl;
+  }
 
   return NextResponse.json({
     success: true,
@@ -169,7 +138,7 @@ async function fetchMetaCreative(adId: string) {
       adId,
       creativeId,
       imageUrl: fullImageUrl,
-      thumbnailUrl: thumbUrl,
+      thumbnailUrl: imageUrl, // The original 64x64 signed URL works as thumbnail
       videoUrl,
       headline,
       body,
