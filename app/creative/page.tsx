@@ -446,18 +446,26 @@ export default function CreativePage() {
       labelFn = (d) => d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
     }
     
+    // Platform-specific gender+age biases
+    const platGenderAgeBias: Record<string, Record<string, number>> = {
+      Meta:   { 'F 18-24': 0.9, 'F 25-34': 1.3, 'F 35-44': 1.2, 'F 45-54': 0.9, 'F 55+': 0.6, 'M 18-24': 0.7, 'M 25-34': 1.1, 'M 35-44': 1.0, 'M 45-54': 0.8, 'M 55+': 0.5 },
+      TikTok: { 'F 18-24': 2.0, 'F 25-34': 1.5, 'F 35-44': 0.5, 'F 45-54': 0.2, 'F 55+': 0.1, 'M 18-24': 1.8, 'M 25-34': 1.3, 'M 35-44': 0.4, 'M 45-54': 0.15, 'M 55+': 0.05 },
+      Reddit: { 'F 18-24': 0.8, 'F 25-34': 1.0, 'F 35-44': 0.6, 'F 45-54': 0.3, 'F 55+': 0.1, 'M 18-24': 1.5, 'M 25-34': 1.8, 'M 35-44': 1.0, 'M 45-54': 0.5, 'M 55+': 0.2 },
+      Google: { 'F 18-24': 0.7, 'F 25-34': 1.0, 'F 35-44': 1.2, 'F 45-54': 1.1, 'F 55+': 0.8, 'M 18-24': 0.6, 'M 25-34': 0.9, 'M 35-44': 1.3, 'M 45-54': 1.2, 'M 55+': 0.9 },
+    };
+    const biases = platGenderAgeBias[platform] || platGenderAgeBias.Meta;
+
     const buckets: Array<Record<string, any>> = [];
     const cursor = new Date(start);
     let idx = 0;
     while (cursor <= end) {
       const label = labelFn(cursor);
-      // Generate slightly varied data based on baseline + index
       const entry: Record<string, any> = { displayLabel: label };
       for (const key of demoKeys) {
         const base = (baseline as any)[key] || 5000;
-        // Add some variance: ±15% seeded by index
         const variance = 1 + (((idx * 7 + key.charCodeAt(0)) % 30) - 15) / 100;
-        entry[key] = Math.round(base * variance * (bucketDays / 7)); // scale by bucket size relative to weekly
+        const platformBias = biases[key] ?? 1.0;
+        entry[key] = Math.round(base * variance * platformBias * (bucketDays / 7));
       }
       buckets.push(entry);
       cursor.setDate(cursor.getDate() + bucketDays);
@@ -465,7 +473,7 @@ export default function CreativePage() {
     }
     
     return buckets;
-  }, [dateRange, demographicsGenderAge]);
+  }, [dateRange, demographicsGenderAge, platform]);
   const sluggingCpaTarget = sluggingCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
   // Filter demographics data based on gender selection
@@ -544,7 +552,7 @@ export default function CreativePage() {
       {/* Tab Navigation */}
       <div className="flex gap-1 sm:gap-1.5 flex-wrap px-1">
         {tabs.map(tab => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-colors min-w-0 ${activeTab === tab ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+          <button key={tab} onClick={() => { setActiveTab(tab); if (platform === 'Google' && tab !== 'Account Control') setPlatform('Meta'); }} className={`px-2 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-colors min-w-0 ${activeTab === tab ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
             <span className="truncate">{tab}</span>
           </button>
         ))}
@@ -563,7 +571,7 @@ export default function CreativePage() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
               <div className="flex gap-1 flex-wrap">
-                {(['Account Control', 'Demographics'].includes(activeTab) ? platformsWithGoogle : platforms).map(p => (
+                {(activeTab === 'Account Control' ? platformsWithGoogle : platforms).map(p => (
                   <button key={p} onClick={() => handlePlatformChange(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
                     {p}
                   </button>
