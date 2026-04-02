@@ -87,6 +87,47 @@ const DEFAULTS: Record<string, PromptTemplate> = {
     category: 'Cohort Analysis',
     lastModified: '2026-03-01',
   },
+  // Attribution Tree — one per layer
+  'mer-ncac-intelligence': {
+    id: 'mer-ncac-intelligence',
+    name: 'MER/nCAC Intelligence',
+    description: 'Marketing efficiency ratio and new customer acquisition cost analysis',
+    prompt: 'Analyze MER and nCAC performance: 1) Current MER trend vs target, 2) nCAC efficiency by channel, 3) Maximum sustainable marketing spend, 4) Budget reallocation recommendations, 5) Blended vs new customer ROAS comparison.',
+    category: 'Attribution Tree',
+    lastModified: '2026-03-01',
+  },
+  'surveys-mmm-intelligence': {
+    id: 'surveys-mmm-intelligence',
+    name: 'Surveys & MMM Intelligence',
+    description: 'Post-purchase survey and media mix modeling analysis',
+    prompt: 'Evaluate survey and MMM data: 1) Post-purchase survey channel attribution accuracy, 2) Survey vs platform attribution discrepancies, 3) Organic and word-of-mouth contribution, 4) Media mix model recommendations for budget allocation, 5) Survey sample size and confidence levels.',
+    category: 'Attribution Tree',
+    lastModified: '2026-03-01',
+  },
+  'mta-platform-intelligence': {
+    id: 'mta-platform-intelligence',
+    name: 'MTA & Platform Intelligence',
+    description: 'Multi-touch attribution and platform-reported data analysis',
+    prompt: 'Analyze multi-touch attribution: 1) Platform-reported vs actual conversion data, 2) Cross-platform attribution overlap and deduplication, 3) Multi-touch path analysis and assist rates, 4) Attribution window impact on channel credit, 5) Incrementality testing recommendations.',
+    category: 'Attribution Tree',
+    lastModified: '2026-03-01',
+  },
+  'tracking-infra-intelligence': {
+    id: 'tracking-infra-intelligence',
+    name: 'Tracking Infrastructure Intelligence',
+    description: 'Pixel, CAPI, and tracking health analysis',
+    prompt: 'Assess tracking infrastructure: 1) Pixel and CAPI event match quality, 2) Server-side vs browser-side tracking gaps, 3) Data loss estimation and impact on attribution, 4) Platform integration health status, 5) Tracking improvement priorities and implementation recommendations.',
+    category: 'Attribution Tree',
+    lastModified: '2026-03-01',
+  },
+  'cohort-ltv-intelligence': {
+    id: 'cohort-ltv-intelligence',
+    name: 'Cohort LTV Intelligence',
+    description: 'Customer lifetime value by acquisition cohort and channel',
+    prompt: 'Examine cohort LTV patterns: 1) LTV:CAC ratio by acquisition channel, 2) Payback period trends and optimization, 3) Channel quality ranking by long-term customer value, 4) Cohort retention curves and inflection points, 5) Budget allocation based on LTV-weighted attribution.',
+    category: 'Attribution Tree',
+    lastModified: '2026-03-01',
+  },
   // P&L
   'pnl-intelligence': {
     id: 'pnl-intelligence',

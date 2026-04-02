@@ -67,6 +67,7 @@ export default function AttributionPage() {
   const [cohortAttrModel, setCohortAttrModel] = useState('First Click');
   const [cohortAttrWindow, setCohortAttrWindow] = useState('7-day click / 1-day view');
   const [expandedSystems, setExpandedSystems] = useState<Set<string>>(new Set());
+  const [hiddenIntel, setHiddenIntel] = useState<Set<string>>(new Set());
   const [liveTrackingData, setLiveTrackingData] = useState<{
     totalEventsPerDay: number;
     status: 'healthy' | 'warning' | 'error';
@@ -321,6 +322,7 @@ export default function AttributionPage() {
             <AIIntelligenceControls 
               intelligenceId="mer-ncac-intelligence"
               title={`${activeInfo.label} AI Intelligence`}
+              onToggleVisibility={(v) => { const s = new Set(hiddenIntel); v ? s.delete('mer-ncac') : s.add('mer-ncac'); setHiddenIntel(s); }}
             />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -402,8 +404,10 @@ export default function AttributionPage() {
             <AIIntelligenceControls 
               intelligenceId="surveys-mmm-intelligence"
               title={`${activeInfo.label} AI Intelligence`}
+              onToggleVisibility={(v) => { const s = new Set(hiddenIntel); v ? s.delete('surveys-mmm') : s.add('surveys-mmm'); setHiddenIntel(s); }}
             />
           </div>
+          {!hiddenIntel.has('surveys-mmm') && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="space-y-3">
               <div className="text-xs font-semibold text-success flex items-center gap-1.5">✅ What's Working</div>
@@ -430,6 +434,7 @@ export default function AttributionPage() {
               ))}
             </div>
           </div>
+          )}
         </div>
       )}
 
@@ -475,6 +480,7 @@ export default function AttributionPage() {
             <AIIntelligenceControls 
               intelligenceId="mta-platform-intelligence"
               title={`${activeInfo.label} AI Intelligence`}
+              onToggleVisibility={(v) => { const s = new Set(hiddenIntel); v ? s.delete('mta-platform') : s.add('mta-platform'); setHiddenIntel(s); }}
             />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -633,6 +639,7 @@ export default function AttributionPage() {
             <AIIntelligenceControls 
               intelligenceId="tracking-infra-intelligence"
               title={`${activeInfo.label} AI Intelligence`}
+              onToggleVisibility={(v) => { const s = new Set(hiddenIntel); v ? s.delete('tracking-infra') : s.add('tracking-infra'); setHiddenIntel(s); }}
             />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -734,6 +741,7 @@ export default function AttributionPage() {
             <AIIntelligenceControls 
               intelligenceId="cohort-ltv-intelligence"
               title={`${activeInfo.label} AI Intelligence`}
+              onToggleVisibility={(v) => { const s = new Set(hiddenIntel); v ? s.delete('cohort-ltv') : s.add('cohort-ltv'); setHiddenIntel(s); }}
             />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
