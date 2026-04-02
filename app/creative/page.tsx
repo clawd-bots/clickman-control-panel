@@ -376,7 +376,7 @@ export default function CreativePage() {
   }, [platform]);
   const paretoTotal = paretoData.reduce((s, c) => s + c.conversions, 0);
 
-  // Slugging data filtered by platform and selected month range (independent of global date range)
+  // Slugging data filtered by platform, CPA mode, and selected month range
   const filteredSlugging = useMemo(() => {
     const cutoff = new Date();
     cutoff.setMonth(cutoff.getMonth() - sluggingMonths);
@@ -391,6 +391,9 @@ export default function CreativePage() {
     // Filter by date range
     const dateFiltered = platformFiltered.filter(d => new Date(d.month) >= cutoff);
     
+    // Use ncHits or hits based on CPA mode
+    const hitsKey = sluggingCpaMode === 'nccpa' ? 'ncHits' : 'hits';
+    
     // If platform is 'All', aggregate by month
     if (sluggingPlatform === 'All') {
       const byMonth: Record<string, { month: string; platform: string; launched: number; hits: number; hitRate: number }> = {};
@@ -399,15 +402,21 @@ export default function CreativePage() {
           byMonth[d.month] = { month: d.month, platform: 'All', launched: 0, hits: 0, hitRate: 0 };
         }
         byMonth[d.month].launched += d.launched;
-        byMonth[d.month].hits += d.hits;
+        byMonth[d.month].hits += (d as any)[hitsKey] ?? d.hits;
       }
       return Object.values(byMonth)
         .map(d => ({ ...d, hitRate: d.launched > 0 ? (d.hits / d.launched) * 100 : 0 }))
         .sort((a, b) => a.month.localeCompare(b.month));
     }
     
-    return dateFiltered.sort((a, b) => a.month.localeCompare(b.month));
-  }, [sluggingMonths, sluggingPlatform]);
+    return dateFiltered
+      .map(d => ({
+        ...d,
+        hits: (d as any)[hitsKey] ?? d.hits,
+        hitRate: d.launched > 0 ? (((d as any)[hitsKey] ?? d.hits) / d.launched) * 100 : 0,
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+  }, [sluggingMonths, sluggingPlatform, sluggingCpaMode]);
 
   const totalSlugging = filteredSlugging.reduce((a, b) => ({ launched: a.launched + b.launched, hits: a.hits + b.hits }), { launched: 0, hits: 0 });
 
@@ -1261,12 +1270,18 @@ export default function CreativePage() {
                   <InfoTooltip metric="Production Rate" />
                 </h3>
                 <div className="flex items-center gap-2">
-                  <div className={`px-2.5 py-1 rounded-md text-xs font-medium ${sluggingCpaMode === 'nccpa' ? 'bg-brand-blue/15 text-brand-blue-light' : 'bg-bg-elevated text-text-secondary border border-border'}`}>
+                  <button 
+                    onClick={() => setSluggingCpaMode('nccpa')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${sluggingCpaMode === 'nccpa' ? 'bg-brand-blue/15 text-brand-blue-light ring-1 ring-brand-blue/30' : 'bg-bg-elevated text-text-secondary border border-border hover:bg-bg-primary'}`}
+                  >
                     <span className="text-text-tertiary">NC CPA Target:</span> <span className="font-semibold">{formatCurrencyValue(targetNCCPA)}</span>
-                  </div>
-                  <div className={`px-2.5 py-1 rounded-md text-xs font-medium ${sluggingCpaMode === 'cpa' ? 'bg-brand-blue/15 text-brand-blue-light' : 'bg-bg-elevated text-text-secondary border border-border'}`}>
+                  </button>
+                  <button 
+                    onClick={() => setSluggingCpaMode('cpa')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${sluggingCpaMode === 'cpa' ? 'bg-brand-blue/15 text-brand-blue-light ring-1 ring-brand-blue/30' : 'bg-bg-elevated text-text-secondary border border-border hover:bg-bg-primary'}`}
+                  >
                     <span className="text-text-tertiary">All CPA Target:</span> <span className="font-semibold">{formatCurrencyValue(targetCPA)}</span>
-                  </div>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1356,7 +1371,7 @@ export default function CreativePage() {
               <div className="text-xs text-text-secondary mb-1">Overall Slugging Rate</div>
               <div className="text-xl font-bold text-warm-gold">{((totalSlugging.hits / totalSlugging.launched) * 100).toFixed(1)}%</div>
               <div className="text-xs text-text-tertiary mt-1">
-                Target: 30% (Target CPA: {formatCurrencyValue(750)})
+                Target: 30% ({sluggingCpaMode === 'nccpa' ? 'NC' : 'All'} CPA: {formatCurrencyValue(sluggingCpaTarget)})
                 <span className={`ml-2 ${
                   ((totalSlugging.hits / totalSlugging.launched) * 100) >= 30 
                     ? 'text-success' 
