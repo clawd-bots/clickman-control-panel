@@ -586,7 +586,7 @@ export default function CreativePage() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
               <div className="flex gap-1 flex-wrap">
-                {(activeTab === 'Account Control' ? platformsWithGoogle : platforms).map(p => (
+                {platforms.map(p => (
                   <button key={p} onClick={() => handlePlatformChange(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
                     {p}
                   </button>
