@@ -362,9 +362,9 @@ export default function AttributionPage() {
             <div className="flex items-center gap-2 shrink-0"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="min-h-[280px]">
+            <div className="min-h-[280px]" onClickCapture={(e) => e.stopPropagation()} style={{ pointerEvents: 'auto' }}>
               <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
+                <PieChart onMouseDown={(e: any) => e?.stopPropagation?.()}>
                   <Pie data={attributionSurvey} cx="50%" cy="50%" outerRadius={100} dataKey="pct" label={({ name, value }) => `${name}: ${value}%`}>
                     {attributionSurvey.map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />
