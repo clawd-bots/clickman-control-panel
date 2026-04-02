@@ -2,8 +2,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
-import { LiveBadge } from '@/components/ui/LiveBadge';
-import DataSource from '@/components/ui/DataSource';
 import { targets as initialTargets, targetTrend, targetAISuggestions } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
@@ -32,10 +30,20 @@ interface MonthlyTarget {
   lastUpdated: string;
 }
 
+// Unit types: 'currency' will be dynamically resolved to the active currency symbol
+type UnitType = 'currency' | 'x' | '#' | '%';
+
 const initialMonthlyTargets: MonthlyTarget[] = [
   {
     metric: 'Net Revenue',
-    unit: '₱',
+    unit: 'currency',
+    Apr26: '', May26: '', Jun26: '', Jul26: '', Aug26: '', Sep26: '',
+    Oct26: '', Nov26: '', Dec26: '', Jan27: '', Feb27: '', Mar27: '',
+    lastUpdated: 'Never',
+  },
+  {
+    metric: 'Marketing Costs',
+    unit: 'currency',
     Apr26: '', May26: '', Jun26: '', Jul26: '', Aug26: '', Sep26: '',
     Oct26: '', Nov26: '', Dec26: '', Jan27: '', Feb27: '', Mar27: '',
     lastUpdated: 'Never',
@@ -63,21 +71,14 @@ const initialMonthlyTargets: MonthlyTarget[] = [
   },
   {
     metric: 'CAC',
-    unit: '₱',
+    unit: 'currency',
     Apr26: '', May26: '', Jun26: '', Jul26: '', Aug26: '', Sep26: '',
     Oct26: '', Nov26: '', Dec26: '', Jan27: '', Feb27: '', Mar27: '',
     lastUpdated: 'Never',
   },
   {
     metric: 'nCAC',
-    unit: '₱', 
-    Apr26: '', May26: '', Jun26: '', Jul26: '', Aug26: '', Sep26: '',
-    Oct26: '', Nov26: '', Dec26: '', Jan27: '', Feb27: '', Mar27: '',
-    lastUpdated: 'Never',
-  },
-  {
-    metric: 'CM3',
-    unit: '₱',
+    unit: 'currency', 
     Apr26: '', May26: '', Jun26: '', Jul26: '', Aug26: '', Sep26: '',
     Oct26: '', Nov26: '', Dec26: '', Jan27: '', Feb27: '', Mar27: '',
     lastUpdated: 'Never',
@@ -91,7 +92,7 @@ const initialMonthlyTargets: MonthlyTarget[] = [
   },
   {
     metric: 'AOV',
-    unit: '₱',
+    unit: 'currency',
     Apr26: '', May26: '', Jun26: '', Jul26: '', Aug26: '', Sep26: '',
     Oct26: '', Nov26: '', Dec26: '', Jan27: '', Feb27: '', Mar27: '',
     lastUpdated: 'Never',
@@ -191,6 +192,12 @@ export default function TargetsPage() {
     return formatCurrency(convertValue(value), currency);
   };
 
+  // Resolve unit display: 'currency' becomes the active currency symbol
+  const getUnitDisplay = (unit: string): string => {
+    if (unit === 'currency') return currency;
+    return unit;
+  };
+
   // Start editing a cell
   const startEdit = (rowIndex: number, colKey: string, currentValue: string) => {
     // Don't allow editing auto-calculated metrics
@@ -229,35 +236,35 @@ export default function TargetsPage() {
         
         // Get all relevant metrics
         const revenue = updatedTargets.find(t => t.metric === 'Net Revenue');
+        const marketingCosts = updatedTargets.find(t => t.metric === 'Marketing Costs');
         const ncOrders = updatedTargets.find(t => t.metric === 'NC Orders');
-        const cac = updatedTargets.find(t => t.metric === 'CAC');
         const ncac = updatedTargets.find(t => t.metric === 'nCAC');
+        const totalOrders = updatedTargets.find(t => t.metric === 'Total Orders');
         const aovRow = updatedTargets.find(t => t.metric === 'AOV');
         const merRow = updatedTargets.find(t => t.metric === 'MER');
         const amerRow = updatedTargets.find(t => t.metric === 'aMER');
         
         const revenueValue = parseFloat((revenue as any)?.[colKey] as string) || 0;
+        const marketingCostsValue = parseFloat((marketingCosts as any)?.[colKey] as string) || 0;
         const ordersValue = parseFloat((ncOrders as any)?.[colKey] as string) || 0;
-        const cacValue = parseFloat((cac as any)?.[colKey] as string) || 0;
+        const totalOrdersValue = parseFloat((totalOrders as any)?.[colKey] as string) || 0;
         const ncacValue = parseFloat((ncac as any)?.[colKey] as string) || 0;
         
-        // Auto-calculate AOV when revenue and NC Orders are available
-        if (revenue && ncOrders && aovRow && revenueValue > 0 && ordersValue > 0) {
-          const calculatedAOV = Math.round(revenueValue / ordersValue);
+        // Auto-calculate AOV when revenue and Total Orders are available
+        if (revenue && totalOrders && aovRow && revenueValue > 0 && totalOrdersValue > 0) {
+          const calculatedAOV = Math.round(revenueValue / totalOrdersValue);
           (aovRow as any)[colKey] = calculatedAOV.toString();
           aovRow.lastUpdated = 'Auto-calculated';
         }
         
-        // Auto-calculate MER when Net Revenue and CAC are available
-        // MER = Net Revenue / (CAC * NC Orders) - simplified as Net Revenue / Marketing Spend
-        if (revenue && ncOrders && cac && merRow && revenueValue > 0 && ordersValue > 0 && cacValue > 0) {
-          const marketingSpend = cacValue * ordersValue;
-          const calculatedMER = (revenueValue / marketingSpend).toFixed(2);
+        // Auto-calculate MER: Net Revenue / Marketing Costs
+        if (revenue && marketingCosts && merRow && revenueValue > 0 && marketingCostsValue > 0) {
+          const calculatedMER = (revenueValue / marketingCostsValue).toFixed(2);
           (merRow as any)[colKey] = calculatedMER;
           merRow.lastUpdated = 'Auto-calculated';
         }
         
-        // Auto-calculate aMER when Net Revenue and nCAC are available  
+        // Auto-calculate aMER when Net Revenue, nCAC, and NC Orders are available  
         if (revenue && ncOrders && ncac && amerRow && revenueValue > 0 && ordersValue > 0 && ncacValue > 0) {
           const newCustomerSpend = ncacValue * ordersValue;
           const calculatedAMER = (revenueValue / newCustomerSpend).toFixed(2);
@@ -326,10 +333,7 @@ export default function TargetsPage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="px-1">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg sm:text-xl font-semibold">Targets & Goals</h2>
-          <div className="flex items-center gap-2"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
-        </div>
+        <h2 className="text-lg sm:text-xl font-semibold">Targets & Goals</h2>
         <p className="text-sm text-text-secondary mt-1">
           Set monthly targets in table format. Each month gets specific goals per metric.
         </p>
@@ -338,11 +342,13 @@ export default function TargetsPage() {
       {/* Monthly Targets Table */}
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
         <div className="mb-4">
-          <h3 className="text-sm font-medium text-text-primary mb-1 flex items-center gap-2">
-            <span>Monthly Target Entry Table</span>
-            <InfoTooltip metric="Monthly Targets" />
-          </h3>
-
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+              <span>Monthly Target Entry Table</span>
+              <InfoTooltip metric="Monthly Targets" />
+            </h3>
+            <span className="text-xs text-text-tertiary">• Changes are saved automatically</span>
+          </div>
         </div>
         
         {/* Mobile Horizontal Scroll Table - Like Desktop */}
@@ -380,61 +386,70 @@ export default function TargetsPage() {
 
                       return (
                         <td key={`${rowIndex}-${colIndex}`} className="py-1.5 px-2 text-center">
-                          {isEditing ? (
-                            <div className="flex items-center gap-1">
-                              <input
-                                type="text"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') saveEdit();
-                                  if (e.key === 'Escape') cancelEdit();
-                                }}
-                                className="w-16 py-1 px-2 rounded text-center text-text-primary bg-bg-primary border border-warm-gold outline-none text-xs"
-                                autoFocus
-                                placeholder={row.unit}
-                              />
-                              <button onClick={saveEdit} className="text-success hover:text-success/80">
-                                <Check size={10} />
+                          {(() => {
+                            const unitDisplay = getUnitDisplay(row.unit);
+                            const prefix = row.unit === 'currency' ? unitDisplay : '';
+                            const suffix = row.unit === 'x' ? 'x' : row.unit === '%' ? '%' : '';
+                            
+                            if (isEditing) return (
+                              <div className="flex items-center gap-1">
+                                {prefix && <span className="text-text-tertiary text-xs">{prefix}</span>}
+                                <input
+                                  type="text"
+                                  value={editValue}
+                                  onChange={(e) => setEditValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') saveEdit();
+                                    if (e.key === 'Escape') cancelEdit();
+                                  }}
+                                  className="w-16 py-1 px-2 rounded text-center text-text-primary bg-bg-primary border border-warm-gold outline-none text-xs"
+                                  autoFocus
+                                  placeholder="0"
+                                />
+                                {suffix && <span className="text-text-tertiary text-xs">{suffix}</span>}
+                                <button onClick={saveEdit} className="text-success hover:text-success/80">
+                                  <Check size={10} />
+                                </button>
+                                <button onClick={cancelEdit} className="text-text-tertiary hover:text-danger">
+                                  <X size={10} />
+                                </button>
+                              </div>
+                            );
+                            
+                            if (isAutoCalc) return (
+                              <div 
+                                className={`w-full py-1 px-2 rounded text-xs cursor-not-allowed ${
+                                  cellValue 
+                                    ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                                    : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
+                                }`}
+                                title={cellValue ? `Auto-calculated: ${prefix}${cellValue}${suffix}` : `Will be auto-calculated`}
+                              >
+                                {cellValue ? (
+                                  <span className="flex items-center justify-center gap-1">
+                                    <span>{prefix}{cellValue}{suffix}</span>
+                                    <span className="text-blue-500 text-[8px]">⚙</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-text-tertiary">Auto</span>
+                                )}
+                              </div>
+                            );
+                            
+                            return (
+                              <button 
+                                className={`w-full py-1 px-2 rounded transition-all text-xs ${
+                                  cellValue 
+                                    ? 'text-text-primary hover:bg-bg-primary border border-transparent hover:border-border' 
+                                    : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-primary border border-dashed border-text-tertiary hover:border-text-secondary'
+                                }`}
+                                onClick={() => startEdit(rowIndex, colKey, cellValue)}
+                                title={cellValue ? `${prefix}${cellValue}${suffix}` : `Set target`}
+                              >
+                                {cellValue ? `${prefix}${cellValue}${suffix}` : 'Set'}
                               </button>
-                              <button onClick={cancelEdit} className="text-text-tertiary hover:text-danger">
-                                <X size={10} />
-                              </button>
-                            </div>
-                          ) : isAutoCalc ? (
-                            <div 
-                              className={`w-full py-1 px-2 rounded text-xs cursor-not-allowed ${
-                                cellValue 
-                                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                                  : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
-                              }`}
-                              title={cellValue 
-                                ? `Auto-calculated: ${cellValue}` 
-                                : `Will be auto-calculated`
-                              }
-                            >
-                              {cellValue ? (
-                                <span className="flex items-center justify-center gap-1">
-                                  <span>{cellValue}</span>
-                                  <span className="text-blue-500 text-[8px]">⚙</span>
-                                </span>
-                              ) : (
-                                <span className="text-text-tertiary">Auto</span>
-                              )}
-                            </div>
-                          ) : (
-                            <button 
-                              className={`w-full py-1 px-2 rounded transition-all text-xs ${
-                                cellValue 
-                                  ? 'text-text-primary hover:bg-bg-primary border border-transparent hover:border-border' 
-                                  : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-primary border border-dashed border-text-tertiary hover:border-text-secondary'
-                              }`}
-                              onClick={() => startEdit(rowIndex, colKey, cellValue)}
-                              title={cellValue || `Set target`}
-                            >
-                              {cellValue || 'Set'}
-                            </button>
-                          )}
+                            );
+                          })()}
                         </td>
                       );
                     })}
@@ -485,63 +500,74 @@ export default function TargetsPage() {
                     
                     return (
                       <td key={`${rowIndex}-${colIndex}`} className="py-2 px-3 text-center">
-                        {isEditing ? (
-                          <div className="flex items-center justify-center gap-1">
-                            <input
-                              type="text"
-                              value={editValue}
-                              onChange={(e) => setEditValue(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') saveEdit();
-                                if (e.key === 'Escape') cancelEdit();
-                              }}
-                              className="w-20 py-1.5 px-2 rounded text-center text-text-primary bg-bg-primary border border-warm-gold outline-none text-xs"
-                              autoFocus
-                              placeholder={row.unit}
-                            />
-                            <button onClick={saveEdit} className="text-success hover:text-success/80">
-                              <Check size={12} />
+                        {(() => {
+                          const unitDisplay = getUnitDisplay(row.unit);
+                          const isPrefix = ['currency'].includes(row.unit) || row.unit === '%';
+                          const prefix = row.unit === 'currency' ? unitDisplay : '';
+                          const suffix = row.unit === 'x' ? 'x' : row.unit === '%' ? '%' : '';
+                          
+                          if (isEditing) return (
+                            <div className="flex items-center justify-center gap-1">
+                              {prefix && <span className="text-text-tertiary text-xs">{prefix}</span>}
+                              <input
+                                type="text"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') saveEdit();
+                                  if (e.key === 'Escape') cancelEdit();
+                                }}
+                                className="w-20 py-1.5 px-2 rounded text-center text-text-primary bg-bg-primary border border-warm-gold outline-none text-xs"
+                                autoFocus
+                                placeholder="0"
+                              />
+                              {suffix && <span className="text-text-tertiary text-xs">{suffix}</span>}
+                              <button onClick={saveEdit} className="text-success hover:text-success/80">
+                                <Check size={12} />
+                              </button>
+                              <button onClick={cancelEdit} className="text-text-tertiary hover:text-danger">
+                                <X size={12} />
+                              </button>
+                            </div>
+                          );
+                          
+                          if (isAutoCalc) return (
+                            <div 
+                              className={`w-full py-1.5 px-3 rounded text-xs cursor-not-allowed ${
+                                cellValue 
+                                  ? 'text-blue-600 bg-blue-50 border border-blue-200' 
+                                  : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
+                              }`}
+                              title={cellValue 
+                                ? `Auto-calculated: ${prefix}${cellValue}${suffix}` 
+                                : `Will be auto-calculated from other targets`
+                              }
+                            >
+                              {cellValue ? (
+                                <span className="flex items-center justify-center gap-1">
+                                  <span>{prefix}{cellValue}{suffix}</span>
+                                  <span className="text-blue-500 text-[10px]">⚙</span>
+                                </span>
+                              ) : (
+                                <span className="text-text-tertiary">Auto-calc</span>
+                              )}
+                            </div>
+                          );
+                          
+                          return (
+                            <button 
+                              className={`w-full py-1.5 px-3 rounded transition-all text-xs ${
+                                cellValue 
+                                  ? 'text-text-primary hover:bg-bg-primary border border-transparent hover:border-border' 
+                                  : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-primary border border-dashed border-text-tertiary hover:border-text-secondary'
+                              }`}
+                              onClick={() => startEdit(rowIndex, colKey, cellValue)}
+                              title={cellValue ? `${prefix}${cellValue}${suffix}` : `Set ${row.metric} target for ${currentMonthLabels[colIndex]}`}
+                            >
+                              {cellValue ? `${prefix}${cellValue}${suffix}` : 'Set target'}
                             </button>
-                            <button onClick={cancelEdit} className="text-text-tertiary hover:text-danger">
-                              <X size={12} />
-                            </button>
-                          </div>
-                        ) : isAutoCalc ? (
-                          // Auto-calculated cell - disabled from editing
-                          <div 
-                            className={`w-full py-1.5 px-3 rounded text-xs cursor-not-allowed ${
-                              cellValue 
-                                ? 'text-blue-600 bg-blue-50 border border-blue-200' 
-                                : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
-                            }`}
-                            title={cellValue 
-                              ? `Auto-calculated: ${cellValue} (based on other targets)` 
-                              : `Will be auto-calculated when Net Revenue, NC Orders, and ${row.metric === 'AOV' ? 'other' : row.metric === 'MER' ? 'CAC' : 'nCAC'} targets are set`
-                            }
-                          >
-                            {cellValue ? (
-                              <span className="flex items-center justify-center gap-1">
-                                <span>{cellValue}</span>
-                                <span className="text-blue-500 text-[10px]">⚙</span>
-                              </span>
-                            ) : (
-                              <span className="text-text-tertiary">Auto-calc</span>
-                            )}
-                          </div>
-                        ) : (
-                          // Editable cell
-                          <button 
-                            className={`w-full py-1.5 px-3 rounded transition-all text-xs ${
-                              cellValue 
-                                ? 'text-text-primary hover:bg-bg-primary border border-transparent hover:border-border' 
-                                : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-primary border border-dashed border-text-tertiary hover:border-text-secondary'
-                            }`}
-                            onClick={() => startEdit(rowIndex, colKey, cellValue)}
-                            title={cellValue || `Set ${row.metric} target for ${currentMonthLabels[colIndex]}`}
-                          >
-                            {cellValue || 'Set target'}
-                          </button>
-                        )}
+                          );
+                        })()}
                       </td>
                     );
                   })}
