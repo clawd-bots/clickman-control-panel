@@ -699,13 +699,13 @@ export default function AttributionPage() {
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               { channel: 'Meta', ltvCac: 2.1, ltv: 6580, cac: 3133, payback: '4.2 months' },
-              { channel: 'Google (Brand)', ltvCac: 3.8, ltv: 7220, cac: 1900, payback: '2.1 months' },
+              { channel: 'Google', ltvCac: 3.8, ltv: 7220, cac: 1900, payback: '2.1 months' },
               { channel: 'TikTok', ltvCac: 1.4, ltv: 4200, cac: 3000, payback: '6.8 months' },
+              { channel: 'Reddit', ltvCac: 1.1, ltv: 3500, cac: 3182, payback: '8.2 months' },
             ].map((ch) => (
               <div key={ch.channel} className="bg-bg-elevated rounded-md p-4 space-y-3">
                 <div className="text-sm font-medium text-text-primary">{ch.channel}</div>
