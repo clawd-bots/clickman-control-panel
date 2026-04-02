@@ -322,6 +322,7 @@ export default function CohortsPage() {
             <AISuggestionsPanel 
               suggestions={getDynamicAISuggestions()} 
               title="Retention Intelligence"
+              promptId="cohorts-intelligence"
             />
           </div>
         </>

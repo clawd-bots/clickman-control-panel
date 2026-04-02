@@ -803,6 +803,7 @@ export default function DashboardPage() {
         <AISuggestionsPanel 
           suggestions={getCrossPageInsights().map((item, i) => `${item.title}: ${item.insight}`)}
           title="Daily Summary & Intelligence"
+          promptId="dashboard-intelligence"
         />
       </div>
     </div>

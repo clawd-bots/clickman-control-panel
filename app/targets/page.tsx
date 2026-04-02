@@ -603,6 +603,7 @@ export default function TargetsPage() {
         <AISuggestionsPanel 
           suggestions={getDynamicTargetIntelligence()} 
           title="Target Intelligence"
+          promptId="target-intelligence"
         />
       </div>
 

@@ -1,182 +1,84 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { Sparkles, RefreshCw, Settings, History, FileText } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Sparkles, RefreshCw, Settings, History } from 'lucide-react';
+import {
+  getPromptById,
+  updatePromptText,
+  getHistory,
+  restoreFromHistory as registryRestore,
+  addToHistory,
+  PromptHistoryEntry,
+} from '@/lib/prompt-registry';
 
 interface AISuggestionsPanelProps {
   suggestions: string[];
   title?: string;
-  attributionModel?: string;
-  attributionWindow?: string;
+  promptId: string; // Must match a key in prompt-registry
 }
 
-const DEFAULT_PROMPTS: Record<string, string> = {
-  'Creative Intelligence': 'Analyze the creative performance data and provide actionable insights about ad fatigue, scaling opportunities, and creative strategy recommendations based on CPA trends and spend distribution.',
-  'Target Intelligence': 'Review target vs actual performance metrics and provide strategic recommendations for improving KPI achievement, budget allocation, and goal setting.',
-  'Cohort Intelligence': 'Analyze cohort retention patterns, lifetime value trends, and provide recommendations for improving customer retention and maximizing CLV by acquisition channel.',
-  'Cross-Layer AI Analysis': 'Provide integrated analysis across attribution layers (MER/nCAC, surveys/MMM, MTA/platform data) and recommend strategic decisions for budget allocation and measurement improvements.',
-};
-
-// Load available templates from Prompt Templates page
-const AVAILABLE_TEMPLATES: Record<string, Array<{id: string, name: string, prompt: string}>> = {
-  'Creative Intelligence': [
-    {
-      id: 'creative-performance',
-      name: 'Creative Performance Analysis',
-      prompt: 'Analyze the creative performance data focusing on: 1) Which ad creatives are scaling efficiently (high spend, low CPA), 2) Creative fatigue indicators and refresh recommendations, 3) Platform-specific creative insights (Meta vs TikTok vs Google), 4) Budget reallocation opportunities from underperformers to winners, 5) Creative testing velocity and hit rate analysis.'
-    },
-    {
-      id: 'ad-churn',
-      name: 'Ad Churn & Lifecycle Analysis',
-      prompt: 'Examine ad creative churn patterns by analyzing: 1) Creative age distribution and spend allocation across age brackets, 2) Launch cohort performance over time, 3) Creative lifecycle optimization (when to refresh vs scale), 4) New creative adoption rate and effectiveness, 5) Recommendations for creative pipeline management and testing cadence.'
-    },
-    {
-      id: 'account-control',
-      name: 'Account Control & Zone Analysis',
-      prompt: 'Using the CPA vs Spend scatter plot data, analyze: 1) Ads in each performance zone (scaling, testing, zombies, untapped), 2) Budget allocation efficiency and reallocation opportunities, 3) Scale-up candidates currently in testing phase, 4) Zombie ads wasting budget that should be paused immediately, 5) Untapped potential ads that need creative optimization or increased spend.'
-    },
-    {
-      id: 'production-efficiency',
-      name: 'Creative Production & Hit Rate',
-      prompt: 'Assess creative production effectiveness by examining: 1) Monthly creative launch volume vs scaling success rate, 2) Creative hit rate analysis (what percentage of launched ads actually scale), 3) Production queue optimization based on winning creative patterns, 4) Platform-specific creative preferences and performance differences, 5) Resource allocation recommendations for creative team focus.'
-    },
-    {
-      id: 'demographics-alignment',
-      name: 'Demographics vs Creative Alignment',
-      prompt: 'Compare creative output vs profitable demographics: 1) Which age/gender segments drive highest LTV and conversion rates, 2) Whether current creative style matches top-performing demographic preferences, 3) Creative misalignment risks (producing Gen Z content when profitable customers are older), 4) Demographic-specific creative recommendations, 5) Production pivot opportunities to better serve high-value segments.'
-    }
-  ],
-  'Target Intelligence': [
-    {
-      id: 'target-performance',
-      name: 'Target vs Actual Performance Analysis',
-      prompt: 'Review target vs actual performance metrics and provide strategic recommendations for improving KPI achievement, budget allocation, and goal setting based on current trends and performance gaps.'
-    }
-  ],
-  'Cohort Intelligence': [
-    {
-      id: 'cohort-retention',
-      name: 'Cohort Retention Analysis',
-      prompt: 'Analyze cohort retention patterns, lifetime value trends, and provide recommendations for improving customer retention and maximizing CLV by acquisition channel.'
-    }
-  ]
-};
-
-export default function AISuggestionsPanel({ 
-  suggestions, 
+export default function AISuggestionsPanel({
+  suggestions,
   title = 'AI Insights',
-  attributionModel,
-  attributionWindow
+  promptId,
 }: AISuggestionsPanelProps) {
   const [visible, setVisible] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showPromptEdit, setShowPromptEdit] = useState(false);
   const [showPromptHistory, setShowPromptHistory] = useState(false);
-
   const [showRestoreModal, setShowRestoreModal] = useState(false);
-  const [restorePrompt, setRestorePrompt] = useState('');
-  const [restorePromptName, setRestorePromptName] = useState('');
+  const [restoreEntry, setRestoreEntry] = useState<PromptHistoryEntry | null>(null);
+  const [editPrompt, setEditPrompt] = useState('');
   const [currentPrompt, setCurrentPrompt] = useState('');
-  const [promptHistory, setPromptHistory] = useState<Array<{prompt: string, timestamp: string, response: string}>>([]);
+  const [history, setHistory] = useState<PromptHistoryEntry[]>([]);
 
-  // Load prompt and history from localStorage on mount
+  // Load from unified registry
+  const reload = useCallback(() => {
+    const tpl = getPromptById(promptId);
+    setCurrentPrompt(tpl.prompt);
+    setEditPrompt(tpl.prompt);
+    setHistory(getHistory(promptId));
+  }, [promptId]);
+
   useEffect(() => {
-    const storageKey = `ai-prompt-${title.toLowerCase().replace(/\s+/g, '-')}`;
-    const historyKey = `ai-prompt-history-${title.toLowerCase().replace(/\s+/g, '-')}`;
-    
-    const savedPrompt = localStorage.getItem(storageKey);
-    const savedHistory = localStorage.getItem(historyKey);
-    
-    if (savedPrompt) {
-      setCurrentPrompt(savedPrompt);
-    } else {
-      setCurrentPrompt(DEFAULT_PROMPTS[title] || 'Analyze the data and provide actionable insights.');
-    }
-    
-    if (savedHistory) {
-      try {
-        const parsed = JSON.parse(savedHistory);
-        // Convert legacy string format to new object format
-        const normalizedHistory = parsed.map((item: any) => {
-          if (typeof item === 'string') {
-            return {
-              prompt: item,
-              timestamp: 'Legacy entry',
-              response: ''
-            };
-          }
-          return item;
-        });
-        setPromptHistory(normalizedHistory);
-      } catch (e) {
-        console.warn('Failed to parse prompt history:', e);
-      }
-    }
-  }, [title]);
+    reload();
+    // Listen for changes from other panels / Prompt Templates page
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.id === promptId) reload();
+    };
+    window.addEventListener('promptUpdated', handler);
+    return () => window.removeEventListener('promptUpdated', handler);
+  }, [promptId, reload]);
 
-  const savePrompt = (prompt: string) => {
-    const storageKey = `ai-prompt-${title.toLowerCase().replace(/\s+/g, '-')}`;
-    const historyKey = `ai-prompt-history-${title.toLowerCase().replace(/\s+/g, '-')}`;
-    
-    // Always add to history when saving (create new version)
-    if (prompt.trim() !== '' && prompt !== currentPrompt) {
-      const newEntry = {
-        prompt: currentPrompt,
-        timestamp: new Date().toLocaleString(),
-        response: 'Manual save'
-      };
-      
-      const newHistory = [newEntry, ...promptHistory].slice(0, 10); // Keep last 10
-      setPromptHistory(newHistory);
-      localStorage.setItem(historyKey, JSON.stringify(newHistory));
+  const handleSave = () => {
+    if (editPrompt.trim() && editPrompt !== currentPrompt) {
+      updatePromptText(promptId, editPrompt);
+      reload();
     }
-    
-    // Update current prompt
-    setCurrentPrompt(prompt);
-    localStorage.setItem(storageKey, prompt);
+    setShowPromptEdit(false);
   };
 
-  const restoreFromHistory = (prompt: string) => {
-    setRestorePrompt(prompt);
-    setRestorePromptName(title); // Default to section title
+  const handleRestore = (entry: PromptHistoryEntry) => {
+    setRestoreEntry(entry);
     setShowRestoreModal(true);
     setShowPromptHistory(false);
   };
 
-  const saveRestoredPrompt = () => {
-    // Create a new version entry in history with GMT+8 timestamp
-    const newEntry = {
-      prompt: currentPrompt, // Save the current prompt before replacing
-      timestamp: new Date().toLocaleString('en-US', {
-        timeZone: 'Asia/Singapore',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      }),
-      response: `Restored from v${promptHistory.length}`
-    };
-    
-    const updatedHistory = [newEntry, ...promptHistory].slice(0, 10); // Keep last 10
-    setPromptHistory(updatedHistory);
-    
-    // Save to localStorage
-    const historyKey = `ai-prompt-history-${title.toLowerCase().replace(/\s+/g, '-')}`;
-    const storageKey = `ai-prompt-${title.toLowerCase().replace(/\s+/g, '-')}`;
-    
-    localStorage.setItem(historyKey, JSON.stringify(updatedHistory));
-    localStorage.setItem(storageKey, restorePrompt);
-    
-    // Update current prompt
-    setCurrentPrompt(restorePrompt);
+  const confirmRestore = () => {
+    if (restoreEntry) {
+      registryRestore(promptId, restoreEntry);
+      reload();
+    }
     setShowRestoreModal(false);
-    
-    // Show success notification (you could add a toast here)
-    console.log(`Prompt restored and saved as v${updatedHistory.length}`);
   };
 
-  // Function to parse markdown bold text
+  const handleRefresh = () => {
+    setRefreshing(true);
+    addToHistory(promptId, currentPrompt, suggestions.join(' ').substring(0, 200));
+    reload();
+    setTimeout(() => setRefreshing(false), 1200);
+  };
+
   const parseMarkdownBold = (text: string) => {
     const parts = text.split(/(\*\*[^*]+\*\*)/g);
     return parts.map((part, index) => {
@@ -187,28 +89,6 @@ export default function AISuggestionsPanel({
     });
   };
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    
-    // Save current prompt and response to history
-    const newEntry = {
-      prompt: currentPrompt,
-      timestamp: new Date().toLocaleString(),
-      response: suggestions.join(' ') || 'Analysis generated based on current data.'
-    };
-    
-    const updatedHistory = [newEntry, ...promptHistory.slice(0, 9)]; // Keep last 10
-    setPromptHistory(updatedHistory);
-    
-    // Save to localStorage
-    const historyKey = `ai-prompt-history-${title.toLowerCase().replace(/\s+/g, '-')}`;
-    localStorage.setItem(historyKey, JSON.stringify(updatedHistory));
-    
-    setTimeout(() => setRefreshing(false), 1200);
-  };
-
-
-
   return (
     <div className="bg-bg-surface border border-border rounded-lg p-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
@@ -217,204 +97,103 @@ export default function AISuggestionsPanel({
           <h3 className="text-sm font-semibold text-text-primary">{title}</h3>
         </div>
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          <button
-            onClick={() => setShowPromptEdit(true)}
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-bg-elevated border border-border text-xs font-medium hover:bg-bg-surface transition-colors whitespace-nowrap"
-          >
-            <Settings size={12} />
-            <span className="hidden sm:inline">Prompt</span>
+          <button onClick={() => { setEditPrompt(currentPrompt); setShowPromptEdit(true); }} className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-bg-elevated border border-border text-xs font-medium hover:bg-bg-surface transition-colors whitespace-nowrap">
+            <Settings size={12} /><span className="hidden sm:inline">Prompt</span>
           </button>
-          <button
-            onClick={() => setShowPromptHistory(true)}
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-bg-elevated border border-border text-xs font-medium hover:bg-bg-surface transition-colors whitespace-nowrap"
-          >
-            <History size={12} />
-            <span className="hidden sm:inline">History</span>
+          <button onClick={() => setShowPromptHistory(true)} className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-bg-elevated border border-border text-xs font-medium hover:bg-bg-surface transition-colors whitespace-nowrap">
+            <History size={12} /><span className="hidden sm:inline">History</span>
           </button>
-
-          <button
-            onClick={handleRefresh}
-            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-warm-gold/15 text-warm-gold text-xs font-medium hover:bg-warm-gold/25 transition-colors whitespace-nowrap"
-          >
-            <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-            <span className="hidden sm:inline">Refresh</span>
+          <button onClick={handleRefresh} className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-md bg-warm-gold/15 text-warm-gold text-xs font-medium hover:bg-warm-gold/25 transition-colors whitespace-nowrap">
+            <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} /><span className="hidden sm:inline">Refresh</span>
           </button>
-          <button
-            onClick={() => setVisible(!visible)}
-            className="text-xs text-text-tertiary hover:text-text-secondary whitespace-nowrap"
-          >
+          <button onClick={() => setVisible(!visible)} className="text-xs text-text-tertiary hover:text-text-secondary whitespace-nowrap">
             {visible ? 'Hide' : 'Show'}
           </button>
         </div>
       </div>
+
       {visible && (
-        <div className="space-y-4">
-          {attributionModel && attributionWindow && (
-            <div className="flex items-center gap-4 text-xs text-text-tertiary pb-2 border-b border-border/50">
-              <span>Attribution Model: <strong className="text-text-secondary">{attributionModel}</strong></span>
-              <span>•</span>
-              <span>Window: <strong className="text-text-secondary">{attributionWindow}</strong></span>
+        <div className="space-y-3">
+          {suggestions.map((s, i) => (
+            <div key={i} className="flex gap-3 text-sm text-text-secondary leading-relaxed">
+              <span className="shrink-0 w-5 h-5 rounded-full bg-brand-blue/20 text-brand-blue-light text-xs flex items-center justify-center font-medium mt-0.5">{i + 1}</span>
+              <span>{parseMarkdownBold(s)}</span>
             </div>
-          )}
-          <div className="space-y-3">
-            {suggestions.map((s, i) => (
-              <div key={i} className="flex gap-3 text-sm text-text-secondary leading-relaxed">
-                <span className="shrink-0 w-5 h-5 rounded-full bg-brand-blue/20 text-brand-blue-light text-xs flex items-center justify-center font-medium mt-0.5">
-                  {i + 1}
-                </span>
-                <span>{parseMarkdownBold(s)}</span>
-              </div>
-            ))}
-          </div>
+          ))}
         </div>
       )}
 
-      {/* Prompt Edit Modal */}
+      {/* Edit Prompt Modal */}
       {showPromptEdit && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-2xl mx-4">
-            <h3 className="text-lg font-semibold text-text-primary mb-4">Edit Analysis Prompt</h3>
+            <h3 className="text-lg font-semibold text-text-primary mb-1">Edit Analysis Prompt</h3>
+            <p className="text-xs text-text-tertiary mb-4">Changes sync to the Prompt Templates page and vice versa.</p>
             <textarea
-              value={currentPrompt}
-              onChange={(e) => setCurrentPrompt(e.target.value)}
+              value={editPrompt}
+              onChange={(e) => setEditPrompt(e.target.value)}
               className="w-full h-40 bg-bg-elevated border border-border rounded-md p-3 text-sm text-text-primary resize-none outline-none focus:border-brand-blue"
-              placeholder="Enter your custom analysis prompt here..."
             />
             <div className="flex items-center justify-end gap-3 mt-4">
-              <button
-                onClick={() => setShowPromptEdit(false)}
-                className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  savePrompt(currentPrompt);
-                  setShowPromptEdit(false);
-                  handleRefresh();
-                }}
-                className="px-4 py-2 bg-brand-blue text-white text-sm rounded-md hover:bg-brand-blue/90 transition-colors"
-              >
-                Save & Refresh
-              </button>
+              <button onClick={() => setShowPromptEdit(false)} className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors">Cancel</button>
+              <button onClick={handleSave} className="px-4 py-2 bg-brand-blue text-white text-sm rounded-md hover:bg-brand-blue/90 transition-colors">Save & Refresh</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Prompt History Modal */}
+      {/* History Modal */}
       {showPromptHistory && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-5xl mx-4">
+          <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-4xl mx-4">
             <h3 className="text-lg font-semibold text-text-primary mb-4">Prompt History</h3>
             <div className="max-h-96 overflow-y-auto">
-              {promptHistory.length === 0 ? (
-                <p className="text-sm text-text-secondary text-center py-8">No prompt history available</p>
+              {history.length === 0 ? (
+                <p className="text-sm text-text-secondary text-center py-8">No history yet — edit or refresh the prompt to create versions.</p>
               ) : (
-                <div className="border border-border rounded-lg overflow-hidden">
-                  <table className="w-full">
-                    <thead className="bg-bg-elevated border-b border-border">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider w-16">Version</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider w-32">Date Saved</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">Prompt</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider w-24">Actions</th>
+                <table className="w-full text-sm">
+                  <thead className="bg-bg-elevated border-b border-border">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-16">Ver</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-40">Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase">Prompt</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase w-24">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {history.map((entry, i) => (
+                      <tr key={i} className={i % 2 === 0 ? 'bg-bg-surface' : 'bg-bg-elevated'}>
+                        <td className="px-4 py-3 text-text-primary">v{history.length - i}</td>
+                        <td className="px-4 py-3 text-text-secondary text-xs">{entry.timestamp}</td>
+                        <td className="px-4 py-3 text-text-primary">
+                          <div className="max-w-md truncate" title={entry.prompt}>{entry.prompt.substring(0, 100)}{entry.prompt.length > 100 ? '...' : ''}</div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button onClick={() => handleRestore(entry)} className="px-3 py-1 bg-brand-blue text-white text-xs rounded-md hover:bg-brand-blue/90">Restore</button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {promptHistory.map((entry, index) => (
-                        <tr key={index} className={index % 2 === 0 ? 'bg-bg-surface' : 'bg-bg-elevated'}>
-                          <td className="px-4 py-3 text-sm text-text-primary">
-                            v{promptHistory.length - index}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-text-secondary">
-                            {new Date(entry.timestamp).toLocaleString('en-US', {
-                              timeZone: 'Asia/Singapore',
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              hour12: true
-                            })}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-text-primary">
-                            <div className="max-w-md truncate" title={entry.prompt}>
-                              {entry.prompt.length > 100 ? entry.prompt.substring(0, 100) + '...' : entry.prompt}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm">
-                            <button
-                              onClick={() => restoreFromHistory(entry.prompt)}
-                              className="inline-flex items-center px-3 py-1 bg-brand-blue text-white text-xs font-medium rounded-md hover:bg-brand-blue/90 transition-colors"
-                            >
-                              Restore
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               )}
             </div>
-            <div className="flex items-center justify-end gap-3 mt-4">
-              <button
-                onClick={() => setShowPromptHistory(false)}
-                className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
-              >
-                Close
-              </button>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setShowPromptHistory(false)} className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary">Close</button>
             </div>
           </div>
         </div>
       )}
 
-
-
-      {/* Restore Prompt Modal */}
-      {showRestoreModal && (
+      {/* Restore Confirm Modal */}
+      {showRestoreModal && restoreEntry && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-2xl mx-4">
-            <h3 className="text-lg font-semibold text-text-primary mb-4">Restore Prompt</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Prompt Name
-                </label>
-                <input
-                  type="text"
-                  value={restorePromptName}
-                  onChange={(e) => setRestorePromptName(e.target.value)}
-                  className="w-full bg-bg-elevated border border-border rounded-md p-3 text-sm text-text-primary outline-none focus:border-brand-blue"
-                  placeholder="Enter prompt name"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-2">
-                  Prompt
-                </label>
-                <textarea
-                  value={restorePrompt}
-                  onChange={(e) => setRestorePrompt(e.target.value)}
-                  className="w-full h-40 bg-bg-elevated border border-border rounded-md p-3 text-sm text-text-primary resize-none outline-none focus:border-brand-blue"
-                  placeholder="Edit the prompt text here..."
-                />
-              </div>
-            </div>
-            <div className="flex items-center justify-end gap-3 mt-6">
-              <button
-                onClick={() => setShowRestoreModal(false)}
-                className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={saveRestoredPrompt}
-                className="px-4 py-2 bg-brand-blue text-white text-sm rounded-md hover:bg-brand-blue/90 transition-colors"
-              >
-                Save
-              </button>
+          <div className="bg-bg-surface border border-border rounded-lg p-6 w-full max-w-lg mx-4">
+            <h3 className="text-lg font-semibold text-text-primary mb-4">Restore This Version?</h3>
+            <p className="text-sm text-text-secondary mb-2">This will replace the current prompt with:</p>
+            <div className="bg-bg-elevated border border-border rounded-md p-3 text-sm text-text-primary max-h-32 overflow-y-auto mb-4">{restoreEntry.prompt}</div>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setShowRestoreModal(false)} className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary">Cancel</button>
+              <button onClick={confirmRestore} className="px-4 py-2 bg-brand-blue text-white text-sm rounded-md hover:bg-brand-blue/90">Restore</button>
             </div>
           </div>
         </div>

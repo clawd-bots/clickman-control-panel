@@ -1788,8 +1788,7 @@ export default function CreativePage() {
         <AISuggestionsPanel 
           suggestions={getDynamicAISuggestions()} 
           title={getAITitle(activeTab)}
-          attributionModel={['Top Creatives', 'Ad Churn'].includes(activeTab) ? undefined : attrModel}
-          attributionWindow={['Top Creatives', 'Ad Churn'].includes(activeTab) ? undefined : attrWindow}
+          promptId="creative-intelligence"
         />
       </div>
     </div>
