@@ -278,61 +278,54 @@ export default function DashboardPage() {
   // Columns: Spend, CPA, NC CPA, AOV, CV (Conversion Value), Purchases, ROAS, NC ROAS, NCP (New Customer Purchases), CR (Conversion Rate)
   const twChannelData = useMemo(() => {
     if (!twData) return null;
-    // Note: NC-specific metrics per channel not available from TW summary API
-    // Using blended NC metrics where channel-specific ones aren't available
+
+    const buildRow = (channel: string, spend: number, cpa: number, cv: number, purchases: number, roas: number, extras?: { ncCpa?: number; aov?: number; cr?: number }) => {
+      // Compute AOV from CV / Purchases when not provided directly
+      const aov = extras?.aov || (purchases > 0 ? cv / purchases : 0);
+      // CR = Purchases / Sessions is not per-channel, show if provided
+      return {
+        channel, spend, cpa,
+        ncCpa: extras?.ncCpa || 0,
+        aov,
+        cv, purchases, roas,
+        ncRoas: 0, // Not available per-channel from TW Summary API
+        ncp: 0, // Not available per-channel from TW Summary API
+        cr: extras?.cr || 0,
+      };
+    };
+
     return [
-      {
-        channel: 'Meta Ads',
-        spend: getMetric(twData, 'metaAdSpend'),
-        cpa: getMetric(twData, 'metaCpa'),
-        ncCpa: 0, // Not available per-channel
-        aov: 0, // Not available per-channel from TW summary
-        cv: getMetric(twData, 'metaConversionValue'),
-        purchases: getMetric(twData, 'metaPurchases') || getMetric(twData, 'metaTotalPurchases'),
-        roas: getMetric(twData, 'metaRoas'),
-        ncRoas: 0, // Not available per-channel
-        ncp: 0, // Not available per-channel
-        cr: 0, // Not available per-channel
-      },
-      {
-        channel: 'Google Ads',
-        spend: getMetric(twData, 'googleAdSpend'),
-        cpa: getMetric(twData, 'googleCpa'),
-        ncCpa: getMetric(twData, 'googleAllCpa'),
-        aov: 0,
-        cv: getMetric(twData, 'googleConversionValue'),
-        purchases: 0,
-        roas: getMetric(twData, 'googleRoas'),
-        ncRoas: 0,
-        ncp: 0,
-        cr: 0,
-      },
-      {
-        channel: 'TikTok Ads',
-        spend: getMetric(twData, 'tiktokAdSpend'),
-        cpa: getMetric(twData, 'tiktokCpa'),
-        ncCpa: 0,
-        aov: 0,
-        cv: getMetric(twData, 'tiktokConversionValue'),
-        purchases: getMetric(twData, 'tiktokPurchases'),
-        roas: getMetric(twData, 'tiktokRoas'),
-        ncRoas: 0,
-        ncp: 0,
-        cr: 0,
-      },
-      {
-        channel: 'Reddit Ads',
-        spend: getMetric(twData, 'redditAdSpend'),
-        cpa: getMetric(twData, 'redditCpa'),
-        ncCpa: 0,
-        aov: getMetric(twData, 'redditAov'),
-        cv: getMetric(twData, 'redditConversionValue'),
-        purchases: getMetric(twData, 'redditConversions'),
-        roas: getMetric(twData, 'redditRoas'),
-        ncRoas: 0,
-        ncp: 0,
-        cr: getMetric(twData, 'redditConversionRate'),
-      },
+      buildRow('Meta Ads',
+        getMetric(twData, 'metaAdSpend'),
+        getMetric(twData, 'metaCpa'),
+        getMetric(twData, 'metaConversionValue'),
+        getMetric(twData, 'metaPurchases') || getMetric(twData, 'metaTotalPurchases'),
+        getMetric(twData, 'metaRoas'),
+      ),
+      buildRow('Google Ads',
+        getMetric(twData, 'googleAdSpend'),
+        getMetric(twData, 'googleCpa'),
+        getMetric(twData, 'googleConversionValue'),
+        // Google doesn't report purchases in TW summary — compute from CV/AOV if possible
+        0,
+        getMetric(twData, 'googleRoas'),
+        { ncCpa: getMetric(twData, 'googleAllCpa') },
+      ),
+      buildRow('TikTok Ads',
+        getMetric(twData, 'tiktokAdSpend'),
+        getMetric(twData, 'tiktokCpa'),
+        getMetric(twData, 'tiktokConversionValue'),
+        getMetric(twData, 'tiktokPurchases'),
+        getMetric(twData, 'tiktokRoas'),
+      ),
+      buildRow('Reddit Ads',
+        getMetric(twData, 'redditAdSpend'),
+        getMetric(twData, 'redditCpa'),
+        getMetric(twData, 'redditConversionValue'),
+        getMetric(twData, 'redditConversions'),
+        getMetric(twData, 'redditRoas'),
+        { aov: getMetric(twData, 'redditAov'), cr: getMetric(twData, 'redditConversionRate') },
+      ),
     ].filter(ch => ch.spend > 0 || ch.cv > 0);
   }, [twData]);
 
@@ -374,7 +367,9 @@ export default function DashboardPage() {
   };
   
   const getCurrentChannelData = () => {
-    // Always use TW live data when available
+    // TW Summary API doesn't differentiate by attribution model —
+    // all tabs show the same live data from TW.
+    // When TW adds attribution model support to their API, we'll wire each tab separately.
     if (twChannelData) return twChannelData;
     return null;
   };
@@ -538,7 +533,7 @@ export default function DashboardPage() {
           <KPICard 
             label="CAC/LTV Ratio" 
             value={`1:${aggregatedData.cacLtvRatio.toFixed(1)}`} 
-            change={aggregatedData.prevCac > 0 && aggregatedData.prevLtv > 0 ? pctChange(aggregatedData.cacLtvRatio, aggregatedData.prevLtv / aggregatedData.prevCac) : 0} 
+            change={0} 
             sparkline={[]}
             dataSource="Triple Whale"
           />
@@ -548,7 +543,7 @@ export default function DashboardPage() {
           <KPICard 
             label="LTV per Customer" 
             value={formatCurrencyValue(aggregatedData.ltv)} 
-            change={aggregatedData.prevLtv > 0 ? pctChange(aggregatedData.ltv, aggregatedData.prevLtv) : 0} 
+            change={0} 
             sparkline={[]}
             target={getTarget('AOV') !== null ? formatCurrencyValue(getTarget('AOV')! * 3.5) : undefined}
             targetAchievement={getTarget('AOV') !== null ? (aggregatedData.ltv / (getTarget('AOV')! * 3.5)) * 100 : undefined}
@@ -587,8 +582,8 @@ export default function DashboardPage() {
                   formatter={(value: any, name: any) => [formatCurrencyValue(value), String(name || '')]}
                 />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Line type="monotone" dataKey="costs" name="Ad Spend" stroke="#EDBF63" strokeWidth={2.5} dot={false} />
                 <Line type="monotone" dataKey="revenue" name="Order Revenue" stroke="#34D399" strokeWidth={2.5} dot={false} />
+                <Line type="monotone" dataKey="costs" name="Ad Spend" stroke="#EDBF63" strokeWidth={2.5} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -685,10 +680,23 @@ export default function DashboardPage() {
       {/* Channel Attribution Table */}
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="attribution-table">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
-            <DataSource source="Triple Whale" />
-            <LiveBadge />
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
+              <DataSource source="Triple Whale" />
+              <LiveBadge />
+            </div>
+            <div className="flex gap-2 sm:gap-3 mt-2 flex-wrap">
+              {['Last Click', 'Linear', 'First Click', 'Linear Paid', 'Triple'].map((tab) => (
+                <button 
+                  key={tab} 
+                  onClick={() => setActiveAttributionTab(tab)}
+                  className={`text-xs px-3 py-1.5 rounded-md transition-colors ${activeAttributionTab === tab ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
           </div>
           <div>
             <div className="text-xs text-text-secondary mb-2">Attribution Window</div>
