@@ -21,6 +21,15 @@ const MODEL_MAP: Record<string, string> = {
   'Triple': 'Triple Attribution',
 };
 
+// Map our window labels to TW attribution_window values
+const WINDOW_MAP: Record<string, string> = {
+  '1-day': '1_day',
+  '7-day': '7_days',
+  '14-day': '14_days',
+  '28-day': '28_days',
+  'lifetime': 'lifetime',
+};
+
 // Friendly channel names
 const CHANNEL_NAMES: Record<string, string> = {
   'facebook-ads': 'Meta Ads',
@@ -38,6 +47,7 @@ export async function GET(request: NextRequest) {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const model = searchParams.get('model') || 'Triple';
+    const window = searchParams.get('window') || 'lifetime';
 
     if (!startDate || !endDate) {
       return NextResponse.json(
@@ -47,7 +57,7 @@ export async function GET(request: NextRequest) {
     }
 
     const forceRefresh = searchParams.get('refresh') === 'true';
-    const cacheKey = `${startDate}_${endDate}_${model}`;
+    const cacheKey = `${startDate}_${endDate}_${model}_${window}`;
     if (!forceRefresh) {
       const cached = await getCached('tw-attribution', cacheKey);
       if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
@@ -55,6 +65,7 @@ export async function GET(request: NextRequest) {
 
     const { apiKey, shopId } = getConfig();
     const twModel = MODEL_MAP[model] || 'Triple Attribution';
+    const twWindow = WINDOW_MAP[window] || 'lifetime';
 
     const query = `
       SELECT
@@ -71,6 +82,7 @@ export async function GET(request: NextRequest) {
       FROM pixel_joined_tvf pj
       WHERE pj.event_date BETWEEN @startDate AND @endDate
         AND pj.model = '${twModel}'
+        AND pj.attribution_window = '${twWindow}'
       GROUP BY pj.channel
     `;
 
@@ -141,6 +153,8 @@ export async function GET(request: NextRequest) {
       success: true,
       model,
       twModel,
+      window,
+      twWindow,
       dateRange: { startDate, endDate },
       data: channels,
     };

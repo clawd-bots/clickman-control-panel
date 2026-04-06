@@ -68,12 +68,12 @@ export default function DashboardPage() {
       .finally(() => setGA4Loading(false));
   }, [dateRange]);
 
-  // Fetch attribution data when tab or date range changes
+  // Fetch attribution data when tab, window, or date range changes
   useEffect(() => {
     setAttrLoading(true);
     const startDate = toLocalDateString(dateRange.startDate);
     const endDate = toLocalDateString(dateRange.endDate);
-    fetch(`/api/triple-whale/attribution?startDate=${startDate}&endDate=${endDate}&model=${encodeURIComponent(activeAttributionTab)}`)
+    fetch(`/api/triple-whale/attribution?startDate=${startDate}&endDate=${endDate}&model=${encodeURIComponent(activeAttributionTab)}&window=${encodeURIComponent(attributionWindow)}`)
       .then(res => res.json())
       .then(json => {
         if (json.success) {
@@ -82,7 +82,7 @@ export default function DashboardPage() {
       })
       .catch(console.error)
       .finally(() => setAttrLoading(false));
-  }, [dateRange, activeAttributionTab]);
+  }, [dateRange, activeAttributionTab, attributionWindow]);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -715,8 +715,19 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <div className="text-[10px] text-text-tertiary self-end">
-            Lifetime window
+          <div>
+            <div className="text-xs text-text-secondary mb-2">Attribution Window</div>
+            <select
+              value={attributionWindow}
+              onChange={(e) => setAttributionWindow(e.target.value)}
+              className="text-xs px-2 py-1 rounded border border-border bg-bg-surface text-text-primary min-w-[120px]"
+            >
+              <option value="1-day">1 day</option>
+              <option value="7-day">7 days</option>
+              <option value="14-day">14 days</option>
+              <option value="28-day">28 days</option>
+              <option value="lifetime">Lifetime</option>
+            </select>
           </div>
         </div>
         <div className="overflow-x-auto">
