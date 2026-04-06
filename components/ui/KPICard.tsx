@@ -79,7 +79,7 @@ export default function KPICard({ label, value, change, sparkline, target, targe
         <div className="text-sm text-text-secondary">{secondary}</div>
       )}
       <div className="flex flex-col gap-1">
-        {comparisonEnabled && (
+        {comparisonEnabled && change !== 0 && (
           <div className="flex items-center gap-2">
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
               isPositive ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'
