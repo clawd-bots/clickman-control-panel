@@ -32,12 +32,14 @@ export default function DashboardPage() {
   const { dateRange } = useDateRange();
   const { getTarget, getTargetAchievement } = useTargets();
   const [activeAttributionTab, setActiveAttributionTab] = useState('Last Click');
-  const [attributionWindow, setAttributionWindow] = useState('7-day/1-day');
+  const [attributionWindow, setAttributionWindow] = useState('7-day');
   const [twData, setTwData] = useState<TWData | null>(null);
   const [twLoading, setTwLoading] = useState(true);
   const [ga4Data, setGA4Data] = useState<GA4Data | null>(null);
   const [ga4Loading, setGA4Loading] = useState(true);
   const [ga4DailyData, setGA4DailyData] = useState<Array<{ date: string; sessions: number; totalUsers: number }>>([]);
+  const [attrData, setAttrData] = useState<any[] | null>(null);
+  const [attrLoading, setAttrLoading] = useState(false);
 
   useEffect(() => {
     setTwLoading(true);
@@ -65,6 +67,22 @@ export default function DashboardPage() {
     }).catch(console.error)
       .finally(() => setGA4Loading(false));
   }, [dateRange]);
+
+  // Fetch attribution data when tab or date range changes
+  useEffect(() => {
+    setAttrLoading(true);
+    const startDate = toLocalDateString(dateRange.startDate);
+    const endDate = toLocalDateString(dateRange.endDate);
+    fetch(`/api/triple-whale/attribution?startDate=${startDate}&endDate=${endDate}&model=${encodeURIComponent(activeAttributionTab)}`)
+      .then(res => res.json())
+      .then(json => {
+        if (json.success) {
+          setAttrData(json.data);
+        }
+      })
+      .catch(console.error)
+      .finally(() => setAttrLoading(false));
+  }, [dateRange, activeAttributionTab]);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -367,9 +385,8 @@ export default function DashboardPage() {
   };
   
   const getCurrentChannelData = () => {
-    // TW Summary API doesn't differentiate by attribution model —
-    // all tabs show the same live data from TW.
-    // When TW adds attribution model support to their API, we'll wire each tab separately.
+    // Use SQL-based attribution data (per-model) when available, fallback to summary data
+    if (attrData && attrData.length > 0) return attrData;
     if (twChannelData) return twChannelData;
     return null;
   };
