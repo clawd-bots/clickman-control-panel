@@ -2,73 +2,89 @@
 import { useState, useMemo, useEffect } from 'react';
 import KPICard from '@/components/ui/KPICard';
 import DataSource from '@/components/ui/DataSource';
-import InfoTooltip from '@/components/ui/InfoTooltip';
 import { LiveBadge } from '@/components/ui/LiveBadge';
 import { SkeletonKPICard, SkeletonChart, SkeletonTable } from '@/components/ui/Skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/components/CurrencyProvider';
-import { ChevronRight, ChevronDown, ChevronsUpDown } from 'lucide-react';
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, LineChart, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 
-// Types for MoM Google Sheets data
-interface MomRow {
+// Types matching the new API response
+interface PnlRowData {
   label: string;
-  monthly: Record<string, number>;
-  total: number;
+  isSection: boolean;
+  isSubItem: boolean;
+  isSummary: boolean;
+  months: {
+    [monthKey: string]: {
+      value: number;
+      pctOfNet: number | null;
+    };
+  };
+  change: {
+    value: number;
+    pctChange: number | null;
+  };
+  ytd: {
+    value: number;
+    pctOfNet: number | null;
+  };
 }
 
 interface SheetData {
-  title: string;
-  dateRange: string;
+  company: string;
+  reportTitle: string;
   currency: string;
+  currencyNote: string;
   months: string[];
-  rows: Record<string, MomRow>;
-  sections: Array<{ key: string; label: string; section: string; indent: number }>;
+  rows: PnlRowData[];
 }
 
-// Key P&L line items we want to display, in order
-const PNL_STRUCTURE = [
-  // Income
-  { key: 'total_income', label: 'Total Income', color: '#34D399', isHeader: true },
-  { key: 'affiliate_income', label: 'Affiliate Income', color: '#94A3B8', indent: true },
-  { key: 'discounts_given', label: 'Discounts Given', color: '#EF4444', indent: true },
-  { key: 'total_service_fee_income', label: 'Service/Fee Income', color: '#4A6BD6', indent: true },
-  { key: 'total_services_sales', label: 'Services Sales', color: '#4A6BD6', indent: true },
-  { key: 'unapplied_cash_payment_income', label: 'Unapplied Cash Payment', color: '#94A3B8', indent: true },
-  
-  // COGS
-  { key: 'total_cost_of_goods_sold', label: 'Cost of Goods Sold', color: '#EF4444', isHeader: true },
-  { key: 'client_ad_budget_spend', label: 'Client Ad Budget Spend', color: '#EF4444', indent: true },
-  
-  // Gross Profit
-  { key: 'gross_profit', label: 'Gross Profit', color: '#EDBF63', isHeader: true },
+// Styling for specific row types
+function getRowStyle(row: PnlRowData): { bg: string; text: string; font: string; border: string } {
+  const label = row.label;
+  // Major summary lines (CM1, CM2, CM3, EBITDA, Net Income)
+  if (/^(CM\d|EBITDA)$/.test(label)) {
+    return { bg: 'bg-brand-blue/5', text: 'text-text-primary', font: 'font-bold', border: 'border-t border-border' };
+  }
+  if (label.startsWith('Net Income') || label.startsWith('Net Revenue')) {
+    return { bg: 'bg-success/5', text: 'text-text-primary', font: 'font-bold text-base', border: 'border-t-2 border-border' };
+  }
+  if (label.startsWith('Total Operating')) {
+    return { bg: 'bg-warning/5', text: 'text-text-primary', font: 'font-semibold', border: 'border-t border-border' };
+  }
+  // Section headers
+  if (row.isSection) {
+    return { bg: 'bg-bg-elevated', text: 'text-text-secondary', font: 'font-semibold uppercase text-xs tracking-wide', border: '' };
+  }
+  // Sub items (indented)
+  if (row.isSubItem) {
+    return { bg: '', text: 'text-text-secondary', font: 'font-normal', border: '' };
+  }
+  // Regular items
+  return { bg: '', text: 'text-text-primary', font: 'font-medium', border: '' };
+}
 
-  // Expenses
-  { key: 'total_expenses', label: 'Total Expenses', color: '#F97316', isHeader: true },
-  { key: 'advertising_marketing', label: 'Advertising & Marketing', color: '#F97316', indent: true },
-  { key: 'company_req_softwares_tools', label: 'Software/Tools', color: '#F97316', indent: true },
-  { key: 'total_contractors', label: 'Total Contractors', color: '#8B5CF6', indent: true },
-  { key: 'legal_professional_services', label: 'Legal & Professional', color: '#F97316', indent: true },
-  { key: 'quickbooks_payments_fees', label: 'QuickBooks Fees', color: '#F97316', indent: true },
-  { key: 'total_sde', label: 'SDE (Owner)', color: '#F97316', indent: true },
-
-  // Bottom line
-  { key: 'net_operating_income', label: 'Net Operating Income', color: '#34D399', isHeader: true },
-  { key: 'total_other_income', label: 'Other Income', color: '#94A3B8' },
-  { key: 'net_income', label: 'Net Income', color: '#22C55E', isHeader: true },
-];
+// Color indicator dot for contribution margin rows
+function getIndicatorColor(label: string): string | null {
+  if (label === 'Net Revenue') return '#34D399';
+  if (label === 'CM1') return '#4A6BD6';
+  if (label === 'CM2') return '#EDBF63';
+  if (label === 'CM3') return '#F97316';
+  if (label === 'EBITDA') return '#8B5CF6';
+  if (label.startsWith('Net Income')) return '#22C55E';
+  return null;
+}
 
 export default function PnLPage() {
   const { currency, convertValue } = useCurrency();
   const [sheetData, setSheetData] = useState<SheetData | null>(null);
   const [sheetLoading, setSheetLoading] = useState(true);
   const [sheetError, setSheetError] = useState<string | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState<string>(''); // empty = Total
-  const [showAllRows, setShowAllRows] = useState(false);
+  const [viewMode, setViewMode] = useState<'monthly' | 'ytd'>('monthly');
 
-  // Fetch Google Sheets P&L data
   useEffect(() => {
     setSheetLoading(true);
     fetch('/api/google-sheets')
@@ -77,10 +93,6 @@ export default function PnLPage() {
         if (json.success) {
           setSheetData(json.data);
           setSheetError(null);
-          // Default to latest month
-          if (json.data.months?.length > 0) {
-            setSelectedMonth(json.data.months[json.data.months.length - 1]);
-          }
         } else {
           setSheetError(json.error || 'Failed to load P&L data');
         }
@@ -89,123 +101,104 @@ export default function PnLPage() {
       .finally(() => setSheetLoading(false));
   }, []);
 
-  const formatCurrencyValue = (value: number) => {
-    return formatCurrency(convertValue(value), currency);
+  const fmt = (value: number) => formatCurrency(convertValue(value), currency);
+
+  // Find key rows by label
+  const findRow = (label: string): PnlRowData | undefined =>
+    sheetData?.rows.find(r => r.label === label);
+
+  // Get the latest month's data for a row
+  const getLatestValue = (row: PnlRowData | undefined): number => {
+    if (!row || !sheetData) return 0;
+    const latestMonth = sheetData.months[sheetData.months.length - 1];
+    return row.months[latestMonth]?.value ?? 0;
   };
 
-  // Get value for selected period
-  const getVal = (row: MomRow | undefined): number => {
-    if (!row) return 0;
-    if (!selectedMonth) return row.total;
-    return row.monthly[selectedMonth] ?? 0;
-  };
+  // KPI summary values (from YTD)
+  const netRevenue = findRow('Net Revenue');
+  const cm1 = findRow('CM1');
+  const cm3 = findRow('CM3');
+  const ebitda = findRow('EBITDA');
+  const netIncome = sheetData?.rows.find(r => r.label.startsWith('Net Income'));
 
-  // Get previous month's value for MoM comparison
-  const getPrevVal = (row: MomRow | undefined): number => {
-    if (!row || !selectedMonth || !sheetData) return 0;
-    const monthIdx = sheetData.months.indexOf(selectedMonth);
-    if (monthIdx <= 0) return 0;
-    const prevMonth = sheetData.months[monthIdx - 1];
-    return row.monthly[prevMonth] ?? 0;
-  };
-
-  // MoM change percentage
-  const getMomChange = (row: MomRow | undefined): number | null => {
-    const curr = getVal(row);
-    const prev = getPrevVal(row);
-    if (prev === 0) return null;
-    return ((curr - prev) / Math.abs(prev)) * 100;
-  };
-
-  // % of Net Revenue
-  const getPctOfRevenue = (row: MomRow | undefined): number | null => {
-    const netRevRow = sheetData?.rows?.total_income;
-    if (!netRevRow || !row) return null;
-    const revenue = getVal(netRevRow);
-    if (revenue === 0) return null;
-    return (getVal(row) / revenue) * 100;
-  };
-
-  // Build visible P&L rows
-  const visibleRows = useMemo(() => {
+  // Chart data: contribution margin waterfall by month
+  const waterfallChartData = useMemo(() => {
     if (!sheetData) return [];
-    
-    if (showAllRows) {
-      // Show all rows from the sheet
-      return sheetData.sections
-        .filter(s => sheetData.rows[s.key])
-        .map(s => ({
-          key: s.key,
-          label: sheetData.rows[s.key].label,
-          color: s.label.startsWith('Total') ? '#34D399' : '#94A3B8',
-          isHeader: s.label.startsWith('Total') || s.label.startsWith('Gross') || s.label.startsWith('Net'),
-          indent: s.indent > 1,
-        }));
-    }
-
-    return PNL_STRUCTURE.filter(item => sheetData.rows[item.key]);
-  }, [sheetData, showAllRows]);
-
-  // Monthly trend chart for key metrics
-  const trendChartData = useMemo(() => {
-    if (!sheetData) return [];
-    return sheetData.months.map(month => ({
-      month: month.replace(' 2025', "'25").replace(' 2026', "'26").replace('Mar 1 - Mar 29 2026', "Mar'26"),
-      income: sheetData.rows.total_income?.monthly[month] ?? 0,
-      expenses: sheetData.rows.total_expenses?.monthly[month] ?? 0,
-      netIncome: sheetData.rows.net_income?.monthly[month] ?? 0,
-      grossProfit: sheetData.rows.gross_profit?.monthly[month] ?? 0,
-    }));
+    return sheetData.months.map(month => {
+      const shortMonth = month.replace(/\s*20\d{2}/, '').trim();
+      const getVal = (label: string) => {
+        const row = sheetData.rows.find(r => r.label === label);
+        return row?.months[month]?.value ?? 0;
+      };
+      return {
+        month: shortMonth,
+        'Net Revenue': getVal('Net Revenue'),
+        'CM1': getVal('CM1'),
+        'CM2': getVal('CM2'),
+        'CM3': getVal('CM3'),
+        'EBITDA': getVal('EBITDA'),
+      };
+    });
   }, [sheetData]);
 
-  // Gross margin chart data
+  // Margin % chart data
   const marginChartData = useMemo(() => {
     if (!sheetData) return [];
     return sheetData.months.map(month => {
-      const income = sheetData.rows.total_income?.monthly[month] ?? 0;
-      const grossProfit = sheetData.rows.gross_profit?.monthly[month] ?? 0;
-      const netIncome = sheetData.rows.net_income?.monthly[month] ?? 0;
+      const shortMonth = month.replace(/\s*20\d{2}/, '').trim();
+      const getPct = (label: string) => {
+        const row = sheetData.rows.find(r => r.label === label);
+        return row?.months[month]?.pctOfNet ?? 0;
+      };
       return {
-        month: month.replace(' 2025', "'25").replace(' 2026', "'26").replace('Mar 1 - Mar 29 2026', "Mar'26"),
-        grossMargin: income > 0 ? (grossProfit / income) * 100 : 0,
-        netMargin: income > 0 ? (netIncome / income) * 100 : 0,
+        month: shortMonth,
+        'CM1 %': getPct('CM1'),
+        'CM2 %': getPct('CM2'),
+        'CM3 %': getPct('CM3'),
+        'EBITDA %': getPct('EBITDA'),
       };
     });
   }, [sheetData]);
 
   const isLive = sheetData !== null && !sheetError;
 
-  // KPI summary values
-  const totalIncome = sheetData ? getVal(sheetData.rows.total_income) : 0;
-  const grossProfit = sheetData ? getVal(sheetData.rows.gross_profit) : 0;
-  const totalExpenses = sheetData ? getVal(sheetData.rows.total_expenses) : 0;
-  const netIncome = sheetData ? getVal(sheetData.rows.net_income) : 0;
-  const grossMarginPct = totalIncome > 0 ? (grossProfit / totalIncome) * 100 : 0;
-
   return (
     <div className="space-y-4 sm:space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-1">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg sm:text-xl font-semibold">Profit & Loss</h2>
+        <div>
           <div className="flex items-center gap-2">
+            <h2 className="text-lg sm:text-xl font-semibold">Profit & Loss</h2>
             <DataSource source={isLive ? 'Google Sheets' : 'N/A'} />
             <LiveBadge variant={isLive ? 'live' : 'sample'} />
           </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Month selector */}
           {sheetData && (
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="px-3 py-1.5 rounded-md text-xs font-medium bg-bg-elevated border border-border text-text-primary"
-            >
-              <option value="">Total (All Months)</option>
-              {sheetData.months.map(m => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+            <p className="text-xs text-text-tertiary mt-1">
+              {sheetData.company} — {sheetData.currencyNote}
+            </p>
           )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setViewMode('monthly')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              viewMode === 'monthly'
+                ? 'bg-brand-blue/15 text-brand-blue-light'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            onClick={() => setViewMode('ytd')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              viewMode === 'ytd'
+                ? 'bg-brand-blue/15 text-brand-blue-light'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'
+            }`}
+          >
+            YTD
+          </button>
         </div>
       </div>
 
@@ -216,189 +209,244 @@ export default function PnLPage() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mx-1">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mx-1">
         {sheetLoading ? (
           <>
-            <SkeletonKPICard /><SkeletonKPICard /><SkeletonKPICard /><SkeletonKPICard />
+            <SkeletonKPICard /><SkeletonKPICard /><SkeletonKPICard /><SkeletonKPICard /><SkeletonKPICard />
           </>
         ) : sheetData ? (
           <>
-            <KPICard 
-              label="Total Income" 
-              value={formatCurrencyValue(totalIncome)} 
-              change={getMomChange(sheetData.rows.total_income) ?? 0} 
-              sparkline={[]} 
+            <KPICard
+              label="Net Revenue"
+              value={fmt(netRevenue?.ytd.value ?? 0)}
+              change={netRevenue?.change.pctChange ?? 0}
+              sparkline={[]}
+              secondary="YTD"
               dataSource="Google Sheets"
             />
-            <KPICard 
-              label="Gross Profit" 
-              value={formatCurrencyValue(grossProfit)} 
-              change={getMomChange(sheetData.rows.gross_profit) ?? 0} 
-              sparkline={[]} 
-              secondary={`${grossMarginPct.toFixed(1)}% margin`}
+            <KPICard
+              label="CM1 (Gross)"
+              value={fmt(cm1?.ytd.value ?? 0)}
+              change={cm1?.change.pctChange ?? 0}
+              sparkline={[]}
+              secondary={cm1?.ytd.pctOfNet != null ? `${cm1.ytd.pctOfNet.toFixed(1)}% margin` : 'YTD'}
               dataSource="Google Sheets"
             />
-            <KPICard 
-              label="Total Expenses" 
-              value={formatCurrencyValue(totalExpenses)} 
-              change={getMomChange(sheetData.rows.total_expenses) ?? 0} 
-              sparkline={[]} 
+            <KPICard
+              label="CM3 (Post-Ads)"
+              value={fmt(cm3?.ytd.value ?? 0)}
+              change={cm3?.change.pctChange ?? 0}
+              sparkline={[]}
+              secondary={cm3?.ytd.pctOfNet != null ? `${cm3.ytd.pctOfNet.toFixed(1)}% margin` : 'YTD'}
               dataSource="Google Sheets"
             />
-            <KPICard 
-              label="Net Income" 
-              value={formatCurrencyValue(netIncome)} 
-              change={getMomChange(sheetData.rows.net_income) ?? 0} 
-              sparkline={[]} 
-              secondary={totalIncome > 0 ? `${((netIncome / totalIncome) * 100).toFixed(1)}% net margin` : ''}
+            <KPICard
+              label="EBITDA"
+              value={fmt(ebitda?.ytd.value ?? 0)}
+              change={ebitda?.change.pctChange ?? 0}
+              sparkline={[]}
+              secondary={ebitda?.ytd.pctOfNet != null ? `${ebitda.ytd.pctOfNet.toFixed(1)}% margin` : 'YTD'}
+              dataSource="Google Sheets"
+            />
+            <KPICard
+              label="Net Income"
+              value={fmt(netIncome?.ytd.value ?? 0)}
+              change={netIncome?.change.pctChange ?? 0}
+              sparkline={[]}
+              secondary={netIncome?.ytd.pctOfNet != null ? `${netIncome.ytd.pctOfNet.toFixed(1)}% net margin` : 'YTD'}
               dataSource="Google Sheets"
             />
           </>
         ) : null}
       </div>
 
-      {/* Revenue vs Expenses Chart */}
-      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-text-secondary">Income vs Expenses — Monthly Trend</h3>
-          <div className="flex items-center gap-2 shrink-0">
-            <DataSource source={isLive ? 'Google Sheets' : 'N/A'} />
-            <LiveBadge variant={isLive ? 'live' : 'sample'} />
-          </div>
-        </div>
-        {sheetLoading ? (
-          <SkeletonChart />
-        ) : (
-          <div className="min-h-[300px]">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={trendChartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} interval={0} angle={-45} textAnchor="end" height={60} />
-                <YAxis 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
-                />
-                <Tooltip 
-                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
-                  formatter={(value: any) => [`$${Number(value).toLocaleString()}`, '']}
-                />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="income" name="Total Income" fill="#34D399" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="expenses" name="Total Expenses" fill="#F97316" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="netIncome" name="Net Income" fill="#4A6BD6" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
-
-      {/* Margin Trend Chart */}
-      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-medium text-text-secondary">Gross & Net Margin — Monthly Trend</h3>
-          <div className="flex items-center gap-2 shrink-0">
-            <DataSource source={isLive ? 'Google Sheets' : 'N/A'} />
-            <LiveBadge variant={isLive ? 'live' : 'sample'} />
-          </div>
-        </div>
-        {sheetLoading ? (
-          <SkeletonChart />
-        ) : (
-          <div className="min-h-[300px]">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={marginChartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} interval={0} angle={-45} textAnchor="end" height={60} />
-                <YAxis 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  tickFormatter={(v) => `${v.toFixed(0)}%`}
-                />
-                <Tooltip 
-                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
-                  formatter={(value: any) => [`${Number(value).toFixed(1)}%`, '']}
-                />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="grossMargin" name="Gross Margin %" fill="#EDBF63" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="netMargin" name="Net Margin %" fill="#22C55E" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-      </div>
-
-      {/* P&L Table */}
-      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-text-primary">
-              P&L Breakdown — {selectedMonth || 'All Months Total'}
-            </h3>
-            <span className="text-xs text-text-tertiary">({currency === '₱' ? 'PHP' : 'USD'})</span>
-          </div>
-          <div className="flex items-center gap-3">
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Contribution Margin Waterfall */}
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-secondary">Revenue → Contribution Margins</h3>
             <div className="flex items-center gap-2 shrink-0">
               <DataSource source={isLive ? 'Google Sheets' : 'N/A'} />
               <LiveBadge variant={isLive ? 'live' : 'sample'} />
             </div>
-            <button
-              onClick={() => setShowAllRows(!showAllRows)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-bg-elevated border border-border text-xs text-text-secondary hover:text-text-primary transition-colors"
-            >
-              <ChevronsUpDown size={13} />
-              {showAllRows ? 'Summary View' : 'Show All Rows'}
-            </button>
+          </div>
+          {sheetLoading ? <SkeletonChart /> : (
+            <div className="min-h-[300px]">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={waterfallChartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                  <YAxis
+                    tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
+                    tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
+                    formatter={(value: any) => [`$${Number(value).toLocaleString()}`, '']}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="Net Revenue" fill="#34D399" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="CM1" fill="#4A6BD6" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="CM2" fill="#EDBF63" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="CM3" fill="#F97316" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="EBITDA" fill="#8B5CF6" radius={[2, 2, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
+        {/* Margin % Trend */}
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-medium text-text-secondary">Margin % Trend</h3>
+            <div className="flex items-center gap-2 shrink-0">
+              <DataSource source={isLive ? 'Google Sheets' : 'N/A'} />
+              <LiveBadge variant={isLive ? 'live' : 'sample'} />
+            </div>
+          </div>
+          {sheetLoading ? <SkeletonChart /> : (
+            <div className="min-h-[300px]">
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={marginChartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
+                  <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                  <YAxis
+                    tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
+                    tickFormatter={(v) => `${v.toFixed(0)}%`}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
+                    formatter={(value: any) => [`${Number(value).toFixed(1)}%`, '']}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Line type="monotone" dataKey="CM1 %" stroke="#4A6BD6" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="CM2 %" stroke="#EDBF63" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="CM3 %" stroke="#F97316" strokeWidth={2} dot={{ r: 4 }} />
+                  <Line type="monotone" dataKey="EBITDA %" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Full P&L Table */}
+      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-medium text-text-primary">
+            Full P&L Statement
+          </h3>
+          <div className="flex items-center gap-2 shrink-0">
+            <DataSource source={isLive ? 'Google Sheets' : 'N/A'} />
+            <LiveBadge variant={isLive ? 'live' : 'sample'} />
           </div>
         </div>
-        
+
         {sheetLoading ? (
           <SkeletonTable />
-        ) : (
+        ) : sheetData ? (
           <div className="overflow-x-auto -mx-1 sm:mx-0">
-            <div className="min-w-[700px]">
+            <div className="min-w-[800px]">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-border text-xs text-text-secondary uppercase">
-                    <th className="text-left py-3 px-3 font-medium w-1/3">Line Item</th>
-                    <th className="text-right py-3 px-3 font-medium">{selectedMonth || 'Total'}</th>
-                    <th className="text-right py-3 px-3 font-medium">% of Income</th>
-                    {selectedMonth && <th className="text-right py-3 px-3 font-medium">MoM Change</th>}
+                  <tr className="border-b-2 border-border text-xs text-text-secondary uppercase">
+                    <th className="text-left py-3 px-3 font-medium w-[240px] sticky left-0 bg-bg-surface z-10">Line Item</th>
+                    {viewMode === 'monthly' ? (
+                      <>
+                        {sheetData.months.map(m => (
+                          <th key={m} className="text-right py-3 px-3 font-medium min-w-[100px]">
+                            {m.replace(/\s*20\d{2}/, '')}
+                          </th>
+                        ))}
+                        {sheetData.months.map(m => (
+                          <th key={`${m}-pct`} className="text-right py-3 px-2 font-medium min-w-[70px] text-text-tertiary">
+                            % Net
+                          </th>
+                        ))}
+                        <th className="text-right py-3 px-3 font-medium min-w-[90px]">MoM Δ</th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="text-right py-3 px-3 font-medium min-w-[120px]">YTD</th>
+                        <th className="text-right py-3 px-3 font-medium min-w-[80px]">% of Net</th>
+                      </>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleRows.map((item) => {
-                    const row = sheetData?.rows[item.key];
-                    if (!row) return null;
-                    const val = getVal(row);
-                    const pctRev = getPctOfRevenue(row);
-                    const momChange = getMomChange(row);
+                  {sheetData.rows.map((row, idx) => {
+                    const style = getRowStyle(row);
+                    const indicator = getIndicatorColor(row.label);
 
                     return (
                       <tr
-                        key={item.key}
-                        className="border-b border-border/50 hover:bg-bg-elevated/20 transition-colors"
+                        key={`${row.label}-${idx}`}
+                        className={`${style.bg} ${style.border} border-b border-border/30 hover:bg-bg-elevated/30 transition-colors`}
                       >
-                        <td className={`py-3.5 px-3 ${item.indent ? 'pl-10' : ''}`}>
-                          <div className="flex items-center gap-3">
-                            <span className="w-1 h-6 rounded-full shrink-0" style={{ background: item.color }} />
-                            <span className={item.isHeader ? 'text-text-primary font-semibold' : 'text-text-primary'}>
-                              {item.label}
+                        <td className={`py-2.5 px-3 sticky left-0 bg-inherit z-10 ${row.isSubItem ? 'pl-8' : ''}`}>
+                          <div className="flex items-center gap-2">
+                            {indicator && (
+                              <span
+                                className="w-1.5 h-5 rounded-full shrink-0"
+                                style={{ background: indicator }}
+                              />
+                            )}
+                            <span className={`${style.text} ${style.font}`}>
+                              {row.label}
                             </span>
                           </div>
                         </td>
-                        <td className={`py-3.5 px-3 text-right font-semibold ${val < 0 ? 'text-danger' : 'text-text-primary'}`}>
-                          {formatCurrencyValue(val)}
-                        </td>
-                        <td className="py-3.5 px-3 text-right text-text-secondary">
-                          {pctRev !== null ? `${pctRev.toFixed(1)}%` : '—'}
-                        </td>
-                        {selectedMonth && (
-                          <td className="py-3.5 px-3 text-right">
-                            {momChange !== null ? (
-                              <span className={momChange >= 0 ? 'text-success' : 'text-danger'}>
-                                {momChange >= 0 ? '↑' : '↓'} {Math.abs(momChange).toFixed(1)}%
-                              </span>
-                            ) : '—'}
-                          </td>
+                        {viewMode === 'monthly' ? (
+                          <>
+                            {sheetData.months.map(m => {
+                              const val = row.months[m]?.value ?? 0;
+                              return (
+                                <td
+                                  key={m}
+                                  className={`py-2.5 px-3 text-right tabular-nums ${style.font} ${
+                                    val < 0 ? 'text-danger' : style.text
+                                  }`}
+                                >
+                                  {val !== 0 ? fmt(val) : '—'}
+                                </td>
+                              );
+                            })}
+                            {sheetData.months.map(m => {
+                              const pct = row.months[m]?.pctOfNet;
+                              return (
+                                <td
+                                  key={`${m}-pct`}
+                                  className="py-2.5 px-2 text-right tabular-nums text-text-tertiary text-xs"
+                                >
+                                  {pct !== null && pct !== undefined ? `${pct.toFixed(1)}%` : ''}
+                                </td>
+                              );
+                            })}
+                            <td className="py-2.5 px-3 text-right tabular-nums">
+                              {row.change.pctChange !== null ? (
+                                <span className={row.change.pctChange >= 0 ? 'text-success' : 'text-danger'}>
+                                  {row.change.pctChange >= 0 ? '↑' : '↓'} {Math.abs(row.change.pctChange).toFixed(1)}%
+                                </span>
+                              ) : row.change.value !== 0 ? (
+                                <span className={row.change.value >= 0 ? 'text-success' : 'text-danger'}>
+                                  {fmt(row.change.value)}
+                                </span>
+                              ) : '—'}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className={`py-2.5 px-3 text-right tabular-nums ${style.font} ${
+                              row.ytd.value < 0 ? 'text-danger' : style.text
+                            }`}>
+                              {row.ytd.value !== 0 ? fmt(row.ytd.value) : '—'}
+                            </td>
+                            <td className="py-2.5 px-3 text-right tabular-nums text-text-secondary">
+                              {row.ytd.pctOfNet !== null ? `${row.ytd.pctOfNet.toFixed(1)}%` : ''}
+                            </td>
+                          </>
                         )}
                       </tr>
                     );
@@ -407,7 +455,7 @@ export default function PnLPage() {
               </table>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
     </div>
   );
