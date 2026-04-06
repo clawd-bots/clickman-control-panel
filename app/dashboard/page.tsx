@@ -715,19 +715,8 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <div>
-            <div className="text-xs text-text-secondary mb-2">Attribution Window</div>
-            <select
-              value={attributionWindow}
-              onChange={(e) => setAttributionWindow(e.target.value)}
-              className="text-xs px-2 py-1 rounded border border-border bg-bg-surface text-text-primary min-w-[140px]"
-            >
-              <option value="1-day">1 day</option>
-              <option value="7-day">7 days</option>
-              <option value="14-day">14 days</option>
-              <option value="28-day">28 days</option>
-              <option value="lifetime">Lifetime</option>
-            </select>
+          <div className="text-[10px] text-text-tertiary self-end">
+            Lifetime window
           </div>
         </div>
         <div className="overflow-x-auto">
