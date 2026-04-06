@@ -123,20 +123,28 @@ export default function AttributionPage() {
       const addToCarts = getGA4Metric(ga4Data, 'addToCarts');
       const checkouts = getGA4Metric(ga4Data, 'checkouts');
       const purchases = getGA4Metric(ga4Data, 'ecommercePurchases');
-      const totalEvents = pageViews + addToCarts + checkouts + purchases;
+      const eventCount = getGA4Metric(ga4Data, 'eventCount');
+      const conversions = getGA4Metric(ga4Data, 'conversions');
+      const totalEvents = eventCount || (pageViews + addToCarts + checkouts + purchases);
       const eventsPerDay = Math.round(totalEvents / dayCount);
+      // Build event breakdown with known events + "Other Events" for the remainder
+      const knownTotal = pageViews + addToCarts + checkouts + purchases;
+      const otherEvents = Math.max(0, eventCount - knownTotal);
+      const breakdown = [
+        { event: 'page_view', count: Math.round(pageViews / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const },
+        { event: 'add_to_cart', count: Math.round(addToCarts / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const },
+        { event: 'begin_checkout', count: Math.round(checkouts / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const },
+        { event: 'purchase', count: Math.round(purchases / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const },
+        ...(conversions > 0 ? [{ event: 'conversions (all)', count: Math.round(conversions / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const }] : []),
+        ...(otherEvents > 0 ? [{ event: 'Other Events', count: Math.round(otherEvents / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const }] : []),
+      ];
       return {
         ...item,
         status: 'healthy' as const,
         events: `${eventsPerDay.toLocaleString()}/day`,
-        matchRate: undefined as any,
-        source: undefined as any,
-        eventBreakdown: [
-          { event: 'page_view', count: Math.round(pageViews / dayCount).toLocaleString(), matchRate: undefined as any, type: undefined as any },
-          { event: 'add_to_cart', count: Math.round(addToCarts / dayCount).toLocaleString(), matchRate: undefined as any, type: undefined as any },
-          { event: 'begin_checkout', count: Math.round(checkouts / dayCount).toLocaleString(), matchRate: undefined as any, type: undefined as any },
-          { event: 'purchase', count: Math.round(purchases / dayCount).toLocaleString(), matchRate: undefined as any, type: undefined as any },
-        ],
+        matchRate: 'N/A' as const,
+        source: undefined as unknown as typeof item.source,
+        eventBreakdown: breakdown,
       };
     }
     return item;
@@ -294,15 +302,13 @@ export default function AttributionPage() {
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary">Blended CPA</div>
               <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(twData ? getMetric(twData, 'blendedCpa') : 750)}</div>
-              <div className="text-xs text-text-secondary mt-2">Based on 3.15x LTV:CAC</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary flex items-center gap-1">
-                <span>ROAS</span>
-                <InfoTooltip metric="Target NCCPA" />
+                <span>Blended ROAS</span>
+                <InfoTooltip metric="ROAS" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{twData ? `${getMetric(twData, 'topRoas').toFixed(2)}x` : `${formatCurrencyValue(850)}`}</div>
-              <div className="text-xs text-text-secondary mt-2">{twData ? 'TW Top ROAS' : 'New customer target'}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{twData ? `${(getMetric(twData, 'twRoas') || getMetric(twData, 'topRoas')).toFixed(2)}x` : '3.58x'}</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary flex items-center gap-1">
@@ -552,7 +558,7 @@ export default function AttributionPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-text-secondary">
                     <span>Events: {item.events}</span>
                     {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && <span>Match Quality: {item.matchRate}</span>}
-                    {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && item.source && (
+                    {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && !(item.system === 'Meta Pixel') && item.source && (
                       <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
                         item.source === 'Browser' ? 'bg-blue-500/15 text-blue-500' :
                         item.source === 'Server' ? 'bg-purple-500/15 text-purple-500' :
