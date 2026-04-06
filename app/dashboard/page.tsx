@@ -208,10 +208,12 @@ export default function DashboardPage() {
       const totalOrders = getMetric(twData, 'orders');
       const totalNewCustomers = getMetric(twData, 'newCustomerOrders');
       const totalSessions = getMetric(twData, 'sessions');
-      // Compute MER as revenue/spend ratio (TW's 'mer' metric is unreliable — returned as % type)
-      const mer = totalCosts > 0 ? totalRevenue / totalCosts : 0;
-      const cac = totalOrders > 0 ? totalCosts / totalOrders : 0;
-      const ncac = totalNewCustomers > 0 ? totalCosts / totalNewCustomers : 0;
+      // MER = TW's "Blended ROAS" metric (roas/topKpiRoas)
+      const mer = getMetric(twData, 'twRoas') || getMetric(twData, 'topRoas');
+      const cac = getMetric(twData, 'blendedCpa');
+      const ncac = getMetric(twData, 'ncpa');
+      // aMER = New Customer Revenue / Total Ad Spend (always lower than MER)
+      const amer = totalCosts > 0 ? getMetric(twData, 'newCustomerRevenue') / totalCosts : 0;
       
       // Previous period values from TW for accurate % change
       const prevRevenue = getPrevMetric(twData, 'orderRevenue');
@@ -219,24 +221,24 @@ export default function DashboardPage() {
       const prevOrders = getPrevMetric(twData, 'orders');
       const prevNewCustomers = getPrevMetric(twData, 'newCustomerOrders');
       const prevSessions = getPrevMetric(twData, 'sessions');
-      const prevMer = prevCosts > 0 ? prevRevenue / prevCosts : 0;
-      const prevCac = prevOrders > 0 ? prevCosts / prevOrders : 0;
-      const prevNcac = prevNewCustomers > 0 ? prevCosts / prevNewCustomers : 0;
-      const prevAmer = getPrevMetric(twData, 'blendedAttributedRoas');
+      const prevMer = getPrevMetric(twData, 'twRoas') || getPrevMetric(twData, 'topRoas');
+      const prevCac = getPrevMetric(twData, 'blendedCpa');
+      const prevNcac = getPrevMetric(twData, 'ncpa');
+      const prevAmer = prevCosts > 0 ? getPrevMetric(twData, 'newCustomerRevenue') / prevCosts : 0;
       
       // Computed AOVs
       const ncAov = totalNewCustomers > 0 ? getMetric(twData, 'newCustomerRevenue') / totalNewCustomers : 0;
       const rcOrders = totalOrders - totalNewCustomers;
       const rcAov = rcOrders > 0 ? getMetric(twData, 'returningCustomerRevenue') / rcOrders : 0;
       
-      // LTV & CAC/LTV ratio
+      // LTV & CAC/LTV ratio (lifetime data, not tied to date picker)
       const ltv = getMetric(twData, 'ltv');
       const prevLtv = getPrevMetric(twData, 'ltv');
       const cacLtvRatio = cac > 0 ? ltv / cac : 0;
 
       return {
         totalRevenue, totalCosts, totalOrders, totalNewCustomers, totalSessions,
-        mer, cac, ncac,
+        mer, cac, ncac, amer,
         prevRevenue, prevCosts, prevOrders, prevNewCustomers, prevSessions,
         prevMer, prevCac, prevNcac, prevAmer,
         ncAov, rcAov, ltv, prevLtv, cacLtvRatio,
@@ -262,6 +264,7 @@ export default function DashboardPage() {
       prevMer: kpiCards.mer.prev,
       prevCac: kpiCards.cac.prev,
       prevNcac: kpiCards.ncac.prev,
+      amer: kpiCards.nmer.value,
       prevAmer: kpiCards.nmer.prev,
       ncAov: revenueInsights.ncAOV,
       rcAov: revenueInsights.rcAOV,
@@ -272,14 +275,65 @@ export default function DashboardPage() {
   }, [chartData, twData]);
 
   // TW-powered channel data for the attribution table
+  // Columns: Spend, CPA, NC CPA, AOV, CV (Conversion Value), Purchases, ROAS, NC ROAS, NCP (New Customer Purchases), CR (Conversion Rate)
   const twChannelData = useMemo(() => {
     if (!twData) return null;
+    // Note: NC-specific metrics per channel not available from TW summary API
+    // Using blended NC metrics where channel-specific ones aren't available
     return [
-      { channel: 'Meta Ads', costs: getMetric(twData, 'metaAdSpend'), revenue: getMetric(twData, 'metaConversionValue'), roas: getMetric(twData, 'metaRoas'), orders: getMetric(twData, 'metaPurchases'), cpo: getMetric(twData, 'metaCpa'), newCustomers: 0, ncPct: 0 },
-      { channel: 'Google Ads', costs: getMetric(twData, 'googleAdSpend'), revenue: getMetric(twData, 'googleConversionValue'), roas: getMetric(twData, 'googleRoas'), orders: 0, cpo: getMetric(twData, 'googleCpa'), newCustomers: 0, ncPct: 0 },
-      { channel: 'TikTok Ads', costs: getMetric(twData, 'tiktokAdSpend'), revenue: getMetric(twData, 'tiktokConversionValue'), roas: getMetric(twData, 'tiktokRoas'), orders: getMetric(twData, 'tiktokPurchases'), cpo: getMetric(twData, 'tiktokCpa'), newCustomers: 0, ncPct: 0 },
-      { channel: 'Reddit Ads', costs: getMetric(twData, 'redditAdSpend'), revenue: getMetric(twData, 'redditConversionValue'), roas: getMetric(twData, 'redditRoas'), orders: getMetric(twData, 'redditConversions'), cpo: getMetric(twData, 'redditCpa'), newCustomers: 0, ncPct: 0 },
-    ].filter(ch => ch.costs > 0 || ch.revenue > 0);
+      {
+        channel: 'Meta Ads',
+        spend: getMetric(twData, 'metaAdSpend'),
+        cpa: getMetric(twData, 'metaCpa'),
+        ncCpa: 0, // Not available per-channel
+        aov: 0, // Not available per-channel from TW summary
+        cv: getMetric(twData, 'metaConversionValue'),
+        purchases: getMetric(twData, 'metaPurchases') || getMetric(twData, 'metaTotalPurchases'),
+        roas: getMetric(twData, 'metaRoas'),
+        ncRoas: 0, // Not available per-channel
+        ncp: 0, // Not available per-channel
+        cr: 0, // Not available per-channel
+      },
+      {
+        channel: 'Google Ads',
+        spend: getMetric(twData, 'googleAdSpend'),
+        cpa: getMetric(twData, 'googleCpa'),
+        ncCpa: getMetric(twData, 'googleAllCpa'),
+        aov: 0,
+        cv: getMetric(twData, 'googleConversionValue'),
+        purchases: 0,
+        roas: getMetric(twData, 'googleRoas'),
+        ncRoas: 0,
+        ncp: 0,
+        cr: 0,
+      },
+      {
+        channel: 'TikTok Ads',
+        spend: getMetric(twData, 'tiktokAdSpend'),
+        cpa: getMetric(twData, 'tiktokCpa'),
+        ncCpa: 0,
+        aov: 0,
+        cv: getMetric(twData, 'tiktokConversionValue'),
+        purchases: getMetric(twData, 'tiktokPurchases'),
+        roas: getMetric(twData, 'tiktokRoas'),
+        ncRoas: 0,
+        ncp: 0,
+        cr: 0,
+      },
+      {
+        channel: 'Reddit Ads',
+        spend: getMetric(twData, 'redditAdSpend'),
+        cpa: getMetric(twData, 'redditCpa'),
+        ncCpa: 0,
+        aov: getMetric(twData, 'redditAov'),
+        cv: getMetric(twData, 'redditConversionValue'),
+        purchases: getMetric(twData, 'redditConversions'),
+        roas: getMetric(twData, 'redditRoas'),
+        ncRoas: 0,
+        ncp: 0,
+        cr: getMetric(twData, 'redditConversionRate'),
+      },
+    ].filter(ch => ch.spend > 0 || ch.cv > 0);
   }, [twData]);
 
   // Different attribution data sets  
@@ -320,11 +374,9 @@ export default function DashboardPage() {
   };
   
   const getCurrentChannelData = () => {
-    // Use TW live data for Triple tab, fallback sample for others
-    if (activeAttributionTab === 'Triple' && twChannelData) {
-      return twChannelData;
-    }
-    return channelAttributionData[activeAttributionTab as keyof typeof channelAttributionData];
+    // Always use TW live data when available
+    if (twChannelData) return twChannelData;
+    return null;
   };
 
   // Comprehensive cross-page AI analysis
@@ -386,9 +438,9 @@ export default function DashboardPage() {
 
       {/* KPI Cards Row 1: Net Revenue, Marketing Costs, MER, aMER */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div data-testid="kpi-net-revenue">
+        <div data-testid="kpi-order-revenue">
           <KPICard 
-            label="Net Revenue" 
+            label="Order Revenue" 
             value={formatCurrencyValue(aggregatedData.totalRevenue)} 
             change={aggregatedData.prevRevenue > 0 ? pctChange(aggregatedData.totalRevenue, aggregatedData.prevRevenue) : 0} 
             sparkline={[]}
@@ -397,9 +449,9 @@ export default function DashboardPage() {
             dataSource="Triple Whale"
           />
         </div>
-        <div data-testid="kpi-marketing-costs">
+        <div data-testid="kpi-ad-spend">
           <KPICard 
-            label="Marketing Costs" 
+            label="Ad Spend" 
             value={formatCurrencyValue(aggregatedData.totalCosts)} 
             change={aggregatedData.prevCosts > 0 ? pctChange(aggregatedData.totalCosts, aggregatedData.prevCosts) : 0} 
             sparkline={[]}
@@ -422,11 +474,11 @@ export default function DashboardPage() {
         <div data-testid="kpi-amer">
           <KPICard 
             label="aMER" 
-            value={twData ? `${getMetric(twData, 'blendedAttributedRoas').toFixed(2)}x` : `${kpiCards.nmer.value}x`} 
-            change={aggregatedData.prevAmer > 0 ? pctChange(twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value, aggregatedData.prevAmer) : 0} 
+            value={`${aggregatedData.amer.toFixed(2)}x`} 
+            change={aggregatedData.prevAmer > 0 ? pctChange(aggregatedData.amer, aggregatedData.prevAmer) : 0} 
             sparkline={[]}
             target={getTarget('aMER') !== null ? `${getTarget('aMER')!.toFixed(2)}x` : undefined}
-            targetAchievement={getTargetAchievement('aMER', twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value) ?? undefined}
+            targetAchievement={getTargetAchievement('aMER', aggregatedData.amer) ?? undefined}
             dataSource="Triple Whale"
           />
         </div>
@@ -482,29 +534,35 @@ export default function DashboardPage() {
 
       {/* CAC/LTV and LTV per Customer KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <KPICard 
-          label="CAC/LTV Ratio" 
-          value={`1:${aggregatedData.cacLtvRatio.toFixed(1)}`} 
-          change={aggregatedData.prevCac > 0 && aggregatedData.prevLtv > 0 ? pctChange(aggregatedData.cacLtvRatio, aggregatedData.prevLtv / aggregatedData.prevCac) : 0} 
-          sparkline={[]}
-          dataSource="Triple Whale"
-        />
-        <KPICard 
-          label="LTV per Customer" 
-          value={formatCurrencyValue(aggregatedData.ltv)} 
-          change={aggregatedData.prevLtv > 0 ? pctChange(aggregatedData.ltv, aggregatedData.prevLtv) : 0} 
-          sparkline={[]}
-          target={getTarget('AOV') !== null ? formatCurrencyValue(getTarget('AOV')! * 3.5) : undefined}
-          targetAchievement={getTarget('AOV') !== null ? (aggregatedData.ltv / (getTarget('AOV')! * 3.5)) * 100 : undefined}
-          dataSource="Triple Whale"
-        />
+        <div>
+          <KPICard 
+            label="CAC/LTV Ratio" 
+            value={`1:${aggregatedData.cacLtvRatio.toFixed(1)}`} 
+            change={aggregatedData.prevCac > 0 && aggregatedData.prevLtv > 0 ? pctChange(aggregatedData.cacLtvRatio, aggregatedData.prevLtv / aggregatedData.prevCac) : 0} 
+            sparkline={[]}
+            dataSource="Triple Whale"
+          />
+          <p className="text-[10px] text-text-tertiary mt-1 px-1">Lifetime data — not tied to date picker</p>
+        </div>
+        <div>
+          <KPICard 
+            label="LTV per Customer" 
+            value={formatCurrencyValue(aggregatedData.ltv)} 
+            change={aggregatedData.prevLtv > 0 ? pctChange(aggregatedData.ltv, aggregatedData.prevLtv) : 0} 
+            sparkline={[]}
+            target={getTarget('AOV') !== null ? formatCurrencyValue(getTarget('AOV')! * 3.5) : undefined}
+            targetAchievement={getTarget('AOV') !== null ? (aggregatedData.ltv / (getTarget('AOV')! * 3.5)) * 100 : undefined}
+            dataSource="Triple Whale"
+          />
+          <p className="text-[10px] text-text-tertiary mt-1 px-1">Lifetime data — not tied to date picker</p>
+        </div>
       </div>
 
       {/* Revenue & Marketing Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="revenue-chart">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-text-secondary truncate">Revenue & Marketing Costs</h3>
+            <h3 className="text-sm font-medium text-text-secondary truncate">Order Revenue & Ad Spend</h3>
             <div className="flex items-center gap-2 shrink-0"><DataSource source="Triple Whale" /><LiveBadge /></div>
           </div>
           <div className="min-h-[240px]">
@@ -529,8 +587,8 @@ export default function DashboardPage() {
                   formatter={(value: any, name: any) => [formatCurrencyValue(value), String(name || '')]}
                 />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Line type="monotone" dataKey="revenue" name="Net Revenue" stroke="#34D399" strokeWidth={2.5} dot={false} />
-                <Line type="monotone" dataKey="costs" name="Marketing Costs" stroke="#EDBF63" strokeWidth={2.5} dot={false} />
+                <Line type="monotone" dataKey="costs" name="Ad Spend" stroke="#EDBF63" strokeWidth={2.5} dot={false} />
+                <Line type="monotone" dataKey="revenue" name="Order Revenue" stroke="#34D399" strokeWidth={2.5} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -552,16 +610,14 @@ export default function DashboardPage() {
                   textAnchor="end"
                   height={60}
                   interval="preserveStartEnd"
-                  label={{ value: 'Date', position: 'insideBottom', offset: -10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  label={{ value: 'Count', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line type="monotone" dataKey="orders" name="Orders" stroke="#4A6BD6" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="newCustomers" name="New Customers" stroke="#EDBF63" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="orders" name="Net Orders" stroke="#4A6BD6" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -576,25 +632,20 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2"><DataSource source="Google Analytics" /><LiveBadge variant={ga4Data ? 'live' : 'sample'} /></div>
           </div>
           {[
-            { label: 'Sessions', value: ga4Data ? getGA4Metric(ga4Data, 'sessions').toLocaleString() : (twData ? getMetric(twData, 'sessions').toLocaleString() : '33,850'), change: twData && getPrevMetric(twData, 'sessions') > 0 ? pctChange(getMetric(twData, 'sessions'), getPrevMetric(twData, 'sessions')) : (ga4Data ? 0 : 8.2) },
-            { label: 'CVR', value: twData ? `${getMetric(twData, 'conversionRate').toFixed(2)}%` : '3.33%', change: twData ? getDelta(twData, 'conversionRate') : 2.1 },
-            { label: 'Engagement Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'engagementRate') * 100).toFixed(1)}%` : '78.0%', change: ga4Data ? 0 : 5.4 },
-            { label: 'Bounce Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'bounceRate') * 100).toFixed(1)}%` : (twData ? `${getMetric(twData, 'bounceRate').toFixed(1)}%` : '42.7%'), change: twData ? getDelta(twData, 'bounceRate') : -3.4 },
-            { label: 'Pages/Session', value: ga4Data ? getGA4Metric(ga4Data, 'screenPageViewsPerSession').toFixed(2) : '3.97', change: ga4Data ? 0 : 2.1 },
-            { label: 'Avg Session', value: ga4Data ? `${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') / 60)}m ${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') % 60)}s` : '2m 34s', change: ga4Data ? 0 : 12.1 },
-            { label: 'Conversions', value: ga4Data ? getGA4Metric(ga4Data, 'conversions').toLocaleString() : '0', change: 0 },
+            { label: 'Sessions', value: ga4Data ? getGA4Metric(ga4Data, 'sessions').toLocaleString() : (twData ? getMetric(twData, 'sessions').toLocaleString() : '33,850') },
+            { label: 'CVR', value: twData ? `${getMetric(twData, 'conversionRate').toFixed(2)}%` : '3.33%' },
+            { label: 'Engagement Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'engagementRate') * 100).toFixed(1)}%` : '78.0%' },
+            { label: 'Bounce Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'bounceRate') * 100).toFixed(1)}%` : (twData ? `${getMetric(twData, 'bounceRate').toFixed(1)}%` : '42.7%') },
+            { label: 'Pages/Session', value: ga4Data ? getGA4Metric(ga4Data, 'screenPageViewsPerSession').toFixed(2) : '3.97' },
+            { label: 'Avg Session', value: ga4Data ? `${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') / 60)}m ${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') % 60)}s` : '2m 34s' },
+            { label: 'Conversions', value: ga4Data ? getGA4Metric(ga4Data, 'conversions').toLocaleString() : '0' },
           ].map((m) => (
             <div key={m.label} className="flex items-center justify-between">
               <div className="flex items-center text-xs text-text-secondary gap-1">
                 <span>{m.label}</span>
                 <InfoTooltip metric={m.label} />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-text-primary">{m.value}</span>
-                <span className={`text-xs px-1.5 py-0.5 rounded-full shrink-0 ${m.change >= 0 ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'}`}>
-                  {m.change >= 0 ? '↑' : '↓'}{Math.abs(m.change)}%
-                </span>
-              </div>
+              <span className="text-sm font-semibold text-text-primary">{m.value}</span>
             </div>
           ))}
         </div>
@@ -618,11 +669,10 @@ export default function DashboardPage() {
                   textAnchor="end"
                   height={60}
                   interval="preserveStartEnd"
-                  label={{ value: 'Date', position: 'insideBottom', offset: -10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  label={{ value: 'Sessions', angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                  tickFormatter={(v) => v.toLocaleString()}
                 />
                 <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                 <Bar dataKey="sessions" name="Sessions" fill="#334FB4" radius={[2, 2, 0, 0]} />
@@ -635,23 +685,10 @@ export default function DashboardPage() {
       {/* Channel Attribution Table */}
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="attribution-table">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
-              <DataSource source="Triple Whale" />
-              <LiveBadge />
-            </div>
-            <div className="flex gap-2 sm:gap-3 mt-2 flex-wrap">
-              {['Last Click', 'Linear', 'First Click', 'Linear Paid', 'Triple'].map((tab) => (
-                <button 
-                  key={tab} 
-                  onClick={() => setActiveAttributionTab(tab)}
-                  className={`text-xs px-3 py-1.5 rounded-md transition-colors ${activeAttributionTab === tab ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
+            <DataSource source="Triple Whale" />
+            <LiveBadge />
           </div>
           <div>
             <div className="text-xs text-text-secondary mb-2">Attribution Window</div>
@@ -660,59 +697,53 @@ export default function DashboardPage() {
               onChange={(e) => setAttributionWindow(e.target.value)}
               className="text-xs px-2 py-1 rounded border border-border bg-bg-surface text-text-primary min-w-[140px]"
             >
-              <option value="1-day">1-day</option>
-              <option value="7-day/1-day">7-day/1-day</option>
-              <option value="28-day/1-day">28-day/1-day</option>
-              <option value="28-day/28-day">28-day/28-day</option>
+              <option value="1-day">1 day</option>
+              <option value="7-day">7 days</option>
+              <option value="14-day">14 days</option>
+              <option value="28-day">28 days</option>
+              <option value="lifetime">Lifetime</option>
             </select>
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[800px]">
+          <table className="w-full text-sm min-w-[900px]">
               <thead>
                 <tr className="border-b border-border text-xs text-text-secondary uppercase">
                   <th className="text-left py-3 px-2 sm:px-3 font-medium min-w-[100px]">Channel</th>
-                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[80px]">Costs</th>
-                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[100px]">Net Revenue</th>
-                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[80px]">
-                    <div className="flex items-center justify-end gap-1">
-                      <span>ROAS</span>
-                      <InfoTooltip metric="ROAS" />
-                    </div>
-                  </th>
-                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[60px]">Orders</th>
-                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[80px]">
-                    <div className="flex items-center justify-end gap-1">
-                      <span>CPO</span>
-                      <InfoTooltip metric="CPO" />
-                    </div>
-                  </th>
-                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[80px]">New Cust.</th>
-                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[60px]">
-                    <div className="flex items-center justify-end gap-1">
-                      <span>NC%</span>
-                      <InfoTooltip metric="NC%" />
-                    </div>
-                  </th>
+                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[80px]">Spend</th>
+                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[70px]">CPA</th>
+                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[70px]">NC CPA</th>
+                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[70px]">AOV</th>
+                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[90px]">CV</th>
+                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[70px]">Purchases</th>
+                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[60px]">ROAS</th>
+                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[70px]">NC ROAS</th>
+                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[50px]">NCP</th>
+                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[50px]">CR</th>
                 </tr>
               </thead>
               <tbody>
-                {getCurrentChannelData().map((row) => (
+                {getCurrentChannelData()?.map((row) => (
                   <tr key={row.channel} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
                     <td className="py-3 px-2 sm:px-3 font-medium text-text-primary">{row.channel}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{formatCurrencyValue(row.costs)}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{formatCurrencyValue(row.revenue)}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{formatCurrencyValue(row.spend)}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cpa > 0 ? formatCurrencyValue(row.cpa) : '—'}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncCpa > 0 ? formatCurrencyValue(row.ncCpa) : '—'}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.aov > 0 ? formatCurrencyValue(row.aov) : '—'}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{row.cv > 0 ? formatCurrencyValue(row.cv) : '—'}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.purchases > 0 ? row.purchases : '—'}</td>
                     <td className="py-3 px-2 sm:px-3 text-right">
                       <span className={row.roas >= 3.5 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : row.roas > 0 ? 'text-danger' : 'text-text-tertiary'}>
-                        {row.roas > 0 ? `${row.roas.toFixed(2)}x` : (row.costs > 0 ? '—' : '0')}
+                        {row.roas > 0 ? `${row.roas.toFixed(2)}x` : '—'}
                       </span>
                     </td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.orders}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cpo > 0 ? formatCurrencyValue(row.cpo) : '0'}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.newCustomers}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncPct.toFixed(1)}%</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncRoas > 0 ? `${row.ncRoas.toFixed(2)}x` : '—'}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncp > 0 ? row.ncp : '—'}</td>
+                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cr > 0 ? `${row.cr.toFixed(2)}%` : '—'}</td>
                   </tr>
-                ))}
+                )) ?? (
+                  <tr><td colSpan={11} className="py-6 text-center text-text-tertiary text-sm">Loading channel data...</td></tr>
+                )}
               </tbody>
             </table>
         </div>
@@ -760,8 +791,10 @@ export default function DashboardPage() {
             {[
               { label: 'NC Revenue', value: formatCurrencyValue(twData ? getMetric(twData, 'newCustomerRevenue') : revenueInsights.ncRevenue), metric: 'NC Revenue' },
               { label: 'RC Revenue', value: formatCurrencyValue(twData ? getMetric(twData, 'returningCustomerRevenue') : revenueInsights.rcRevenue), metric: 'RC Revenue' },
-              { label: 'NC AOV', value: formatCurrencyValue(aggregatedData.ncAov), metric: 'NC AOV' },
-              { label: 'RC AOV', value: formatCurrencyValue(aggregatedData.rcAov), metric: 'RC AOV' },
+              { label: 'NC AOV', value: formatCurrencyValue(twData ? aggregatedData.ncAov : revenueInsights.ncAOV), metric: 'NC AOV' },
+              { label: 'RC AOV', value: formatCurrencyValue(twData ? aggregatedData.rcAov : revenueInsights.rcAOV), metric: 'RC AOV' },
+              { label: 'NC Orders', value: twData ? formatNumber(getMetric(twData, 'newCustomerOrders')) : formatNumber(revenueInsights.firstPurchasePct), metric: 'NC Orders' },
+              { label: 'RC Orders', value: twData ? formatNumber(getMetric(twData, 'orders') - getMetric(twData, 'newCustomerOrders')) : '—', metric: 'RC Orders' },
             ].map((item) => (
               <div key={item.label} className="bg-bg-elevated rounded-md p-3 min-h-[70px] flex flex-col justify-between">
                 <div className="flex items-center text-xs text-text-secondary mb-1 gap-1">
@@ -772,32 +805,41 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <div className="min-w-[200px]">
-              <ResponsiveContainer width={200} height={140}>
-                <PieChart>
-                  <Pie data={[
-                    { name: 'First Purchase', value: revenueInsights.firstPurchasePct },
-                    { name: 'Repeat', value: revenueInsights.repeatPct },
-                  ]} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value">
-                    <Cell fill="#4A6BD6" />
-                    <Cell fill="#34D399" />
-                  </Pie>
-                  <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="text-xs text-text-secondary space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-brand-blue-light shrink-0" />
-                <span>First Purchase: {revenueInsights.firstPurchasePct}%</span>
+          {(() => {
+            const ncRev = twData ? getMetric(twData, 'newCustomerRevenue') : revenueInsights.ncRevenue;
+            const rcRev = twData ? getMetric(twData, 'returningCustomerRevenue') : revenueInsights.rcRevenue;
+            const total = ncRev + rcRev;
+            const ncPct = total > 0 ? (ncRev / total) * 100 : 50;
+            const rcPct = total > 0 ? (rcRev / total) * 100 : 50;
+            return (
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <div className="min-w-[200px]">
+                  <ResponsiveContainer width={200} height={140}>
+                    <PieChart>
+                      <Pie data={[
+                        { name: 'New Customer', value: ncPct },
+                        { name: 'Returning', value: rcPct },
+                      ]} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value">
+                        <Cell fill="#4A6BD6" />
+                        <Cell fill="#34D399" />
+                      </Pie>
+                      <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="text-xs text-text-secondary space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-brand-blue-light shrink-0" />
+                    <span>New Customer: {ncPct.toFixed(1)}%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-success shrink-0" />
+                    <span>Returning: {rcPct.toFixed(1)}%</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-success shrink-0" />
-                <span>Repeat: {revenueInsights.repeatPct}%</span>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       </div>
 

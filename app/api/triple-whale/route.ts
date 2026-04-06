@@ -89,19 +89,21 @@ const DASHBOARD_METRICS: Record<string, string> = {
   'paymentGateways': 'paymentGatewayCosts',
   // Efficiency (all calculated by TW server-side — NOT by us)
   'mer': 'mer',
+  'roas': 'twRoas',
+  'topKpiRoas': 'topRoas',
   'newCustomersCpa': 'ncpa',
   'shopifyCpa': 'blendedCpa',
   'totalCpa': 'totalCpa',
   'newCustomersRoas': 'newCustomerRoas',
   'blendedAttributedRoas': 'blendedAttributedRoas',
   'poas': 'poas',
+  'newCustomersPercent': 'newCustomersPercent',
   // Profit
   'grossProfit': 'grossProfit',
   'totalNetProfit': 'netProfit',
   'totalNetMargin': 'netMargin',
   'cashTurnover': 'cashTurnover',
   'topKpiContributionProfit': 'contributionProfit',
-  'topKpiRoas': 'topRoas',
   'topKpiPoas': 'topPoas',
   // Refunds
   'totalRefunds': 'refunds',
@@ -168,6 +170,8 @@ const DASHBOARD_METRICS: Record<string, string> = {
   'redditActualCPC': 'redditCpc',
   'redditConversions': 'redditConversions',
   'redditConversionValue': 'redditConversionValue',
+  'redditAov': 'redditAov',
+  'redditConversionRate': 'redditConversionRate',
 };
 
 function roundValue(type: string, value: unknown): number | null {
