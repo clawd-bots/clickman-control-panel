@@ -7,7 +7,7 @@ import { SkeletonMetricCard, SkeletonTable } from '@/components/ui/Skeleton';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
-import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
+import { filterByDateRange, formatDateLabel, toLocalDateString } from '@/lib/dateUtils';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { fetchTripleWhaleData, getMetric, TWData } from '@/lib/triple-whale-client';
 import { cohortRetention, clvExtension, productComparison, cohortAISuggestions } from '@/lib/sample-data';
@@ -24,8 +24,8 @@ export default function CohortsPage() {
 
   useEffect(() => {
     setTwLoading(true);
-    const startDate = dateRange.startDate.toISOString().split('T')[0];
-    const endDate = dateRange.endDate.toISOString().split('T')[0];
+    const startDate = toLocalDateString(dateRange.startDate);
+    const endDate = toLocalDateString(dateRange.endDate);
     fetchTripleWhaleData(startDate, endDate, 'summary')
       .then(setTwData)
       .catch(console.error)

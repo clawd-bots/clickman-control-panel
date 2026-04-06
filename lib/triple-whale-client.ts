@@ -131,8 +131,12 @@ export function getDefaultDateRange(): { startDate: string; endDate: string } {
   const start = new Date();
   start.setDate(start.getDate() - 30);
 
+  // Use local date components to avoid UTC timezone shift
+  const fmt = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
   return {
-    startDate: start.toISOString().split('T')[0],
-    endDate: end.toISOString().split('T')[0],
+    startDate: fmt(start),
+    endDate: fmt(end),
   };
 }

@@ -17,7 +17,7 @@ import {
 } from '@/lib/sample-data';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/components/CurrencyProvider';
-import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
+import { filterByDateRange, formatDateLabel, toLocalDateString } from '@/lib/dateUtils';
 import { ChevronDown } from 'lucide-react';
 import AdThumbnail from '@/components/ui/AdThumbnail';
 import {
@@ -98,8 +98,8 @@ export default function CreativePage() {
     setTwLoading(true);
     setTtLoading(true);
     setMetaLoading(true);
-    const startDate = dateRange.startDate.toISOString().split('T')[0];
-    const endDate = dateRange.endDate.toISOString().split('T')[0];
+    const startDate = toLocalDateString(dateRange.startDate);
+    const endDate = toLocalDateString(dateRange.endDate);
     fetchTripleWhaleData(startDate, endDate, 'summary')
       .then(setTwData)
       .catch(console.error)

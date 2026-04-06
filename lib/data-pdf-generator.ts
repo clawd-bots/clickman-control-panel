@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { toLocalDateString } from '@/lib/dateUtils';
 
 class PDFBuilder {
   private pdf: jsPDF;
@@ -97,8 +98,8 @@ export async function generateDataPDF(selectedSections?: string[]): Promise<void
   if (has('dashboard') || has('kpi-cards') || has('channel-attribution')) {
     const today = new Date();
     const start = new Date(today.getFullYear(), today.getMonth(), 1);
-    const startStr = start.toISOString().split('T')[0];
-    const endStr = today.toISOString().split('T')[0];
+    const startStr = toLocalDateString(start);
+    const endStr = toLocalDateString(today);
 
     // Fetch Triple Whale data
     const twData = await fetchJSON(`/api/triple-whale?startDate=${startStr}&endDate=${endStr}&mode=all`);
@@ -214,8 +215,8 @@ export async function generateDataPDF(selectedSections?: string[]): Promise<void
 
     // Fetch Meta overview for ad count summary
     const today = new Date();
-    const startStr = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-    const endStr = today.toISOString().split('T')[0];
+    const startStr = toLocalDateString(new Date(today.getFullYear(), today.getMonth(), 1));
+    const endStr = toLocalDateString(today);
     const metaData = await fetchJSON(`/api/meta?mode=overview&startDate=${startStr}&endDate=${endStr}`);
     
     if (metaData?.data?.summary) {

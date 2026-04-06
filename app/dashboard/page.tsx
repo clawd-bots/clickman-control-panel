@@ -8,8 +8,8 @@ import { LiveBadge } from '@/components/ui/LiveBadge';
 import { SkeletonKPICard, SkeletonChart, SkeletonTable } from '@/components/ui/Skeleton';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
-import { filterByDateRange, formatDateLabel, aggregateToWeeks } from '@/lib/dateUtils';
-import { fetchTripleWhaleData, getMetric, getDailyData, TWData } from '@/lib/triple-whale-client';
+import { filterByDateRange, formatDateLabel, aggregateToWeeks, toLocalDateString } from '@/lib/dateUtils';
+import { fetchTripleWhaleData, getMetric, getPrevMetric, getDelta, getDailyData, TWData } from '@/lib/triple-whale-client';
 import { fetchGA4Data, getGA4Metric, GA4Data } from '@/lib/ga4-client';
 import { useTargets } from '@/lib/useTargets';
 
@@ -42,8 +42,8 @@ export default function DashboardPage() {
   useEffect(() => {
     setTwLoading(true);
     setGA4Loading(true);
-    const startDate = dateRange.startDate.toISOString().split('T')[0];
-    const endDate = dateRange.endDate.toISOString().split('T')[0];
+    const startDate = toLocalDateString(dateRange.startDate);
+    const endDate = toLocalDateString(dateRange.endDate);
     fetchTripleWhaleData(startDate, endDate, 'all')
       .then(setTwData)
       .catch(console.error)
@@ -208,11 +208,39 @@ export default function DashboardPage() {
       const totalOrders = getMetric(twData, 'orders');
       const totalNewCustomers = getMetric(twData, 'newCustomerOrders');
       const totalSessions = getMetric(twData, 'sessions');
-      const mer = getMetric(twData, 'mer');
-      const cac = getMetric(twData, 'blendedCpa');
-      const ncac = getMetric(twData, 'ncpa');
+      // Compute MER as revenue/spend ratio (TW's 'mer' metric is unreliable — returned as % type)
+      const mer = totalCosts > 0 ? totalRevenue / totalCosts : 0;
+      const cac = totalOrders > 0 ? totalCosts / totalOrders : 0;
+      const ncac = totalNewCustomers > 0 ? totalCosts / totalNewCustomers : 0;
       
-      return { totalRevenue, totalCosts, totalOrders, totalNewCustomers, totalSessions, mer, cac, ncac };
+      // Previous period values from TW for accurate % change
+      const prevRevenue = getPrevMetric(twData, 'orderRevenue');
+      const prevCosts = getPrevMetric(twData, 'metaAdSpend') + getPrevMetric(twData, 'googleAdSpend') + getPrevMetric(twData, 'tiktokAdSpend') + getPrevMetric(twData, 'redditAdSpend');
+      const prevOrders = getPrevMetric(twData, 'orders');
+      const prevNewCustomers = getPrevMetric(twData, 'newCustomerOrders');
+      const prevSessions = getPrevMetric(twData, 'sessions');
+      const prevMer = prevCosts > 0 ? prevRevenue / prevCosts : 0;
+      const prevCac = prevOrders > 0 ? prevCosts / prevOrders : 0;
+      const prevNcac = prevNewCustomers > 0 ? prevCosts / prevNewCustomers : 0;
+      const prevAmer = getPrevMetric(twData, 'blendedAttributedRoas');
+      
+      // Computed AOVs
+      const ncAov = totalNewCustomers > 0 ? getMetric(twData, 'newCustomerRevenue') / totalNewCustomers : 0;
+      const rcOrders = totalOrders - totalNewCustomers;
+      const rcAov = rcOrders > 0 ? getMetric(twData, 'returningCustomerRevenue') / rcOrders : 0;
+      
+      // LTV & CAC/LTV ratio
+      const ltv = getMetric(twData, 'ltv');
+      const prevLtv = getPrevMetric(twData, 'ltv');
+      const cacLtvRatio = cac > 0 ? ltv / cac : 0;
+
+      return {
+        totalRevenue, totalCosts, totalOrders, totalNewCustomers, totalSessions,
+        mer, cac, ncac,
+        prevRevenue, prevCosts, prevOrders, prevNewCustomers, prevSessions,
+        prevMer, prevCac, prevNcac, prevAmer,
+        ncAov, rcAov, ltv, prevLtv, cacLtvRatio,
+      };
     }
     
     const totalRevenue = chartData.reduce((sum, day) => sum + day.revenue, 0);
@@ -222,14 +250,24 @@ export default function DashboardPage() {
     const totalSessions = chartData.reduce((sum, day) => sum + day.sessions, 0);
     
     return {
-      totalRevenue,
-      totalCosts,
-      totalOrders,
-      totalNewCustomers,
-      totalSessions,
+      totalRevenue, totalCosts, totalOrders, totalNewCustomers, totalSessions,
       mer: totalCosts > 0 ? totalRevenue / totalCosts : 0,
       cac: totalOrders > 0 ? totalCosts / totalOrders : 0,
       ncac: totalNewCustomers > 0 ? totalCosts / totalNewCustomers : 0,
+      prevRevenue: kpiCards.netRevenue.prev,
+      prevCosts: kpiCards.marketingCosts.prev,
+      prevOrders: kpiCards.netOrders.prev,
+      prevNewCustomers: kpiCards.newCustomers.prev,
+      prevSessions: 0,
+      prevMer: kpiCards.mer.prev,
+      prevCac: kpiCards.cac.prev,
+      prevNcac: kpiCards.ncac.prev,
+      prevAmer: kpiCards.nmer.prev,
+      ncAov: revenueInsights.ncAOV,
+      rcAov: revenueInsights.rcAOV,
+      ltv: 2520,
+      prevLtv: 0,
+      cacLtvRatio: 3.2,
     };
   }, [chartData, twData]);
 
@@ -352,7 +390,7 @@ export default function DashboardPage() {
           <KPICard 
             label="Net Revenue" 
             value={formatCurrencyValue(aggregatedData.totalRevenue)} 
-            change={pctChange(aggregatedData.totalRevenue, kpiCards.netRevenue.prev)} 
+            change={aggregatedData.prevRevenue > 0 ? pctChange(aggregatedData.totalRevenue, aggregatedData.prevRevenue) : 0} 
             sparkline={[]}
             target={getTarget('Net Revenue') !== null ? formatCurrencyValue(getTarget('Net Revenue')!) : undefined}
             targetAchievement={getTargetAchievement('Net Revenue', aggregatedData.totalRevenue) ?? undefined}
@@ -363,7 +401,7 @@ export default function DashboardPage() {
           <KPICard 
             label="Marketing Costs" 
             value={formatCurrencyValue(aggregatedData.totalCosts)} 
-            change={pctChange(aggregatedData.totalCosts, kpiCards.marketingCosts.prev)} 
+            change={aggregatedData.prevCosts > 0 ? pctChange(aggregatedData.totalCosts, aggregatedData.prevCosts) : 0} 
             sparkline={[]}
             target={getTarget('Marketing Costs') !== null ? formatCurrencyValue(getTarget('Marketing Costs')!) : undefined}
             targetAchievement={getTargetAchievement('Marketing Costs', aggregatedData.totalCosts) ?? undefined}
@@ -374,7 +412,7 @@ export default function DashboardPage() {
           <KPICard 
             label="MER" 
             value={`${aggregatedData.mer.toFixed(2)}x`} 
-            change={pctChange(aggregatedData.mer, kpiCards.mer.prev)} 
+            change={aggregatedData.prevMer > 0 ? pctChange(aggregatedData.mer, aggregatedData.prevMer) : 0} 
             sparkline={[]}
             target={getTarget('MER') !== null ? `${getTarget('MER')!.toFixed(2)}x` : undefined}
             targetAchievement={getTargetAchievement('MER', aggregatedData.mer) ?? undefined}
@@ -385,7 +423,7 @@ export default function DashboardPage() {
           <KPICard 
             label="aMER" 
             value={twData ? `${getMetric(twData, 'blendedAttributedRoas').toFixed(2)}x` : `${kpiCards.nmer.value}x`} 
-            change={pctChange(twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value, kpiCards.nmer.prev)} 
+            change={aggregatedData.prevAmer > 0 ? pctChange(twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value, aggregatedData.prevAmer) : 0} 
             sparkline={[]}
             target={getTarget('aMER') !== null ? `${getTarget('aMER')!.toFixed(2)}x` : undefined}
             targetAchievement={getTargetAchievement('aMER', twData ? getMetric(twData, 'blendedAttributedRoas') : kpiCards.nmer.value) ?? undefined}
@@ -400,7 +438,7 @@ export default function DashboardPage() {
           <KPICard 
             label="Orders" 
             value={formatNumber(aggregatedData.totalOrders)} 
-            change={pctChange(aggregatedData.totalOrders, kpiCards.netOrders.prev)} 
+            change={aggregatedData.prevOrders > 0 ? pctChange(aggregatedData.totalOrders, aggregatedData.prevOrders) : 0} 
             sparkline={[]}
             target={getTarget('Orders') !== null ? formatNumber(Math.round(getTarget('Orders')!)) : undefined}
             targetAchievement={getTargetAchievement('Orders', aggregatedData.totalOrders) ?? undefined}
@@ -411,7 +449,7 @@ export default function DashboardPage() {
           <KPICard 
             label="NC Orders" 
             value={formatNumber(aggregatedData.totalNewCustomers)} 
-            change={pctChange(aggregatedData.totalNewCustomers, kpiCards.newCustomers.prev)} 
+            change={aggregatedData.prevNewCustomers > 0 ? pctChange(aggregatedData.totalNewCustomers, aggregatedData.prevNewCustomers) : 0} 
             sparkline={[]}
             target={getTarget('NC Orders') !== null ? formatNumber(Math.round(getTarget('NC Orders')!)) : undefined}
             targetAchievement={getTargetAchievement('NC Orders', aggregatedData.totalNewCustomers) ?? undefined}
@@ -422,7 +460,7 @@ export default function DashboardPage() {
           <KPICard 
             label="CAC" 
             value={formatCurrencyValue(aggregatedData.cac)} 
-            change={pctChange(aggregatedData.cac, kpiCards.cac.prev)} 
+            change={aggregatedData.prevCac > 0 ? pctChange(aggregatedData.cac, aggregatedData.prevCac) : 0} 
             sparkline={[]}
             target={getTarget('CAC') !== null ? formatCurrencyValue(getTarget('CAC')!) : undefined}
             targetAchievement={getTargetAchievement('CAC', aggregatedData.cac) ?? undefined}
@@ -433,7 +471,7 @@ export default function DashboardPage() {
           <KPICard 
             label="ncCAC" 
             value={formatCurrencyValue(aggregatedData.ncac)} 
-            change={pctChange(aggregatedData.ncac, kpiCards.ncac.prev)} 
+            change={aggregatedData.prevNcac > 0 ? pctChange(aggregatedData.ncac, aggregatedData.prevNcac) : 0} 
             sparkline={[]}
             target={getTarget('ncCAC') !== null ? formatCurrencyValue(getTarget('ncCAC')!) : undefined}
             targetAchievement={getTargetAchievement('ncCAC', aggregatedData.ncac) ?? undefined}
@@ -446,18 +484,18 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <KPICard 
           label="CAC/LTV Ratio" 
-          value="1:3.2" 
-          change={8.1} 
+          value={`1:${aggregatedData.cacLtvRatio.toFixed(1)}`} 
+          change={aggregatedData.prevCac > 0 && aggregatedData.prevLtv > 0 ? pctChange(aggregatedData.cacLtvRatio, aggregatedData.prevLtv / aggregatedData.prevCac) : 0} 
           sparkline={[]}
           dataSource="Triple Whale"
         />
         <KPICard 
           label="LTV per Customer" 
-          value={formatCurrencyValue(twData ? getMetric(twData, 'ltv') : 2520)} 
-          change={12.4} 
+          value={formatCurrencyValue(aggregatedData.ltv)} 
+          change={aggregatedData.prevLtv > 0 ? pctChange(aggregatedData.ltv, aggregatedData.prevLtv) : 0} 
           sparkline={[]}
           target={getTarget('AOV') !== null ? formatCurrencyValue(getTarget('AOV')! * 3.5) : undefined}
-          targetAchievement={getTarget('AOV') !== null && twData ? (getMetric(twData, 'ltv') / (getTarget('AOV')! * 3.5)) * 100 : undefined}
+          targetAchievement={getTarget('AOV') !== null ? (aggregatedData.ltv / (getTarget('AOV')! * 3.5)) * 100 : undefined}
           dataSource="Triple Whale"
         />
       </div>
@@ -538,12 +576,12 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2"><DataSource source="Google Analytics" /><LiveBadge variant={ga4Data ? 'live' : 'sample'} /></div>
           </div>
           {[
-            { label: 'Sessions', value: ga4Data ? getGA4Metric(ga4Data, 'sessions').toLocaleString() : (twData ? getMetric(twData, 'sessions').toLocaleString() : '33,850'), change: 8.2 },
-            { label: 'CVR', value: twData ? `${getMetric(twData, 'conversionRate').toFixed(2)}%` : '3.33%', change: 2.1 },
-            { label: 'Engagement Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'engagementRate') * 100).toFixed(1)}%` : '78.0%', change: 5.4 },
-            { label: 'Bounce Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'bounceRate') * 100).toFixed(1)}%` : (twData ? `${getMetric(twData, 'bounceRate').toFixed(1)}%` : '42.7%'), change: -3.4 },
-            { label: 'Pages/Session', value: ga4Data ? getGA4Metric(ga4Data, 'screenPageViewsPerSession').toFixed(2) : '3.97', change: 2.1 },
-            { label: 'Avg Session', value: ga4Data ? `${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') / 60)}m ${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') % 60)}s` : '2m 34s', change: 12.1 },
+            { label: 'Sessions', value: ga4Data ? getGA4Metric(ga4Data, 'sessions').toLocaleString() : (twData ? getMetric(twData, 'sessions').toLocaleString() : '33,850'), change: twData && getPrevMetric(twData, 'sessions') > 0 ? pctChange(getMetric(twData, 'sessions'), getPrevMetric(twData, 'sessions')) : (ga4Data ? 0 : 8.2) },
+            { label: 'CVR', value: twData ? `${getMetric(twData, 'conversionRate').toFixed(2)}%` : '3.33%', change: twData ? getDelta(twData, 'conversionRate') : 2.1 },
+            { label: 'Engagement Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'engagementRate') * 100).toFixed(1)}%` : '78.0%', change: ga4Data ? 0 : 5.4 },
+            { label: 'Bounce Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'bounceRate') * 100).toFixed(1)}%` : (twData ? `${getMetric(twData, 'bounceRate').toFixed(1)}%` : '42.7%'), change: twData ? getDelta(twData, 'bounceRate') : -3.4 },
+            { label: 'Pages/Session', value: ga4Data ? getGA4Metric(ga4Data, 'screenPageViewsPerSession').toFixed(2) : '3.97', change: ga4Data ? 0 : 2.1 },
+            { label: 'Avg Session', value: ga4Data ? `${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') / 60)}m ${Math.floor(getGA4Metric(ga4Data, 'averageSessionDuration') % 60)}s` : '2m 34s', change: ga4Data ? 0 : 12.1 },
             { label: 'Conversions', value: ga4Data ? getGA4Metric(ga4Data, 'conversions').toLocaleString() : '0', change: 0 },
           ].map((m) => (
             <div key={m.label} className="flex items-center justify-between">
@@ -665,8 +703,8 @@ export default function DashboardPage() {
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{formatCurrencyValue(row.costs)}</td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{formatCurrencyValue(row.revenue)}</td>
                     <td className="py-3 px-2 sm:px-3 text-right">
-                      <span className={row.roas >= 3.5 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : 'text-danger'}>
-                        {row.roas > 0 ? `${row.roas.toFixed(2)}x` : '0'}
+                      <span className={row.roas >= 3.5 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : row.roas > 0 ? 'text-danger' : 'text-text-tertiary'}>
+                        {row.roas > 0 ? `${row.roas.toFixed(2)}x` : (row.costs > 0 ? '—' : '0')}
                       </span>
                     </td>
                     <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.orders}</td>
@@ -722,8 +760,8 @@ export default function DashboardPage() {
             {[
               { label: 'NC Revenue', value: formatCurrencyValue(twData ? getMetric(twData, 'newCustomerRevenue') : revenueInsights.ncRevenue), metric: 'NC Revenue' },
               { label: 'RC Revenue', value: formatCurrencyValue(twData ? getMetric(twData, 'returningCustomerRevenue') : revenueInsights.rcRevenue), metric: 'RC Revenue' },
-              { label: 'NC AOV', value: formatCurrencyValue(twData ? getMetric(twData, 'aov') : revenueInsights.ncAOV), metric: 'NC AOV' },
-              { label: 'RC AOV', value: formatCurrencyValue(twData ? getMetric(twData, 'aov') : revenueInsights.rcAOV), metric: 'RC AOV' },
+              { label: 'NC AOV', value: formatCurrencyValue(aggregatedData.ncAov), metric: 'NC AOV' },
+              { label: 'RC AOV', value: formatCurrencyValue(aggregatedData.rcAov), metric: 'RC AOV' },
             ].map((item) => (
               <div key={item.label} className="bg-bg-elevated rounded-md p-3 min-h-[70px] flex flex-col justify-between">
                 <div className="flex items-center text-xs text-text-secondary mb-1 gap-1">

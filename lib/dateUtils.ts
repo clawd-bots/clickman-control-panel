@@ -146,3 +146,12 @@ function toISODateString(date: Date): string {
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
+
+/**
+ * Converts a Date to YYYY-MM-DD using local timezone (not UTC).
+ * Use this instead of date.toISOString().split('T')[0] which converts to UTC first
+ * and can shift the date by ±1 day depending on timezone offset.
+ */
+export function toLocalDateString(date: Date): string {
+  return toISODateString(date);
+}

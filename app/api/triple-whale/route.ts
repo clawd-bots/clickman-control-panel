@@ -16,11 +16,19 @@ function getConfig() {
   return { apiKey, shopId };
 }
 
-// Convert day-of-year (x) to YYYY-MM-DD based on start date
-function dayOfYearToDate(dayOfYear: number, year: number): string {
+// Convert day-of-year (x) to YYYY-MM-DD based on start date.
+// Handles year boundaries: if the resulting date is before startDate, try year+1.
+function dayOfYearToDate(dayOfYear: number, year: number, startDate: string): string {
   const date = new Date(year, 0); // Jan 1
   date.setDate(dayOfYear);
-  return date.toISOString().split('T')[0];
+  const result = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  // If the result is before the startDate, the day-of-year likely belongs to the next year
+  if (result < startDate) {
+    const nextYear = new Date(year + 1, 0);
+    nextYear.setDate(dayOfYear);
+    return `${nextYear.getFullYear()}-${String(nextYear.getMonth() + 1).padStart(2, '0')}-${String(nextYear.getDate()).padStart(2, '0')}`;
+  }
+  return result;
 }
 
 // Determine the year from startDate
@@ -310,7 +318,7 @@ export async function GET(request: NextRequest) {
       const metric = metricMap.get(twId);
       if (metric && metric.charts.current && metric.charts.current.length > 0) {
         daily[ourName] = metric.charts.current.map((point) => ({
-          date: dayOfYearToDate(point.x, year),
+          date: dayOfYearToDate(point.x, year, startDate),
           value: roundValue(metric.type, point.y) ?? 0,
         }));
       }

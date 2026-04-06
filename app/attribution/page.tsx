@@ -8,7 +8,8 @@ import AIIntelligenceControls from '@/components/ui/AIIntelligenceControls';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
-import { fetchTripleWhaleData, getMetric, TWData } from '@/lib/triple-whale-client';
+import { toLocalDateString } from '@/lib/dateUtils';
+import { fetchTripleWhaleData, getMetric, getPrevMetric, TWData } from '@/lib/triple-whale-client';
 import { fetchGA4Data, getGA4Metric, GA4Data } from '@/lib/ga4-client';
 import { attributionSurvey, trackingHealth as sampleTrackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
 import { Star, GitBranch, Activity, Database, Layers, Sparkles, ChevronDown } from 'lucide-react';
@@ -53,8 +54,8 @@ export default function AttributionPage() {
   useEffect(() => {
     setTwLoading(true);
     setGA4Loading(true);
-    const startDate = dateRange.startDate.toISOString().split('T')[0];
-    const endDate = dateRange.endDate.toISOString().split('T')[0];
+    const startDate = toLocalDateString(dateRange.startDate);
+    const endDate = toLocalDateString(dateRange.endDate);
     fetchTripleWhaleData(startDate, endDate, 'summary')
       .then(setTwData)
       .catch(console.error)
@@ -78,8 +79,8 @@ export default function AttributionPage() {
   // Fetch live Google Ads tracking data
   const fetchTrackingData = useCallback(async () => {
     try {
-      const startDateStr = dateRange.startDate.toISOString().split('T')[0];
-      const endDateStr = dateRange.endDate.toISOString().split('T')[0];
+      const startDateStr = toLocalDateString(dateRange.startDate);
+      const endDateStr = toLocalDateString(dateRange.endDate);
       const res = await fetch(`/api/google-ads/tracking?startDate=${startDateStr}&endDate=${endDateStr}`);
       const json = await res.json();
       if (json.success && json.data) {
@@ -274,8 +275,8 @@ export default function AttributionPage() {
                 <span>MER</span>
                 <InfoTooltip metric="MER" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{twData ? `${getMetric(twData, 'mer').toFixed(2)}x` : '3.67x'}</div>
-              <div className="text-xs text-success mt-2">↑ 3.1% MoM</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{twData ? (() => { const rev = getMetric(twData, 'orderRevenue'); const spend = getMetric(twData, 'metaAdSpend') + getMetric(twData, 'googleAdSpend') + getMetric(twData, 'tiktokAdSpend') + getMetric(twData, 'redditAdSpend'); return spend > 0 ? `${(rev / spend).toFixed(2)}x` : '—'; })() : '3.67x'}</div>
+              <div className="text-xs text-success mt-2">{twData ? (() => { const rev = getMetric(twData, 'orderRevenue'); const spend = getMetric(twData, 'metaAdSpend') + getMetric(twData, 'googleAdSpend') + getMetric(twData, 'tiktokAdSpend') + getMetric(twData, 'redditAdSpend'); const prevRev = getPrevMetric(twData, 'orderRevenue'); const prevSpend = getPrevMetric(twData, 'metaAdSpend') + getPrevMetric(twData, 'googleAdSpend') + getPrevMetric(twData, 'tiktokAdSpend') + getPrevMetric(twData, 'redditAdSpend'); if (spend > 0 && prevSpend > 0) { const curr = rev / spend; const prev = prevRev / prevSpend; const chg = ((curr - prev) / prev) * 100; return `${chg >= 0 ? '↑' : '↓'} ${Math.abs(chg).toFixed(1)}% vs prev`; } return ''; })() : '↑ 3.1% MoM'}</div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary flex items-center gap-1">
