@@ -386,7 +386,7 @@ export default function CreativePage() {
         }
 
         return {
-          name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
+          name: a.adName,
           adId: a.adId,
           spend: a.spend,
           cpa: rawCpa,
