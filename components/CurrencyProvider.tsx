@@ -48,12 +48,12 @@ export function CurrencyProvider({ children }: CurrencyProviderProps) {
   }, []);
 
   // Convert values based on current currency
-  // All data from Triple Whale / dashboard is in PHP (₱), convert to USD when needed
+  // All data from Triple Whale / APIs is in the shop's currency (PHP ₱ for andyou.ph)
   const convertValue = (value: number): number => {
     if (currency === '$') {
-      return value / exchangeRate;
+      return value / exchangeRate; // Convert PHP → USD
     }
-    return value;
+    return value; // Already PHP
   };
 
   return (

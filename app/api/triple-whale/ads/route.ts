@@ -115,6 +115,14 @@ export async function GET(request: NextRequest) {
     const rawData = await res.json();
     const rows = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
+    // Fetch live USD→PHP exchange rate for currency conversion
+    let usdToPhp = 57; // fallback
+    try {
+      const rateRes = await fetch(new URL('/api/exchange-rate', request.url).toString());
+      const rateData = await rateRes.json();
+      if (rateData.success && rateData.rate) usdToPhp = rateData.rate;
+    } catch { /* use fallback */ }
+
     // Process ad-level data
     const ads = rows
       .filter((r: any) => {
@@ -130,11 +138,13 @@ export async function GET(request: NextRequest) {
         return (r.spend > 0 || r.impressions > 0 || r.clicks > 0);
       })
       .map((r: any) => {
-        const spend = r.spend || 0;
-        const revenue = r.order_revenue || 0;
+        // TW SQL API (pixel_joined_tvf) returns values in USD
+        // Convert monetary values to PHP for consistency with Summary Page API
+        const spend = (r.spend || 0) * usdToPhp;
+        const revenue = (r.order_revenue || 0) * usdToPhp;
         const orders = r.orders || 0;
         const ncOrders = r.nc_orders || 0;
-        const ncRevenue = r.nc_revenue || 0;
+        const ncRevenue = (r.nc_revenue || 0) * usdToPhp;
 
         return {
           adId: r.ad_id || '',
@@ -145,7 +155,7 @@ export async function GET(request: NextRequest) {
           spend,
           cpa: orders > 0 ? spend / orders : 0,
           ncCpa: ncOrders > 0 ? spend / ncOrders : 0,
-          roas: spend > 0 ? revenue / spend : 0,
+          roas: spend > 0 ? revenue / spend : 0,  // ROAS is a ratio, no conversion needed
           ncRoas: spend > 0 ? ncRevenue / spend : 0,
           orders: Math.round(orders),
           ncOrders: Math.round(ncOrders),
