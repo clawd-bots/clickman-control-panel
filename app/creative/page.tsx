@@ -1219,20 +1219,18 @@ export default function CreativePage() {
               </div>
             </div>
             <div className="overflow-x-auto -mx-1 sm:mx-0">
-              <div className="min-w-[700px]">
+              <div className="min-w-[800px]">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border text-text-secondary uppercase">
-                      <th className="text-left py-2 px-2 font-medium min-w-[80px]">Color</th>
-                      <th className="text-center py-2 px-2 font-medium min-w-[50px]">Image</th>
-                      <th className="text-left py-2 px-2 font-medium min-w-[160px]">Ad Name</th>
-                      <th className="text-center py-2 px-2 font-medium min-w-[80px]">Platform</th>
+                      <th className="text-left py-2 px-2 font-medium w-[70px]">Zone</th>
+                      <th className="text-left py-2 px-2 font-medium">Ad Name</th>
                       <th className="text-right py-2 px-2 font-medium min-w-[80px]">Spend</th>
                       <th className="text-right py-2 px-2 font-medium min-w-[80px]">CPA</th>
-                      <th className="text-right py-2 px-2 font-medium min-w-[70px]">NCCPA</th>
-                      <th className="text-right py-2 px-2 font-medium min-w-[60px]">ROAS</th>
+                      <th className="text-right py-2 px-2 font-medium min-w-[80px]">NCCPA</th>
+                      <th className="text-right py-2 px-2 font-medium min-w-[70px]">ROAS</th>
                       <th className="text-right py-2 px-2 font-medium min-w-[70px]">NCROAS</th>
-                      <th className="text-center py-2 px-2 font-medium min-w-[70px]">Preview</th>
+                      <th className="text-center py-2 px-2 font-medium min-w-[50px]">View</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1240,15 +1238,28 @@ export default function CreativePage() {
                       .filter(ad => accountControlFilter === 'all' || ad.zone === accountControlFilter)
                       .sort((a, b) => b.spend - a.spend)
                       .slice((acCurrentPage - 1) * acPageSize, acCurrentPage * acPageSize)
-                      .map((ad) => (
-                      <tr key={ad.name} className="border-b border-border/30 hover:bg-bg-elevated/50 transition-colors">
+                      .map((ad) => {
+                        // Build platform ad URL
+                        const adId = (ad as any).adId || '';
+                        let platformUrl = '';
+                        if (ad.platform === 'Meta' && adId) {
+                          platformUrl = `https://www.facebook.com/ads/manager/account/campaigns?act=${process.env.NEXT_PUBLIC_META_AD_ACCOUNT_ID || ''}&selected_adset_ids&selected_campaign_ids&search_value=${encodeURIComponent(adId)}`;
+                        } else if (ad.platform === 'TikTok' && adId) {
+                          platformUrl = `https://ads.tiktok.com/i18n/perf?keyword=${encodeURIComponent(adId)}`;
+                        } else if (ad.platform === 'Google' && adId) {
+                          platformUrl = `https://ads.google.com/aw/ads?adId=${encodeURIComponent(adId)}`;
+                        } else if (ad.platform === 'Reddit' && adId) {
+                          platformUrl = `https://ads.reddit.com/`;
+                        }
+                        return (
+                      <tr key={`${ad.name}-${adId}`} className="border-b border-border/30 hover:bg-bg-elevated/50 transition-colors">
                         <td className="py-2.5 px-2">
                           <div className="flex items-center gap-2">
                             <div 
-                              className="w-4 h-4 rounded-full border border-black/10" 
+                              className="w-3 h-3 rounded-full border border-black/10 shrink-0" 
                               style={{ backgroundColor: zoneColors[ad.zone] }}
                             />
-                            <span className="text-xs text-text-tertiary">
+                            <span className="text-xs text-text-tertiary whitespace-nowrap">
                               {ad.zone === 'scaling' ? 'Scale' :
                                ad.zone === 'zombie' ? 'Kill' :
                                ad.zone === 'testing' ? 'Test' :
@@ -1256,69 +1267,52 @@ export default function CreativePage() {
                             </span>
                           </div>
                         </td>
-                        <td className="py-2.5 px-2 text-center">
-                          <AdThumbnail adId={(ad as any).adId} platform={ad.platform} size={36} />
-                        </td>
                         <td className="py-2.5 px-2 font-medium text-text-primary">
-                          <div className="max-w-[150px] truncate" title={ad.name}>
+                          <div className="whitespace-nowrap" title={ad.name}>
                             {ad.name}
                           </div>
                         </td>
-                        <td className="py-2.5 px-2 text-center text-text-secondary">
-                          {ad.platform}
-                        </td>
-                        <td className="py-2.5 px-2 text-right text-text-secondary">
+                        <td className="py-2.5 px-2 text-right text-text-secondary whitespace-nowrap">
                           {formatCurrencyValue(ad.spend)}
                         </td>
-                        <td className="py-2.5 px-2 text-right">
-                          <span className={ad.cpa <= 700 ? 'text-success' : ad.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>
-                            {formatCurrencyValue(ad.cpa)}
+                        <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                          <span className={ad.cpa === 0 ? 'text-text-tertiary' : ad.cpa <= 700 ? 'text-success' : ad.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>
+                            {ad.cpa === 0 ? '—' : formatCurrencyValue(ad.cpa)}
                           </span>
                         </td>
-                        <td className="py-2.5 px-2 text-right text-text-secondary">
-                          {((ad as any).frequency || 1.3).toFixed(1)}
-                        </td>
-                        <td className="py-2.5 px-2 text-right">
-                          <span className={((ad as any).nccpa || ad.cpa * 0.75) <= 525 ? 'text-success' : ((ad as any).nccpa || ad.cpa * 0.75) <= 638 ? 'text-warm-gold' : 'text-danger'}>
-                            {formatCurrencyValue((ad as any).nccpa || ad.cpa * 0.75)}
+                        <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                          <span className={(ad as any).nccpa === 0 ? 'text-text-tertiary' : (ad as any).nccpa <= 525 ? 'text-success' : (ad as any).nccpa <= 638 ? 'text-warm-gold' : 'text-danger'}>
+                            {(ad as any).nccpa === 0 ? '—' : formatCurrencyValue((ad as any).nccpa)}
                           </span>
                         </td>
-                        <td className="py-2.5 px-2 text-right">
-                          <span className={((ad as any).roas || 2.8) >= 3.0 ? 'text-success' : ((ad as any).roas || 2.8) >= 2.5 ? 'text-warm-gold' : 'text-danger'}>
-                            {((ad as any).roas || 2.8).toFixed(2)}x
+                        <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                          <span className={(ad as any).roas === 0 ? 'text-text-tertiary' : (ad as any).roas >= 3.0 ? 'text-success' : (ad as any).roas >= 2.0 ? 'text-warm-gold' : 'text-danger'}>
+                            {(ad as any).roas === 0 ? '—' : `${(ad as any).roas.toFixed(2)}x`}
                           </span>
                         </td>
-                        <td className="py-2.5 px-2 text-right">
-                          <span className={((ad as any).ncroas || ((ad as any).roas || 2.8) * 0.8) >= 2.4 ? 'text-success' : ((ad as any).ncroas || ((ad as any).roas || 2.8) * 0.8) >= 2.0 ? 'text-warm-gold' : 'text-danger'}>
-                            {((ad as any).ncroas || ((ad as any).roas || 2.8) * 0.8).toFixed(2)}x
+                        <td className="py-2.5 px-2 text-right whitespace-nowrap">
+                          <span className={(ad as any).ncroas === 0 ? 'text-text-tertiary' : (ad as any).ncroas >= 2.4 ? 'text-success' : (ad as any).ncroas >= 1.5 ? 'text-warm-gold' : 'text-danger'}>
+                            {(ad as any).ncroas === 0 ? '—' : `${(ad as any).ncroas.toFixed(2)}x`}
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-center">
-                          <button 
-                            onClick={() => {
-                              const params = new URLSearchParams({
-                                name: ad.name,
-                                platform: ad.platform,
-                                spend: String(ad.spend),
-                                cpa: String(ad.cpa),
-                                zone: ad.zone,
-                                roas: String((ad as any).roas || 0),
-                                nccpa: String((ad as any).nccpa || 0),
-                                ncroas: String((ad as any).ncroas || 0),
-                                previewUrl: (ad as any).previewUrl || '',
-                                adId: String((ad as any).adId || ''),
-                              });
-                              const slug = encodeURIComponent(ad.name.replace(/\s+/g, '-').toLowerCase().replace(/[/\\]/g, '_'));
-                              window.open(`/api/ad-preview/${slug}?${params.toString()}`, '_blank');
-                            }}
-                            className="text-brand-blue-light hover:text-brand-blue text-xs font-medium px-2 py-1 rounded-md border border-brand-blue/30 hover:border-brand-blue/50 transition-colors"
-                            title="Preview ad creative, headline, and performance metrics"
-                          >
-                            View
-                          </button>
+                          {platformUrl ? (
+                            <a
+                              href={platformUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-brand-blue-light hover:text-brand-blue text-xs font-medium px-2 py-1 rounded-md border border-brand-blue/30 hover:border-brand-blue/50 transition-colors inline-block"
+                              title={`Open in ${ad.platform} Ads Manager`}
+                            >
+                              View
+                            </a>
+                          ) : (
+                            <span className="text-text-tertiary text-xs">—</span>
+                          )}
                         </td>
                       </tr>
-                    ))}
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
