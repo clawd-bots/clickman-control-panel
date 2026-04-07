@@ -147,8 +147,13 @@ export async function GET(request: NextRequest) {
         // Convert monetary values to PHP for consistency with Summary Page API
         const spend = (r.spend || 0) * usdToPhp;
         const revenue = (r.order_revenue || 0) * usdToPhp;
-        const orders = r.orders || 0;
-        const ncOrders = r.nc_orders || 0;
+        // Use website_purchases for order count (matches TW UI better than orders_quantity)
+        // orders_quantity can overcount due to attribution model splits
+        const purchases = r.pixel_purchases || 0;
+        const orders = purchases > 0 ? purchases : (r.orders || 0);
+        // NC orders can't exceed total orders
+        const rawNcOrders = r.nc_orders || 0;
+        const ncOrders = Math.min(rawNcOrders, orders);
         const ncRevenue = (r.nc_revenue || 0) * usdToPhp;
 
         return {
