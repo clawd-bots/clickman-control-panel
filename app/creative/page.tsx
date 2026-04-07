@@ -361,13 +361,13 @@ export default function CreativePage() {
         if (noConversion) {
           zone = 'no-conversion';
         } else if (highSpend && !highCpa) {
-          zone = 'scaling';
+          zone = 'scaling';       // bottom-right
         } else if (highSpend && highCpa) {
-          zone = 'zombie';
+          zone = 'zombie';        // top-right
         } else if (!highSpend && !highCpa) {
-          zone = 'untapped';
+          zone = 'testing';       // bottom-left
         } else {
-          zone = 'testing';
+          zone = 'untapped';      // top-left (!highSpend && highCpa)
         }
 
         return {
