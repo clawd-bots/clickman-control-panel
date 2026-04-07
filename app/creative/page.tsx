@@ -6,7 +6,7 @@ import DataSource from '@/components/ui/DataSource';
 import { SkeletonMetricCard, SkeletonChart, SkeletonTable } from '@/components/ui/Skeleton';
 import { useDateRange } from '@/components/DateProvider';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
-import { fetchTripleWhaleData, getMetric, TWData } from '@/lib/triple-whale-client';
+import { fetchTripleWhaleData, getMetric, TWData, fetchTWAds, TWAd } from '@/lib/triple-whale-client';
 import { fetchTikTokOverview, classifyAdZone, TikTokOverview } from '@/lib/tiktok-client';
 import { fetchMetaOverview, classifyMetaAdZone, MetaOverview } from '@/lib/meta-client';
 import {
@@ -93,6 +93,8 @@ export default function CreativePage() {
   const [ttLoading, setTtLoading] = useState(true);
   const [metaData, setMetaData] = useState<MetaOverview | null>(null);
   const [metaLoading, setMetaLoading] = useState(true);
+  const [twAds, setTwAds] = useState<TWAd[]>([]);
+  const [twAdsLoading, setTwAdsLoading] = useState(true);
 
   useEffect(() => {
     setTwLoading(true);
@@ -171,6 +173,17 @@ export default function CreativePage() {
   const [platform, setPlatform] = useState('Meta');
   const [attrModel, setAttrModel] = useState('Linear All');
   const [attrWindow, setAttrWindow] = useState('7 days');
+
+  // Fetch TW ad-level data for Account Control (depends on attribution model/window)
+  useEffect(() => {
+    setTwAdsLoading(true);
+    const startDate = toLocalDateString(dateRange.startDate);
+    const endDate = toLocalDateString(dateRange.endDate);
+    fetchTWAds(startDate, endDate, attrModel, attrWindow)
+      .then(setTwAds)
+      .catch(console.error)
+      .finally(() => setTwAdsLoading(false));
+  }, [dateRange, attrModel, attrWindow]);
   const [accountControlFilter, setAccountControlFilter] = useState('all');
   const [accountControlCampaign, setAccountControlCampaign] = useState('all');
   const [acPageSize, setAcPageSize] = useState(10);
@@ -299,64 +312,66 @@ export default function CreativePage() {
     return [...new Set(campaigns)];
   }, [platform]);
 
-  // Get campaign names for the current platform (real data or sample)
+  // Get campaign names for the current platform from TW ads data
   const accountControlCampaigns = useMemo(() => {
+    if (twAds.length > 0) {
+      const names = twAds
+        .filter(a => a.platform === platform)
+        .map(a => a.campaignName)
+        .filter(Boolean);
+      return [...new Set(names)].sort();
+    }
+    // Fallback to platform-specific or sample data
     if (platform === 'TikTok' && ttData) {
-      return ttData.campaigns
-        .filter(c => c.status === 'ENABLE')
-        .map(c => c.name);
+      return ttData.campaigns.filter(c => c.status === 'ENABLE').map(c => c.name);
     }
     if (platform === 'Meta' && metaData) {
-      return metaData.campaigns
-        .filter(c => c.status === 'ACTIVE')
-        .map(c => c.name);
+      return metaData.campaigns.filter(c => c.status === 'ACTIVE').map(c => c.name);
     }
     const names = creativePerformance
       .filter(c => c.platform === platform)
       .map(c => (c as any).campaignName as string)
       .filter(Boolean);
     return [...new Set(names)];
-  }, [platform, ttData, metaData]);
+  }, [platform, twAds, ttData, metaData]);
 
-  // Filter account control data by platform and campaign (real data or sample)
+  // Filter account control data — use Triple Whale ad-level data (all platforms)
   const filteredAccountControlData = useMemo(() => {
     const cpaTarget = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
-    if (platform === 'TikTok' && ttData) {
-      let ads = ttData.ads.filter(a => a.spend > 0);
+    // Use TW ad-level data if available
+    if (twAds.length > 0) {
+      let ads = twAds.filter(a => a.platform === platform);
       if (accountControlCampaign !== 'all') {
         ads = ads.filter(a => a.campaignName === accountControlCampaign);
       }
-      return ads.map(a => ({
-        name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
-        adId: (a as any).adId || '',
-        spend: a.spend,
-        cpa: a.cpa,
-        roas: (a as any).roas || 0,
-        platform: 'TikTok' as const,
-        zone: classifyAdZone(a, cpaTarget),
-        previewUrl: '',
-      }));
+      return ads.map(a => {
+        const cpa = churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa;
+        const highSpend = a.spend >= 500;
+        const highCpa = cpa > cpaTarget || cpa === 0;
+        let zone: string;
+        if (highSpend && !highCpa) zone = 'scaling';
+        else if (highSpend && highCpa) zone = 'zombie';
+        else if (!highSpend && !highCpa && a.orders > 0) zone = 'untapped';
+        else zone = 'testing';
+
+        return {
+          name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
+          adId: a.adId,
+          spend: a.spend,
+          cpa,
+          roas: churnCpaMode === 'nccpa' ? a.ncRoas : a.roas,
+          nccpa: a.ncCpa,
+          ncroas: a.ncRoas,
+          orders: a.orders,
+          platform: a.platform as any,
+          zone,
+          previewUrl: '',
+        };
+      });
     }
 
-    if (platform === 'Meta' && metaData) {
-      let ads = metaData.ads.filter(a => a.spend > 0);
-      if (accountControlCampaign !== 'all') {
-        ads = ads.filter(a => a.campaignName === accountControlCampaign);
-      }
-      return ads.map(a => ({
-        name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
-        adId: (a as any).adId || '',
-        spend: a.spend,
-        cpa: a.cpa,
-        roas: (a as any).roas || 0,
-        purchases: a.purchases,
-        platform: 'Meta' as const,
-        zone: classifyMetaAdZone(a, cpaTarget),
-        previewUrl: '',
-      }));
-    }
-
+    // Fallback to sample data if TW ads not available
     let data = accountControlData.filter(d => d.platform === platform);
     if (accountControlCampaign !== 'all') {
       const adsInCampaign = creativePerformance
@@ -365,7 +380,7 @@ export default function CreativePage() {
       data = data.filter(d => adsInCampaign.includes(d.name));
     }
     return data;
-  }, [platform, accountControlCampaign, ttData, metaData, churnCpaMode, targetCPA, targetNCCPA]);
+  }, [platform, accountControlCampaign, twAds, churnCpaMode, targetCPA, targetNCCPA]);
 
   // Reset selected campaigns when platform changes
   const handlePlatformChange = (p: string) => {
@@ -603,7 +618,7 @@ export default function CreativePage() {
             <div className="flex items-center gap-2">
               <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
               <div className="flex gap-1 flex-wrap">
-                {platforms.map(p => (
+                {(activeTab === 'Account Control' ? platformsWithGoogle : platforms).map(p => (
                   <button key={p} onClick={() => handlePlatformChange(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
                     {p}
                   </button>

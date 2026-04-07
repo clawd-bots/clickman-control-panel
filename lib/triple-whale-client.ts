@@ -83,6 +83,58 @@ export function getDailyData(data: TWData | null, key: string): TWDailyPoint[] {
 }
 
 /**
+ * Triple Whale ad-level data (from pixel_joined_tvf).
+ */
+export interface TWAd {
+  adId: string;
+  adName: string;
+  campaignName: string;
+  platform: string;
+  channelId: string;
+  spend: number;
+  cpa: number;
+  ncCpa: number;
+  roas: number;
+  ncRoas: number;
+  orders: number;
+  ncOrders: number;
+  revenue: number;
+  ncRevenue: number;
+  clicks: number;
+  impressions: number;
+}
+
+export interface TWAdsResponse {
+  success: boolean;
+  model: string;
+  window: string;
+  dateRange: { startDate: string; endDate: string };
+  totalAds: number;
+  data: TWAd[];
+  error?: string;
+}
+
+/**
+ * Fetch ad-level data from Triple Whale for account control chart.
+ */
+export async function fetchTWAds(
+  startDate: string,
+  endDate: string,
+  model: string = 'Linear All',
+  window: string = 'Lifetime',
+  platform?: string
+): Promise<TWAd[]> {
+  const params = new URLSearchParams({ startDate, endDate, model, window });
+  if (platform) params.set('platform', platform);
+  const res = await fetch(`/api/triple-whale/ads?${params.toString()}`);
+  const json: TWAdsResponse = await res.json();
+  if (!json.success) {
+    throw new Error(json.error || 'Failed to fetch TW ad data');
+  }
+  return json.data;
+}
+
+/**
  * Format a number as currency (PHP ₱ or USD $).
  */
 export function formatCurrency(value: number | null, currency: 'PHP' | 'USD' = 'PHP'): string {
