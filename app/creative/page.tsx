@@ -350,11 +350,17 @@ export default function CreativePage() {
       const avgSpend = adsWithSpend.length > 0 ? adsWithSpend.reduce((s, a) => s + a.spend, 0) / adsWithSpend.length : 500;
       const adsWithCpa = ads.filter(a => (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa) > 0);
       const avgCpa = adsWithCpa.length > 0 ? adsWithCpa.reduce((s, a) => s + (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa), 0) / adsWithCpa.length : cpaTarget;
+      // For ads with $0 CPA (no conversions), place them visually above avg on the chart
+      // They're the worst performers — infinite effective CPA
+      const maxCpa = adsWithCpa.length > 0 ? Math.max(...adsWithCpa.map(a => churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa)) : avgCpa * 2;
+      const zeroCpaPlacement = Math.max(maxCpa * 1.1, avgCpa * 2); // Place above the highest real CPA
 
       return ads.map(a => {
-        const cpa = churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa;
+        const rawCpa = churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa;
+        // For chart positioning: $0 CPA with spend = worst performer, place at top
+        const chartCpa = (rawCpa === 0 && a.spend > 0) ? zeroCpaPlacement : rawCpa;
         const highSpend = a.spend >= avgSpend;
-        const highCpa = cpa > avgCpa || cpa === 0;
+        const highCpa = chartCpa > avgCpa;
         let zone: string;
         if (highSpend && !highCpa) zone = 'scaling';
         else if (highSpend && highCpa) zone = 'zombie';
@@ -365,7 +371,8 @@ export default function CreativePage() {
           name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
           adId: a.adId,
           spend: a.spend,
-          cpa,
+          cpa: chartCpa,
+          rawCpa,
           roas: churnCpaMode === 'nccpa' ? a.ncRoas : a.roas,
           nccpa: a.ncCpa,
           ncroas: a.ncRoas,
@@ -1030,9 +1037,21 @@ export default function CreativePage() {
                             <span className="text-text-primary font-medium">{formatCurrencyValue(data.spend)}</span>
                           </div>
                           <div className="flex justify-between gap-4">
-                            <span className="text-text-secondary">CPA (Y-axis):</span>
-                            <span className="text-text-primary font-medium">{formatCurrencyValue(data.cpa)}</span>
+                            <span className="text-text-secondary">{churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'}:</span>
+                            <span className="text-text-primary font-medium">{data.rawCpa === 0 ? 'No conversions' : formatCurrencyValue(data.rawCpa ?? data.cpa)}</span>
                           </div>
+                          {data.orders !== undefined && (
+                          <div className="flex justify-between gap-4">
+                            <span className="text-text-secondary">Orders:</span>
+                            <span className="text-text-primary font-medium">{data.orders}</span>
+                          </div>
+                          )}
+                          {data.roas > 0 && (
+                          <div className="flex justify-between gap-4">
+                            <span className="text-text-secondary">{churnCpaMode === 'nccpa' ? 'NCROAS' : 'ROAS'}:</span>
+                            <span className="text-text-primary font-medium">{data.roas.toFixed(2)}x</span>
+                          </div>
+                          )}
                           <div className="flex justify-between gap-4">
                             <span className="text-text-secondary">Platform:</span>
                             <span className="text-text-primary font-medium">{data.platform}</span>
