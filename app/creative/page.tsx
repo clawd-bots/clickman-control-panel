@@ -41,7 +41,7 @@ const tabDescriptions: Record<string, string> = {
   'Demographics': 'Are you producing for the audience that is actually buying? If women 25-34 drive your profit but you keep producing TikTok-style ads for Gen Z, you\'re burning cash. Align your production queue with your paying demographic.',
 };
 
-const attributionModels = ['First Click', 'Last Click', 'Linear All', 'Linear Paid', 'Triple Attribution', 'Triple Attribution + Platform Views', 'Clicks * Deterministic Views'];
+const attributionModels = ['Triple Attribution', 'First Click', 'Last Click', 'Linear All', 'Linear Paid'];
 const attributionWindows = ['1 day', '7 days', '14 days', '28 days', 'Lifetime'];
 
 // Zone colors for account control scatter
@@ -171,7 +171,7 @@ export default function CreativePage() {
     };
   }, [twData]);
   const [platform, setPlatform] = useState('Meta');
-  const [attrModel, setAttrModel] = useState('Linear All');
+  const [attrModel, setAttrModel] = useState('Triple Attribution');
   const [attrWindow, setAttrWindow] = useState('7 days');
 
   // Fetch TW ad-level data for Account Control (depends on attribution model/window)
@@ -937,6 +937,14 @@ export default function CreativePage() {
               </div>
             </div>
           )}
+          {!twAdsLoading && twAds.length === 0 && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-bg-surface/80 backdrop-blur-[1px] rounded-lg">
+              <div className="text-center">
+                <div className="text-sm font-medium text-text-primary mb-1">No ad-level data for this model</div>
+                <div className="text-xs text-text-secondary">Triple Whale may not have ad-level data for "{attrModel}". Try "Triple Attribution".</div>
+              </div>
+            </div>
+          )}
           <div className="flex flex-col gap-3 mb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
@@ -1072,10 +1080,10 @@ export default function CreativePage() {
                             <span className="text-text-primary font-medium">{data.orders}</span>
                           </div>
                           )}
-                          {data.roas > 0 && (
+                          {(data.roas ?? 0) > 0 && (
                           <div className="flex justify-between gap-4">
                             <span className="text-text-secondary">{churnCpaMode === 'nccpa' ? 'NCROAS' : 'ROAS'}:</span>
-                            <span className="text-text-primary font-medium">{data.roas.toFixed(2)}x</span>
+                            <span className="text-text-primary font-medium">{(data.roas ?? 0).toFixed(2)}x</span>
                           </div>
                           )}
                           <div className="flex justify-between gap-4">
@@ -1294,13 +1302,13 @@ export default function CreativePage() {
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-right whitespace-nowrap">
-                          <span className={(ad as any).roas === 0 ? 'text-text-tertiary' : (ad as any).roas >= 3.0 ? 'text-success' : (ad as any).roas >= 2.0 ? 'text-warm-gold' : 'text-danger'}>
-                            {(ad as any).roas === 0 ? '—' : `${(ad as any).roas.toFixed(2)}x`}
+                          <span className={!(ad as any).roas ? 'text-text-tertiary' : (ad as any).roas >= 3.0 ? 'text-success' : (ad as any).roas >= 2.0 ? 'text-warm-gold' : 'text-danger'}>
+                            {!(ad as any).roas ? '—' : `${((ad as any).roas).toFixed(2)}x`}
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-right whitespace-nowrap">
-                          <span className={(ad as any).ncroas === 0 ? 'text-text-tertiary' : (ad as any).ncroas >= 2.4 ? 'text-success' : (ad as any).ncroas >= 1.5 ? 'text-warm-gold' : 'text-danger'}>
-                            {(ad as any).ncroas === 0 ? '—' : `${(ad as any).ncroas.toFixed(2)}x`}
+                          <span className={!(ad as any).ncroas ? 'text-text-tertiary' : (ad as any).ncroas >= 2.4 ? 'text-success' : (ad as any).ncroas >= 1.5 ? 'text-warm-gold' : 'text-danger'}>
+                            {!(ad as any).ncroas ? '—' : `${((ad as any).ncroas).toFixed(2)}x`}
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-center">
