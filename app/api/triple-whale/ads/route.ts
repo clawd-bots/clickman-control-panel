@@ -115,12 +115,16 @@ export async function GET(request: NextRequest) {
     const rawData = await res.json();
     const rows = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
-    // Fetch live USD→PHP exchange rate for currency conversion
-    let usdToPhp = 57; // fallback
+    // TW SQL API returns values in USD — convert to PHP (shop currency)
+    // Use env var or fetch rate; fallback to 57
+    let usdToPhp = parseFloat(process.env.USD_TO_PHP_RATE || '') || 57;
     try {
-      const rateRes = await fetch(new URL('/api/exchange-rate', request.url).toString());
-      const rateData = await rateRes.json();
-      if (rateData.success && rateData.rate) usdToPhp = rateData.rate;
+      // Fetch from exchangerate-api (same source as /api/exchange-rate)
+      const rateRes = await fetch('https://open.er-api.com/v6/latest/USD');
+      if (rateRes.ok) {
+        const rateData = await rateRes.json();
+        if (rateData?.rates?.PHP) usdToPhp = rateData.rates.PHP;
+      }
     } catch { /* use fallback */ }
 
     // Process ad-level data
