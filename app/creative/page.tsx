@@ -180,8 +180,8 @@ export default function CreativePage() {
     const today = new Date();
     const start = new Date(today);
     // Window dropdown controls the lookback period
-    const windowDays: Record<string, number> = { '1 day': 1, '7 days': 7, '14 days': 14, '28 days': 28, 'Lifetime': 365 };
-    const days = windowDays[attrWindow] || 7;
+    const windowDays: Record<string, number> = { '1 day': 0, '7 days': 6, '14 days': 13, '28 days': 27, 'Lifetime': 364 };
+    const days = windowDays[attrWindow] ?? 6;
     start.setDate(start.getDate() - days);
     fetchTWAds(toLocalDateString(start), toLocalDateString(today), attrModel, attrWindow)
       .then(setTwAds)
