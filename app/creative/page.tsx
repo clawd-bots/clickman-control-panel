@@ -174,17 +174,20 @@ export default function CreativePage() {
   const [attrModel, setAttrModel] = useState('Triple Attribution');
   const [attrWindow, setAttrWindow] = useState('7 days');
 
-  // Fetch TW ad-level data for Account Control — lifetime (1 year lookback, detached from global date range)
+  // Fetch TW ad-level data for Account Control — date range based on Window dropdown
   useEffect(() => {
     setTwAdsLoading(true);
     const today = new Date();
-    const oneYearAgo = new Date(today);
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    fetchTWAds(toLocalDateString(oneYearAgo), toLocalDateString(today), attrModel, 'Lifetime')
+    const start = new Date(today);
+    // Window dropdown controls the lookback period
+    const windowDays: Record<string, number> = { '1 day': 1, '7 days': 7, '14 days': 14, '28 days': 28, 'Lifetime': 365 };
+    const days = windowDays[attrWindow] || 7;
+    start.setDate(start.getDate() - days);
+    fetchTWAds(toLocalDateString(start), toLocalDateString(today), attrModel, attrWindow)
       .then(setTwAds)
       .catch(console.error)
       .finally(() => setTwAdsLoading(false));
-  }, [attrModel]);
+  }, [attrModel, attrWindow]);
   const [accountControlFilter, setAccountControlFilter] = useState('all');
   const [accountControlCampaign, setAccountControlCampaign] = useState('all');
   const [acPageSize, setAcPageSize] = useState(10);
@@ -373,7 +376,8 @@ export default function CreativePage() {
         const cpaTarget = churnCpaMode === 'nccpa' ? targetNCCPA : targetCPA;
         const spendThreshold = cpaTarget * 2;
         const highSpend = a.spend >= spendThreshold;
-        const highCpa = rawCpa > cpaTarget || rawCpa === 0;
+        // $0 CPA (no conversions) = low CPA for classification (Testing, not Untapped)
+        const highCpa = rawCpa > 0 && rawCpa > cpaTarget;
 
         let zone: string;
         if (highSpend && !highCpa) {
