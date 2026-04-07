@@ -41,7 +41,7 @@ const tabDescriptions: Record<string, string> = {
   'Demographics': 'Are you producing for the audience that is actually buying? If women 25-34 drive your profit but you keep producing TikTok-style ads for Gen Z, you\'re burning cash. Align your production queue with your paying demographic.',
 };
 
-const attributionModels = ['Linear All', 'Linear Paid'];
+const attributionModels = ['First Click', 'Last Click', 'Linear All', 'Linear Paid', 'Triple Attribution', 'Triple Attribution + Platform Views', 'Clicks * Deterministic Views'];
 const attributionWindows = ['1 day', '7 days', '14 days', '28 days', 'Lifetime'];
 
 // Zone colors for account control scatter
@@ -1224,7 +1224,7 @@ export default function CreativePage() {
                   <thead>
                     <tr className="border-b border-border text-text-secondary uppercase">
                       <th className="text-left py-2 px-2 font-medium w-[70px]">Zone</th>
-                      <th className="text-left py-2 px-2 font-medium">Ad Name</th>
+                      <th className="text-left py-2 px-2 font-medium w-[300px] min-w-[300px] max-w-[300px]">Ad Name</th>
                       <th className="text-right py-2 px-2 font-medium min-w-[80px]">Spend</th>
                       <th className="text-right py-2 px-2 font-medium min-w-[80px]">CPA</th>
                       <th className="text-right py-2 px-2 font-medium min-w-[80px]">NCCPA</th>
@@ -1267,8 +1267,8 @@ export default function CreativePage() {
                             </span>
                           </div>
                         </td>
-                        <td className="py-2.5 px-2 font-medium text-text-primary">
-                          <div className="whitespace-nowrap" title={ad.name}>
+                        <td className="py-2.5 px-2 font-medium text-text-primary w-[300px] min-w-[300px] max-w-[300px]">
+                          <div className="overflow-x-auto whitespace-nowrap scrollbar-thin" title={ad.name}>
                             {ad.name}
                           </div>
                         </td>

@@ -13,10 +13,13 @@ function getConfig() {
 }
 
 const MODEL_MAP: Record<string, string> = {
+  'First Click': 'First Click',
   'Last Click': 'Last Click',
   'Linear All': 'Linear All',
-  'First Click': 'First Click',
   'Linear Paid': 'Linear Paid',
+  'Triple Attribution': 'Triple Attribution',
+  'Triple Attribution + Platform Views': 'Triple Attribution + Platform Views',
+  'Clicks * Deterministic Views': 'Clicks * Deterministic Views',
   'Triple': 'Triple Attribution',
 };
 
