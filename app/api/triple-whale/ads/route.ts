@@ -58,7 +58,8 @@ export async function GET(request: NextRequest) {
     }
 
     const forceRefresh = searchParams.get('refresh') === 'true';
-    const cacheKey = `ads_${startDate}_${endDate}_${model}_${window}_${platform || 'all'}`;
+    // v2 cache key — invalidates old cached data with wrong currency conversion
+    const cacheKey = `v2_ads_${startDate}_${endDate}_${model}_${window}_${platform || 'all'}`;
     if (!forceRefresh) {
       const cached = await getCached('tw-ads', cacheKey);
       if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
@@ -178,6 +179,7 @@ export async function GET(request: NextRequest) {
       twWindow,
       dateRange: { startDate, endDate },
       totalAds: ads.length,
+      usdToPhpRate: usdToPhp,
       data: ads,
     };
 
