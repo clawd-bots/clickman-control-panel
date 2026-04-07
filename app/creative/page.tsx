@@ -188,14 +188,24 @@ export default function CreativePage() {
   // ─── Ad Churn derived data ───
   const churnPlatformData = useMemo(() => {
     const raw = adChurnDataByPlatform[churnPlatform] || adChurnDataByPlatform.Meta;
-    const filtered = filterByDateRange(raw, 'month', dateRange.startDate, dateRange.endDate);
+    // For monthly data, expand the filter range to include any month that overlaps with the selected range
+    const filterStart = new Date(dateRange.startDate);
+    filterStart.setDate(1); // Start of the month containing startDate
+    const filterEnd = new Date(dateRange.endDate);
+    filterEnd.setMonth(filterEnd.getMonth() + 1, 0); // End of the month containing endDate
+    const filtered = filterByDateRange(raw, 'month', filterStart, filterEnd);
     const data = filtered.length > 0 ? filtered : raw;
     return data.map(d => ({ ...d, displayMonth: formatDateLabel(d.month, 'month') }));
   }, [churnPlatform, dateRange]);
   // Cohort data filtered by global date range and platform
   const filteredCohortData = useMemo(() => {
     const raw = creativeChurnCohortsByPlatform[churnPlatform] || creativeChurnCohorts;
-    const filtered = filterByDateRange(raw, 'date' as keyof typeof raw[0], dateRange.startDate, dateRange.endDate);
+    // For weekly data, expand to include the full months that overlap with selected range
+    const filterStart = new Date(dateRange.startDate);
+    filterStart.setDate(1); // Start of month
+    const filterEnd = new Date(dateRange.endDate);
+    filterEnd.setMonth(filterEnd.getMonth() + 1, 0); // End of month
+    const filtered = filterByDateRange(raw, 'date' as keyof typeof raw[0], filterStart, filterEnd);
     return filtered.length > 0 ? filtered : raw;
   }, [churnPlatform, dateRange]);
 

@@ -438,6 +438,7 @@ export const adChurnDataByPlatform: Record<string, Array<{
     { month: '2026-01-01', 'Last 7 Days': 17200, '8-14 Days': 12500, '15-30 Days': 14200, '31-90 Days': 16500, '91-180 Days': 9200, '180+ Days': 8400, conversions: 118, spend: 78000, cpa: 661 },
     { month: '2026-02-01', 'Last 7 Days': 19800, '8-14 Days': 10800, '15-30 Days': 18500, '31-90 Days': 15100, '91-180 Days': 11800, '180+ Days': 5000, conversions: 125, spend: 81000, cpa: 648 },
     { month: '2026-03-01', 'Last 7 Days': 21200, '8-14 Days': 13200, '15-30 Days': 16800, '31-90 Days': 17500, '91-180 Days': 7200, '180+ Days': 4100, conversions: 132, spend: 80000, cpa: 606 },
+    { month: '2026-04-01', 'Last 7 Days': 22800, '8-14 Days': 14100, '15-30 Days': 15200, '31-90 Days': 16200, '91-180 Days': 6800, '180+ Days': 3900, conversions: 138, spend: 79000, cpa: 572 },
   ],
   TikTok: [
     { month: '2025-10-01', 'Last 7 Days': 4000, '8-14 Days': 2500, '15-30 Days': 4500, '31-90 Days': 6000, '91-180 Days': 3200, '180+ Days': 1800, conversions: 28, spend: 22000, cpa: 786 },
@@ -446,6 +447,7 @@ export const adChurnDataByPlatform: Record<string, Array<{
     { month: '2026-01-01', 'Last 7 Days': 5500, '8-14 Days': 4000, '15-30 Days': 4500, '31-90 Days': 5200, '91-180 Days': 3200, '180+ Days': 2600, conversions: 36, spend: 25000, cpa: 694 },
     { month: '2026-02-01', 'Last 7 Days': 6200, '8-14 Days': 3400, '15-30 Days': 5200, '31-90 Days': 4500, '91-180 Days': 3200, '180+ Days': 1500, conversions: 38, spend: 24000, cpa: 632 },
     { month: '2026-03-01', 'Last 7 Days': 6800, '8-14 Days': 4000, '15-30 Days': 4500, '31-90 Days': 5200, '91-180 Days': 2500, '180+ Days': 1500, conversions: 42, spend: 24500, cpa: 583 },
+    { month: '2026-04-01', 'Last 7 Days': 7200, '8-14 Days': 4500, '15-30 Days': 4200, '31-90 Days': 4800, '91-180 Days': 2200, '180+ Days': 1100, conversions: 45, spend: 24000, cpa: 533 },
   ],
   Reddit: [
     { month: '2025-10-01', 'Last 7 Days': 1200, '8-14 Days': 800, '15-30 Days': 1500, '31-90 Days': 2000, '91-180 Days': 1000, '180+ Days': 500, conversions: 6, spend: 7000, cpa: 1167 },
@@ -454,6 +456,7 @@ export const adChurnDataByPlatform: Record<string, Array<{
     { month: '2026-01-01', 'Last 7 Days': 1800, '8-14 Days': 1200, '15-30 Days': 1500, '31-90 Days': 1600, '91-180 Days': 1000, '180+ Days': 900, conversions: 8, spend: 8000, cpa: 1000 },
     { month: '2026-02-01', 'Last 7 Days': 2000, '8-14 Days': 1000, '15-30 Days': 1800, '31-90 Days': 1400, '91-180 Days': 1100, '180+ Days': 700, conversions: 9, spend: 8000, cpa: 889 },
     { month: '2026-03-01', 'Last 7 Days': 2200, '8-14 Days': 1200, '15-30 Days': 1500, '31-90 Days': 1600, '91-180 Days': 800, '180+ Days': 700, conversions: 10, spend: 8000, cpa: 800 },
+    { month: '2026-04-01', 'Last 7 Days': 2400, '8-14 Days': 1300, '15-30 Days': 1400, '31-90 Days': 1500, '91-180 Days': 700, '180+ Days': 600, conversions: 11, spend: 7900, cpa: 718 },
   ],
   Google: [
     { month: '2025-10-01', 'Last 7 Days': 800, '8-14 Days': 700, '15-30 Days': 1000, '31-90 Days': 1000, '91-180 Days': 800, '180+ Days': 700, conversions: 22, spend: 5000, cpa: 227 },
@@ -462,6 +465,7 @@ export const adChurnDataByPlatform: Record<string, Array<{
     { month: '2026-01-01', 'Last 7 Days': 700, '8-14 Days': 800, '15-30 Days': 1000, '31-90 Days': 1200, '91-180 Days': 800, '180+ Days': 500, conversions: 26, spend: 5000, cpa: 192 },
     { month: '2026-02-01', 'Last 7 Days': 800, '8-14 Days': 600, '15-30 Days': 1000, '31-90 Days': 1100, '91-180 Days': 700, '180+ Days': 800, conversions: 25, spend: 5000, cpa: 200 },
     { month: '2026-03-01', 'Last 7 Days': 1000, '8-14 Days': 800, '15-30 Days': 1000, '31-90 Days': 1200, '91-180 Days': 700, '180+ Days': 300, conversions: 28, spend: 5000, cpa: 179 },
+    { month: '2026-04-01', 'Last 7 Days': 1100, '8-14 Days': 900, '15-30 Days': 900, '31-90 Days': 1100, '91-180 Days': 600, '180+ Days': 300, conversions: 30, spend: 4900, cpa: 163 },
   ],
 };
 
@@ -520,6 +524,8 @@ const _baseCohorts = [
   { week: 'W2 Mar', date: '2026-03-08', oct: 0, nov: 0, dec: 0, jan: 10000, feb: 38000, mar: 32000 },
   { week: 'W3 Mar', date: '2026-03-15', oct: 0, nov: 0, dec: 0, jan: 6000, feb: 30000, mar: 45000 },
   { week: 'W4 Mar', date: '2026-03-22', oct: 0, nov: 0, dec: 0, jan: 3000, feb: 25000, mar: 52000 },
+  { week: 'W1 Apr', date: '2026-04-01', oct: 0, nov: 0, dec: 0, jan: 1000, feb: 20000, mar: 48000 },
+  { week: 'W2 Apr', date: '2026-04-08', oct: 0, nov: 0, dec: 0, jan: 0, feb: 15000, mar: 42000 },
 ];
 
 function _scaleCohorts(mult: number) {
