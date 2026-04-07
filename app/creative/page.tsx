@@ -174,10 +174,13 @@ export default function CreativePage() {
   const [attrModel, setAttrModel] = useState('Triple Attribution');
   const [attrWindow, setAttrWindow] = useState('7 days');
 
-  // Fetch TW ad-level data for Account Control — always lifetime (all-time data, detached from global date range)
+  // Fetch TW ad-level data for Account Control — lifetime (1 year lookback, detached from global date range)
   useEffect(() => {
     setTwAdsLoading(true);
-    fetchTWAds('2020-01-01', toLocalDateString(new Date()), attrModel, 'Lifetime')
+    const today = new Date();
+    const oneYearAgo = new Date(today);
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    fetchTWAds(toLocalDateString(oneYearAgo), toLocalDateString(today), attrModel, 'Lifetime')
       .then(setTwAds)
       .catch(console.error)
       .finally(() => setTwAdsLoading(false));
@@ -1013,6 +1016,8 @@ export default function CreativePage() {
             ))}
           </div>
           {(() => {
+            // Don't render chart if no data
+            if (filteredAccountControlData.length === 0) return null;
             // Compute dynamic averages for axis reference lines
             const adsWithData = filteredAccountControlData.filter(a => a.spend > 0);
             const avgSpend = adsWithData.length > 0 ? adsWithData.reduce((s, a) => s + a.spend, 0) / adsWithData.length : 500;
