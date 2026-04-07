@@ -345,10 +345,16 @@ export default function CreativePage() {
       if (accountControlCampaign !== 'all') {
         ads = ads.filter(a => a.campaignName === accountControlCampaign);
       }
+      // Compute averages for zone classification
+      const adsWithSpend = ads.filter(a => a.spend > 0);
+      const avgSpend = adsWithSpend.length > 0 ? adsWithSpend.reduce((s, a) => s + a.spend, 0) / adsWithSpend.length : 500;
+      const adsWithCpa = ads.filter(a => (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa) > 0);
+      const avgCpa = adsWithCpa.length > 0 ? adsWithCpa.reduce((s, a) => s + (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa), 0) / adsWithCpa.length : cpaTarget;
+
       return ads.map(a => {
         const cpa = churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa;
-        const highSpend = a.spend >= 500;
-        const highCpa = cpa > cpaTarget || cpa === 0;
+        const highSpend = a.spend >= avgSpend;
+        const highCpa = cpa > avgCpa || cpa === 0;
         let zone: string;
         if (highSpend && !highCpa) zone = 'scaling';
         else if (highSpend && highCpa) zone = 'zombie';
@@ -967,6 +973,18 @@ export default function CreativePage() {
               </div>
             ))}
           </div>
+          {(() => {
+            // Compute dynamic averages for axis reference lines
+            const adsWithData = filteredAccountControlData.filter(a => a.spend > 0);
+            const avgSpend = adsWithData.length > 0 ? adsWithData.reduce((s, a) => s + a.spend, 0) / adsWithData.length : 500;
+            const adsWithCpa = adsWithData.filter(a => a.cpa > 0);
+            const avgCpa = adsWithCpa.length > 0 ? adsWithCpa.reduce((s, a) => s + a.cpa, 0) / adsWithCpa.length : 500;
+            const maxSpend = adsWithData.length > 0 ? Math.max(...adsWithData.map(a => a.spend)) : 1000;
+            const maxCpa = adsWithCpa.length > 0 ? Math.max(...adsWithCpa.map(a => a.cpa)) : 1000;
+            // Add 20% padding to max values for nice chart bounds
+            const xMax = Math.ceil(maxSpend * 1.2);
+            const yMax = Math.ceil(maxCpa * 1.2);
+            return (
           <div className="min-h-[320px] sm:min-h-[450px]" style={{ width: '100%', height: '450px' }}>
             <ResponsiveContainer width="100%" height="100%">
             <ScatterChart margin={{ top: 20, right: 50, bottom: 60, left: 60 }}>
@@ -975,8 +993,7 @@ export default function CreativePage() {
                 type="number" dataKey="spend" name="Spend"
                 tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }}
                 tickFormatter={(v) => formatCurrencyValue(v).replace('$', '$').replace(',', '')}
-                domain={[0, 60000]}
-                interval={0}
+                domain={[0, xMax]}
                 tickCount={6}
                 label={{ value: 'Total Spend', position: 'insideBottom', offset: -15, style: { fill: 'var(--color-text-tertiary)', fontSize: 11, textAnchor: 'middle' } }}
               />
@@ -984,13 +1001,13 @@ export default function CreativePage() {
                 type="number" dataKey="cpa" name="CPA"
                 tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }}
                 tickFormatter={(v) => formatCurrencyValue(v).replace('$', '$').replace(',', '')}
-                domain={[200, 1500]}
+                domain={[0, yMax]}
                 tickCount={7}
-                label={{ value: 'CPA', angle: -90, position: 'insideLeft', offset: 10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11, textAnchor: 'middle' } }}
+                label={{ value: churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA', angle: -90, position: 'insideLeft', offset: 10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11, textAnchor: 'middle' } }}
               />
               <ZAxis type="number" range={[80, 200]} />
-              <ReferenceLine y={787} stroke="#EF4444" strokeDasharray="6 4" strokeWidth={2} label={{ value: `CPA Target ${formatCurrencyValue(787)}`, position: 'right', style: { fill: '#EF4444', fontSize: 10, fontWeight: 600 } }} />
-              <ReferenceLine x={20000} stroke="var(--color-text-tertiary)" strokeDasharray="4 4" strokeWidth={1} label={{ value: 'Scale threshold', position: 'top', style: { fill: 'var(--color-text-tertiary)', fontSize: 10 } }} />
+              <ReferenceLine y={avgCpa} stroke="#EF4444" strokeDasharray="6 4" strokeWidth={2} label={{ value: `Avg ${churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'} ${formatCurrencyValue(Math.round(avgCpa))}`, position: 'right', style: { fill: '#EF4444', fontSize: 10, fontWeight: 600 } }} />
+              <ReferenceLine x={avgSpend} stroke="var(--color-text-tertiary)" strokeDasharray="4 4" strokeWidth={1} label={{ value: `Avg Spend ${formatCurrencyValue(Math.round(avgSpend))}`, position: 'top', style: { fill: 'var(--color-text-tertiary)', fontSize: 10 } }} />
               <Tooltip
                 cursor={{ strokeDasharray: '3 3' }}
                 contentStyle={{ 
@@ -1064,23 +1081,25 @@ export default function CreativePage() {
             </ScatterChart>
             </ResponsiveContainer>
           </div>
+            );
+          })()}
           {/* Quadrant labels */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             <div className="bg-success/5 border border-success/20 rounded-lg p-3">
-              <div className="text-xs font-medium text-success mb-1">↘ Bottom-Right: Scaling</div>
-              <div className="text-xs text-text-secondary">High spend, low CPA. Your proven winners. Scale these harder.</div>
+              <div className="text-xs font-medium text-success mb-1">↘ Bottom-Right: Scaling Winners</div>
+              <div className="text-xs text-text-secondary">Above-average spend, below-average CPA. Proven winners — scale harder.</div>
             </div>
             <div className="bg-danger/5 border border-danger/20 rounded-lg p-3">
               <div className="text-xs font-medium text-danger mb-1">↗ Top-Right: Zombies</div>
-              <div className="text-xs text-text-secondary">High spend, high CPA. Wasting budget. Kill or restructure immediately.</div>
+              <div className="text-xs text-text-secondary">Above-average spend, above-average CPA. Burning budget. Kill or restructure.</div>
             </div>
             <div className="bg-brand-blue/5 border border-brand-blue/20 rounded-lg p-3">
               <div className="text-xs font-medium text-brand-blue-light mb-1">↙ Bottom-Left: Testing</div>
-              <div className="text-xs text-text-secondary">Low spend, low CPA. Promising tests. Scale up to confirm they hold.</div>
+              <div className="text-xs text-text-secondary">Below-average spend, below-average CPA. Promising — scale up to confirm.</div>
             </div>
             <div className="bg-warm-gold/5 border border-warm-gold/20 rounded-lg p-3">
               <div className="text-xs font-medium text-warm-gold mb-1">↖ Top-Left: Untapped / Learning</div>
-              <div className="text-xs text-text-secondary">Low spend, high CPA. Still in learning phase or needs new creative approach.</div>
+              <div className="text-xs text-text-secondary">Below-average spend, above-average CPA. Still learning or needs new approach.</div>
             </div>
           </div>
           
