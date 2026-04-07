@@ -45,8 +45,8 @@ const attributionModels = ['Linear All', 'Linear Paid'];
 const attributionWindows = ['1 day', '7 days', '14 days', '28 days', 'Lifetime'];
 
 // Zone colors for account control scatter
-const zoneColors: Record<string, string> = { scaling: '#10B981', zombie: '#EF4444', testing: '#4A6BD6', untapped: '#EDBF63' };
-const zoneLabels: Record<string, string> = { scaling: 'Scaling (Winners)', zombie: 'Zombies (Kill)', testing: 'Testing', untapped: 'Untapped Winners' };
+const zoneColors: Record<string, string> = { scaling: '#10B981', zombie: '#EF4444', testing: '#4A6BD6', untapped: '#EDBF63', 'no-conversion': '#94A3B8' };
+const zoneLabels: Record<string, string> = { scaling: 'Scale (Winners)', zombie: 'Zombies (Kill)', testing: 'Testing', untapped: 'Untapped/Learning', 'no-conversion': 'No Conversion' };
 
 // Churn age colors (dark → light for new → old)
 const churnAgeColors = ['#1e3a5f', '#2563EB', '#4A6BD6', '#6B8DE8', '#93B4F5', '#C5D8FB'];
@@ -345,33 +345,36 @@ export default function CreativePage() {
       if (accountControlCampaign !== 'all') {
         ads = ads.filter(a => a.campaignName === accountControlCampaign);
       }
-      // Compute averages for zone classification
+      // Compute averages — exclude $0 CPA ads from CPA average
       const adsWithSpend = ads.filter(a => a.spend > 0);
       const avgSpend = adsWithSpend.length > 0 ? adsWithSpend.reduce((s, a) => s + a.spend, 0) / adsWithSpend.length : 500;
       const adsWithCpa = ads.filter(a => (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa) > 0);
       const avgCpa = adsWithCpa.length > 0 ? adsWithCpa.reduce((s, a) => s + (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa), 0) / adsWithCpa.length : cpaTarget;
-      // For ads with $0 CPA (no conversions), place them visually above avg on the chart
-      // They're the worst performers — infinite effective CPA
-      const maxCpa = adsWithCpa.length > 0 ? Math.max(...adsWithCpa.map(a => churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa)) : avgCpa * 2;
-      const zeroCpaPlacement = Math.max(maxCpa * 1.1, avgCpa * 2); // Place above the highest real CPA
 
       return ads.map(a => {
         const rawCpa = churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa;
-        // For chart positioning: $0 CPA with spend = worst performer, place at top
-        const chartCpa = (rawCpa === 0 && a.spend > 0) ? zeroCpaPlacement : rawCpa;
+        const noConversion = rawCpa === 0 && a.spend > 0;
         const highSpend = a.spend >= avgSpend;
-        const highCpa = chartCpa > avgCpa;
+        const highCpa = rawCpa > avgCpa;
+
         let zone: string;
-        if (highSpend && !highCpa) zone = 'scaling';
-        else if (highSpend && highCpa) zone = 'zombie';
-        else if (!highSpend && !highCpa && a.orders > 0) zone = 'untapped';
-        else zone = 'testing';
+        if (noConversion) {
+          zone = 'no-conversion';
+        } else if (highSpend && !highCpa) {
+          zone = 'scaling';
+        } else if (highSpend && highCpa) {
+          zone = 'zombie';
+        } else if (!highSpend && !highCpa) {
+          zone = 'untapped';
+        } else {
+          zone = 'testing';
+        }
 
         return {
           name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
           adId: a.adId,
           spend: a.spend,
-          cpa: chartCpa,
+          cpa: rawCpa,
           rawCpa,
           roas: churnCpaMode === 'nccpa' ? a.ncRoas : a.roas,
           nccpa: a.ncCpa,
@@ -1062,11 +1065,13 @@ export default function CreativePage() {
                               data.zone === 'scaling' ? 'text-success' :
                               data.zone === 'zombie' ? 'text-danger' :
                               data.zone === 'testing' ? 'text-brand-blue-light' :
+                              data.zone === 'no-conversion' ? 'text-text-secondary' :
                               'text-warm-gold'
                             }`}>
-                              {data.zone === 'scaling' ? 'Scaling' :
+                              {data.zone === 'scaling' ? 'Scale' :
                                data.zone === 'zombie' ? 'Zombie' :
-                               data.zone === 'testing' ? 'Testing' : 'Untapped'}
+                               data.zone === 'testing' ? 'Testing' :
+                               data.zone === 'no-conversion' ? 'No Conversion' : 'Untapped'}
                             </span>
                           </div>
                         </div>
@@ -1103,22 +1108,26 @@ export default function CreativePage() {
             );
           })()}
           {/* Quadrant labels */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
             <div className="bg-success/5 border border-success/20 rounded-lg p-3">
-              <div className="text-xs font-medium text-success mb-1">↘ Bottom-Right: Scaling Winners</div>
-              <div className="text-xs text-text-secondary">Above-average spend, below-average CPA. Proven winners — scale harder.</div>
+              <div className="text-xs font-medium text-success mb-1">↘ Bottom-Right: Scale</div>
+              <div className="text-xs text-text-secondary">Above-avg spend, below-avg CPA. Proven winners — scale harder.</div>
             </div>
             <div className="bg-danger/5 border border-danger/20 rounded-lg p-3">
               <div className="text-xs font-medium text-danger mb-1">↗ Top-Right: Zombies</div>
-              <div className="text-xs text-text-secondary">Above-average spend, above-average CPA. Burning budget. Kill or restructure.</div>
+              <div className="text-xs text-text-secondary">Above-avg spend, above-avg CPA. Burning budget. Kill or restructure.</div>
             </div>
             <div className="bg-brand-blue/5 border border-brand-blue/20 rounded-lg p-3">
               <div className="text-xs font-medium text-brand-blue-light mb-1">↙ Bottom-Left: Testing</div>
-              <div className="text-xs text-text-secondary">Below-average spend, below-average CPA. Promising — scale up to confirm.</div>
+              <div className="text-xs text-text-secondary">Below-avg spend, below-avg CPA. Promising — scale up to confirm.</div>
             </div>
             <div className="bg-warm-gold/5 border border-warm-gold/20 rounded-lg p-3">
               <div className="text-xs font-medium text-warm-gold mb-1">↖ Top-Left: Untapped / Learning</div>
-              <div className="text-xs text-text-secondary">Below-average spend, above-average CPA. Still learning or needs new approach.</div>
+              <div className="text-xs text-text-secondary">Below-avg spend, above-avg CPA. Still learning or needs new approach.</div>
+            </div>
+            <div className="bg-white/5 border border-text-tertiary/30 rounded-lg p-3">
+              <div className="text-xs font-medium text-text-secondary mb-1">↓ Bottom: No Conversion</div>
+              <div className="text-xs text-text-secondary">Has spend but zero conversions. Hugs the X-axis. Not included in avg CPA.</div>
             </div>
           </div>
           
@@ -1182,6 +1191,16 @@ export default function CreativePage() {
                 >
                   Untapped/Learning
                 </button>
+                <button
+                  onClick={() => { setAccountControlFilter('no-conversion'); setAcCurrentPage(1); }}
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                    accountControlFilter === 'no-conversion'
+                      ? 'bg-text-tertiary text-white'
+                      : 'bg-bg-elevated text-text-secondary hover:text-text-primary hover:bg-bg-surface'
+                  }`}
+                >
+                  No Conversion
+                </button>
               </div>
             </div>
             <div className="overflow-x-auto -mx-1 sm:mx-0">
@@ -1217,7 +1236,8 @@ export default function CreativePage() {
                             <span className="text-xs text-text-tertiary">
                               {ad.zone === 'scaling' ? 'Scale' :
                                ad.zone === 'zombie' ? 'Kill' :
-                               ad.zone === 'testing' ? 'Test' : 'Learn'}
+                               ad.zone === 'testing' ? 'Test' :
+                               ad.zone === 'no-conversion' ? 'No Conv.' : 'Learn'}
                             </span>
                           </div>
                         </td>
