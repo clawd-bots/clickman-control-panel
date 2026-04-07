@@ -42,7 +42,7 @@ const tabDescriptions: Record<string, string> = {
 };
 
 const attributionModels = ['Linear All', 'Linear Paid'];
-const attributionWindows = ['1-day click', '7-day click', '14-day click', '28-day click', '7-day click / 1-day view', '28-day click / 1-day view', '28-day click / 28-day view'];
+const attributionWindows = ['1 day', '7 days', '14 days', '28 days', 'Lifetime'];
 
 // Zone colors for account control scatter
 const zoneColors: Record<string, string> = { scaling: '#10B981', zombie: '#EF4444', testing: '#4A6BD6', untapped: '#EDBF63' };
@@ -170,7 +170,7 @@ export default function CreativePage() {
   }, [twData]);
   const [platform, setPlatform] = useState('Meta');
   const [attrModel, setAttrModel] = useState('Linear All');
-  const [attrWindow, setAttrWindow] = useState('7-day click / 1-day view');
+  const [attrWindow, setAttrWindow] = useState('7 days');
   const [accountControlFilter, setAccountControlFilter] = useState('all');
   const [accountControlCampaign, setAccountControlCampaign] = useState('all');
   const [acPageSize, setAcPageSize] = useState(10);
@@ -344,16 +344,22 @@ export default function CreativePage() {
       if (accountControlCampaign !== 'all') {
         ads = ads.filter(a => a.campaignName === accountControlCampaign);
       }
-      return ads.map(a => ({
-        name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
-        adId: (a as any).adId || '',
-        spend: a.spend,
-        cpa: a.cpa,
-        roas: (a as any).roas || 0,
-        platform: 'Meta' as const,
-        zone: classifyMetaAdZone(a, cpaTarget),
-        previewUrl: '',
-      }));
+      // For ads with 0 purchases, set CPA = total spend (effective CPA of infinity, capped)
+      // This correctly places them high on the chart as zombies/testing
+      return ads.map(a => {
+        const effectiveCpa = a.purchases > 0 ? a.cpa : a.spend; // spend = cost per 0 conversions (effectively infinite)
+        return {
+          name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
+          adId: (a as any).adId || '',
+          spend: a.spend,
+          cpa: effectiveCpa,
+          roas: (a as any).roas || 0,
+          purchases: a.purchases,
+          platform: 'Meta' as const,
+          zone: classifyMetaAdZone(a, cpaTarget),
+          previewUrl: '',
+        };
+      });
     }
 
     let data = accountControlData.filter(d => d.platform === platform);

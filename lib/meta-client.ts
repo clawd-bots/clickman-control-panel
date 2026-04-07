@@ -66,10 +66,20 @@ export async function fetchMetaOverview(startDate: string, endDate: string): Pro
  */
 export function classifyMetaAdZone(ad: MetaAd, cpaTarget: number, spendThreshold: number = 500): string {
   const highSpend = ad.spend >= spendThreshold;
-  const highCpa = ad.cpa > cpaTarget || ad.cpa === 0;
   
-  if (highSpend && !highCpa && ad.purchases > 0) return 'scaling';
+  // If no purchases, classify based on spend alone
+  if (ad.purchases === 0) {
+    // High spend with no purchases = zombie (wasting budget)
+    if (highSpend) return 'zombie';
+    // Low spend with no purchases = still testing
+    return 'testing';
+  }
+  
+  // Has purchases — classify by CPA vs target
+  const highCpa = ad.cpa > cpaTarget;
+  
+  if (highSpend && !highCpa) return 'scaling';
   if (highSpend && highCpa) return 'zombie';
-  if (!highSpend && !highCpa && ad.purchases > 0) return 'untapped';
+  if (!highSpend && !highCpa) return 'untapped';
   return 'testing';
 }

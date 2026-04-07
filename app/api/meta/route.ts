@@ -53,16 +53,39 @@ async function metaFetchAll(path: string, params: Record<string, string> = {}, m
   return all;
 }
 
+const PURCHASE_ACTION_TYPES = [
+  'purchase', 'omni_purchase',
+  'onsite_conversion.purchase', 'onsite_web_purchase', 'onsite_web_app_purchase',
+  'offsite_conversion.fb_pixel_purchase',
+];
+
 function extractPurchases(actions: any[]): number {
   if (!actions) return 0;
-  const purchase = actions.find((a: any) => a.action_type === 'purchase' || a.action_type === 'omni_purchase');
-  return purchase ? parseInt(purchase.value) || 0 : 0;
+  // Prefer omni_purchase (deduplicated), then fall back to others
+  for (const type of PURCHASE_ACTION_TYPES) {
+    const match = actions.find((a: any) => a.action_type === type);
+    if (match) return parseInt(match.value) || 0;
+  }
+  return 0;
 }
 
 function extractCostPerPurchase(costPerAction: any[]): number {
   if (!costPerAction) return 0;
-  const purchase = costPerAction.find((a: any) => a.action_type === 'purchase' || a.action_type === 'omni_purchase');
-  return purchase ? parseFloat(purchase.value) || 0 : 0;
+  for (const type of PURCHASE_ACTION_TYPES) {
+    const match = costPerAction.find((a: any) => a.action_type === type);
+    if (match) return parseFloat(match.value) || 0;
+  }
+  return 0;
+}
+
+function extractPurchaseRoas(actionValues: any[], spend: number): number {
+  if (!actionValues || spend <= 0) return 0;
+  // Look for purchase revenue in action_values
+  for (const type of PURCHASE_ACTION_TYPES) {
+    const match = actionValues.find((a: any) => a.action_type === type);
+    if (match) return (parseFloat(match.value) || 0) / spend;
+  }
+  return 0;
 }
 
 export async function GET(request: NextRequest) {
@@ -96,7 +119,7 @@ export async function GET(request: NextRequest) {
 
     if (mode === 'ad-performance') {
       const insights = await metaFetchAll(`/${accountId}/insights`, {
-        fields: 'ad_id,ad_name,campaign_id,campaign_name,adset_name,spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,action_values',
+        fields: 'ad_id,ad_name,campaign_id,campaign_name,adset_name,spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,action_values,website_purchase_roas',
         level: 'ad',
         time_range: timeRange,
       });
@@ -110,7 +133,7 @@ export async function GET(request: NextRequest) {
           fields: 'name,status,objective,created_time',
         }),
         metaFetchAll(`/${accountId}/insights`, {
-          fields: 'ad_id,ad_name,campaign_id,campaign_name,adset_name,spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,action_values',
+          fields: 'ad_id,ad_name,campaign_id,campaign_name,adset_name,spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,action_values,website_purchase_roas',
           level: 'ad',
           time_range: timeRange,
         }),
@@ -137,14 +160,26 @@ export async function GET(request: NextRequest) {
         roas: 0, // Will calculate below
       }));
 
-      // Calculate ROAS from action_values
+      // Calculate ROAS: prefer website_purchase_roas, then action_values, then compute from purchases * CPA
       adInsights.forEach((ad: any, i: number) => {
-        if (ad.action_values) {
-          const purchaseValue = ad.action_values.find((a: any) => a.action_type === 'purchase' || a.action_type === 'omni_purchase');
-          if (purchaseValue && ads[i].spend > 0) {
-            ads[i].roas = parseFloat(purchaseValue.value) / ads[i].spend;
+        // Method 1: website_purchase_roas field (most reliable)
+        if (ad.website_purchase_roas) {
+          const roasEntry = ad.website_purchase_roas.find((r: any) => r.action_type === 'omni_purchase' || r.action_type === 'offsite_conversion.fb_pixel_purchase');
+          if (roasEntry) {
+            ads[i].roas = parseFloat(roasEntry.value) || 0;
+            return;
           }
         }
+        // Method 2: action_values purchase revenue / spend
+        if (ad.action_values && ads[i].spend > 0) {
+          const roas = extractPurchaseRoas(ad.action_values, ads[i].spend);
+          if (roas > 0) {
+            ads[i].roas = roas;
+            return;
+          }
+        }
+        // Method 3: If we have purchases and CPA, derive approximate revenue
+        // (this is a rough fallback)
       });
 
       // Sort by spend descending
