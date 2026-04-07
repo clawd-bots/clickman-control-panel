@@ -45,8 +45,8 @@ const attributionModels = ['First Click', 'Last Click', 'Linear Paid', 'Triple A
 const attributionWindows = ['1 day', '7 days', '14 days', '28 days', 'Lifetime'];
 
 // Zone colors for account control scatter
-const zoneColors: Record<string, string> = { scaling: '#10B981', zombie: '#EF4444', testing: '#4A6BD6', untapped: '#EDBF63', 'no-conversion': '#94A3B8' };
-const zoneLabels: Record<string, string> = { scaling: 'Scale (Winners)', zombie: 'Zombies (Kill)', testing: 'Testing', untapped: 'Untapped/Learning', 'no-conversion': 'No Conversion' };
+const zoneColors: Record<string, string> = { scaling: '#10B981', zombie: '#EF4444', testing: '#4A6BD6', untapped: '#EDBF63' };
+const zoneLabels: Record<string, string> = { scaling: 'Scale (Winners)', zombie: 'Zombies (Kill)', testing: 'Testing', untapped: 'Untapped/Learning' };
 
 // Churn age colors (dark → light for new → old)
 const churnAgeColors = ['#1e3a5f', '#2563EB', '#4A6BD6', '#6B8DE8', '#93B4F5', '#C5D8FB'];
@@ -243,11 +243,10 @@ export default function CreativePage() {
   const wastedSpend = useMemo(() => {
     if (twAds.length > 0) {
       const platformAds = twAds.filter(a => a.platform === platform && a.spend > 0);
-      const avgCpaAds = platformAds.filter(a => (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa) > 0);
-      const avgCpa = avgCpaAds.length > 0 ? avgCpaAds.reduce((s, a) => s + (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa), 0) / avgCpaAds.length : 0;
+      const target = churnCpaMode === 'nccpa' ? targetNCCPA : targetCPA;
       return platformAds.reduce((total, a) => {
         const cpa = churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa;
-        if (cpa > avgCpa || cpa === 0) return total + a.spend;
+        if (cpa > target || cpa === 0) return total + a.spend;
         return total;
       }, 0);
     }
@@ -369,16 +368,15 @@ export default function CreativePage() {
       const adsWithCpa = ads.filter(a => (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa) > 0);
       const avgCpa = adsWithCpa.length > 0 ? adsWithCpa.reduce((s, a) => s + (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa), 0) / adsWithCpa.length : cpaTarget;
 
-      return ads.map(a => {
+      return ads.filter(a => a.spend > 0).map(a => {
         const rawCpa = churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa;
-        const noConversion = rawCpa === 0 && a.spend > 0;
-        const highSpend = a.spend >= avgSpend;
-        const highCpa = rawCpa > avgCpa;
+        const cpaTarget = churnCpaMode === 'nccpa' ? targetNCCPA : targetCPA;
+        const spendThreshold = cpaTarget * 2;
+        const highSpend = a.spend >= spendThreshold;
+        const highCpa = rawCpa > cpaTarget || rawCpa === 0;
 
         let zone: string;
-        if (noConversion) {
-          zone = 'no-conversion';
-        } else if (highSpend && !highCpa) {
+        if (highSpend && !highCpa) {
           zone = 'scaling';       // bottom-right
         } else if (highSpend && highCpa) {
           zone = 'zombie';        // top-right
@@ -649,7 +647,7 @@ export default function CreativePage() {
         {/* Row 1: Platform + Attribution */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           {!['Slugging Rate', 'Ad Churn'].includes(activeTab) && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
               <div className="flex gap-1 flex-wrap">
                 {(activeTab === 'Account Control' ? platformsWithGoogle : platforms).map(p => (
@@ -658,6 +656,25 @@ export default function CreativePage() {
                   </button>
                 ))}
               </div>
+              {activeTab === 'Account Control' && accountControlCampaigns.length > 0 && (
+                <>
+                  <span className="text-xs text-text-tertiary mx-1">|</span>
+                  <span className="text-xs text-text-secondary font-medium shrink-0">Campaign:</span>
+                  <div className="relative">
+                    <select
+                      value={accountControlCampaign}
+                      onChange={(e) => { setAccountControlCampaign(e.target.value); setAcCurrentPage(1); }}
+                      className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors max-w-[280px]"
+                    >
+                      <option value="all">All Campaigns</option>
+                      {accountControlCampaigns.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+                  </div>
+                </>
+              )}
             </div>
           )}
           {!['Slugging Rate', 'Ad Churn'].includes(activeTab) && (
@@ -955,24 +972,6 @@ export default function CreativePage() {
                 <InfoTooltip metric="Account Control Chart" />
               </h3>
               <div className="flex items-center gap-3">
-                {accountControlCampaigns.length > 0 && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-text-secondary font-medium shrink-0">Campaign:</span>
-                    <div className="relative">
-                      <select
-                        value={accountControlCampaign}
-                        onChange={(e) => setAccountControlCampaign(e.target.value)}
-                        className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors max-w-[280px]"
-                      >
-                        <option value="all">All Campaigns</option>
-                        {accountControlCampaigns.map(c => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
-                      </select>
-                      <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
             {/* CPA Target Toggle + Wasted Spend */}
@@ -1004,7 +1003,7 @@ export default function CreativePage() {
                   )}
                 </div>
                 <span className="text-[10px] text-text-tertiary">
-                  Ads above avg {churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'} or with no conversions
+                  Ads above target {churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'} of {formatCurrencyValue(churnCpaMode === 'cpa' ? targetCPA : targetNCCPA)}
                 </span>
               </div>
             </div>
@@ -1020,16 +1019,15 @@ export default function CreativePage() {
           {(() => {
             // Don't render chart if no data
             if (filteredAccountControlData.length === 0) return null;
-            // Compute dynamic averages for axis reference lines
+            // Use target-based reference lines
+            const cpaTarget = churnCpaMode === 'nccpa' ? targetNCCPA : targetCPA;
+            const spendTarget = cpaTarget * 2;
             const adsWithData = filteredAccountControlData.filter(a => a.spend > 0);
-            const avgSpend = adsWithData.length > 0 ? adsWithData.reduce((s, a) => s + a.spend, 0) / adsWithData.length : 500;
-            const adsWithCpa = adsWithData.filter(a => a.cpa > 0);
-            const avgCpa = adsWithCpa.length > 0 ? adsWithCpa.reduce((s, a) => s + a.cpa, 0) / adsWithCpa.length : 500;
             const maxSpend = adsWithData.length > 0 ? Math.max(...adsWithData.map(a => a.spend)) : 1000;
-            const maxCpa = adsWithCpa.length > 0 ? Math.max(...adsWithCpa.map(a => a.cpa)) : 1000;
-            // Add 20% padding to max values for nice chart bounds
-            const xMax = Math.ceil(maxSpend * 1.2);
-            const yMax = Math.ceil(maxCpa * 1.2);
+            const maxCpa = adsWithData.length > 0 ? Math.max(...adsWithData.map(a => a.cpa)) : 1000;
+            // Add 20% padding, ensure targets are visible
+            const xMax = Math.ceil(Math.max(maxSpend, spendTarget) * 1.2);
+            const yMax = Math.ceil(Math.max(maxCpa, cpaTarget) * 1.2);
             return (
           <div className="min-h-[320px] sm:min-h-[450px]" style={{ width: '100%', height: '450px' }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -1052,8 +1050,8 @@ export default function CreativePage() {
                 label={{ value: churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA', angle: -90, position: 'insideLeft', offset: 10, style: { fill: 'var(--color-text-tertiary)', fontSize: 11, textAnchor: 'middle' } }}
               />
               <ZAxis type="number" range={[80, 200]} />
-              <ReferenceLine y={avgCpa} stroke="#EF4444" strokeDasharray="6 4" strokeWidth={2} label={{ value: `Avg ${churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'} ${formatCurrencyValue(Math.round(avgCpa))}`, position: 'right', style: { fill: '#EF4444', fontSize: 10, fontWeight: 600 } }} />
-              <ReferenceLine x={avgSpend} stroke="var(--color-text-tertiary)" strokeDasharray="4 4" strokeWidth={1} label={{ value: `Avg Spend ${formatCurrencyValue(Math.round(avgSpend))}`, position: 'top', style: { fill: 'var(--color-text-tertiary)', fontSize: 10 } }} />
+              <ReferenceLine y={cpaTarget} stroke="#EF4444" strokeDasharray="6 4" strokeWidth={2} label={{ value: `Target ${churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'} ${formatCurrencyValue(cpaTarget)}`, position: 'right', style: { fill: '#EF4444', fontSize: 10, fontWeight: 600 } }} />
+              <ReferenceLine x={spendTarget} stroke="var(--color-text-tertiary)" strokeDasharray="4 4" strokeWidth={1} label={{ value: `Spend Threshold ${formatCurrencyValue(spendTarget)}`, position: 'top', style: { fill: 'var(--color-text-tertiary)', fontSize: 10 } }} />
               <Tooltip
                 cursor={{ strokeDasharray: '3 3' }}
                 contentStyle={{ 
@@ -1101,13 +1099,11 @@ export default function CreativePage() {
                               data.zone === 'scaling' ? 'text-success' :
                               data.zone === 'zombie' ? 'text-danger' :
                               data.zone === 'testing' ? 'text-brand-blue-light' :
-                              data.zone === 'no-conversion' ? 'text-text-secondary' :
                               'text-warm-gold'
                             }`}>
                               {data.zone === 'scaling' ? 'Scale' :
                                data.zone === 'zombie' ? 'Zombie' :
-                               data.zone === 'testing' ? 'Testing' :
-                               data.zone === 'no-conversion' ? 'No Conversion' : 'Untapped'}
+                               data.zone === 'testing' ? 'Testing' : 'Untapped'}
                             </span>
                           </div>
                         </div>
@@ -1144,27 +1140,24 @@ export default function CreativePage() {
             );
           })()}
           {/* Quadrant labels */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             <div className="bg-success/5 border border-success/20 rounded-lg p-3">
               <div className="text-xs font-medium text-success mb-1">↘ Bottom-Right: Scale</div>
-              <div className="text-xs text-text-secondary">Above-avg spend, below-avg CPA. Proven winners — scale harder.</div>
+              <div className="text-xs text-text-secondary">Spend ≥ 2× target CPA, CPA below target. Proven winners — scale harder.</div>
             </div>
             <div className="bg-danger/5 border border-danger/20 rounded-lg p-3">
               <div className="text-xs font-medium text-danger mb-1">↗ Top-Right: Zombies</div>
-              <div className="text-xs text-text-secondary">Above-avg spend, above-avg CPA. Burning budget. Kill or restructure.</div>
+              <div className="text-xs text-text-secondary">Spend ≥ 2× target CPA, CPA above target. Burning budget. Kill or restructure.</div>
             </div>
             <div className="bg-brand-blue/5 border border-brand-blue/20 rounded-lg p-3">
               <div className="text-xs font-medium text-brand-blue-light mb-1">↙ Bottom-Left: Testing</div>
-              <div className="text-xs text-text-secondary">Below-avg spend, below-avg CPA. Promising — scale up to confirm.</div>
+              <div className="text-xs text-text-secondary">Spend below 2× target CPA, CPA below target. Promising — scale up to confirm.</div>
             </div>
             <div className="bg-warm-gold/5 border border-warm-gold/20 rounded-lg p-3">
               <div className="text-xs font-medium text-warm-gold mb-1">↖ Top-Left: Untapped / Learning</div>
-              <div className="text-xs text-text-secondary">Below-avg spend, above-avg CPA. Still learning or needs new approach.</div>
+              <div className="text-xs text-text-secondary">Spend below 2× target CPA, CPA above target. Still learning or needs new approach.</div>
             </div>
-            <div className="bg-white/5 border border-text-tertiary/30 rounded-lg p-3">
-              <div className="text-xs font-medium text-text-secondary mb-1">↓ Bottom: No Conversion</div>
-              <div className="text-xs text-text-secondary">Has spend but zero conversions. Hugs the X-axis. Not included in avg CPA.</div>
-            </div>
+
           </div>
           
           {/* Creative Listings Table */}
@@ -1227,16 +1220,7 @@ export default function CreativePage() {
                 >
                   Untapped/Learning
                 </button>
-                <button
-                  onClick={() => { setAccountControlFilter('no-conversion'); setAcCurrentPage(1); }}
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                    accountControlFilter === 'no-conversion'
-                      ? 'bg-text-tertiary text-white'
-                      : 'bg-bg-elevated text-text-secondary hover:text-text-primary hover:bg-bg-surface'
-                  }`}
-                >
-                  No Conversion
-                </button>
+
               </div>
             </div>
             <div className="overflow-x-auto -mx-1 sm:mx-0">
@@ -1306,7 +1290,7 @@ export default function CreativePage() {
                               {ad.zone === 'scaling' ? 'Scale' :
                                ad.zone === 'zombie' ? 'Kill' :
                                ad.zone === 'testing' ? 'Test' :
-                               ad.zone === 'no-conversion' ? 'No Conv.' : 'Learn'}
+                               'Learn'}
                             </span>
                           </div>
                         </td>
