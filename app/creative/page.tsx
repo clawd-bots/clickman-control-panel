@@ -928,7 +928,15 @@ export default function CreativePage() {
 
       {/* ═══════════════════════ ACCOUNT CONTROL (Scatter Plot) ═══════════════════════ */}
       {activeTab === 'Account Control' && (
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
+        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1 relative">
+          {twAdsLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-bg-surface/70 backdrop-blur-[1px] rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-5 h-5 border-2 border-brand-blue border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-text-secondary">Loading attribution data…</span>
+              </div>
+            </div>
+          )}
           <div className="flex flex-col gap-3 mb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
@@ -1268,7 +1276,7 @@ export default function CreativePage() {
                           </div>
                         </td>
                         <td className="py-2.5 px-2 font-medium text-text-primary w-[300px] min-w-[300px] max-w-[300px]">
-                          <div className="overflow-x-auto whitespace-nowrap scrollbar-thin" title={ad.name}>
+                          <div className="overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" title={ad.name}>
                             {ad.name}
                           </div>
                         </td>
