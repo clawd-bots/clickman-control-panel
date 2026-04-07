@@ -179,8 +179,7 @@ export default function CreativePage() {
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [genderFilter, setGenderFilter] = useState('all');
   const [churnCpaMode, setChurnCpaMode] = useState<'cpa' | 'nccpa'>('cpa');
-  const [churnAgePlatform, setChurnAgePlatform] = useState('Meta');
-  const [churnCohortPlatform, setChurnCohortPlatform] = useState('Meta');
+  const [churnPlatform, setChurnPlatform] = useState('Meta');
   const [sluggingPlatform, setSluggingPlatform] = useState('All');
   const [sluggingMonths, setSluggingMonths] = useState<number>(6);
   const [sluggingCpaMode, setSluggingCpaMode] = useState<'cpa' | 'nccpa'>('cpa');
@@ -188,15 +187,22 @@ export default function CreativePage() {
 
   // ─── Ad Churn derived data ───
   const churnPlatformData = useMemo(() => {
-    const raw = adChurnDataByPlatform[churnAgePlatform] || adChurnDataByPlatform.Meta;
+    const raw = adChurnDataByPlatform[churnPlatform] || adChurnDataByPlatform.Meta;
     const filtered = filterByDateRange(raw, 'month', dateRange.startDate, dateRange.endDate);
     const data = filtered.length > 0 ? filtered : raw;
     return data.map(d => ({ ...d, displayMonth: formatDateLabel(d.month, 'month') }));
-  }, [churnAgePlatform, dateRange]);
+  }, [churnPlatform, dateRange]);
+  // Cohort data filtered by global date range and platform
+  const filteredCohortData = useMemo(() => {
+    const raw = creativeChurnCohortsByPlatform[churnPlatform] || creativeChurnCohorts;
+    const filtered = filterByDateRange(raw, 'date' as keyof typeof raw[0], dateRange.startDate, dateRange.endDate);
+    return filtered.length > 0 ? filtered : raw;
+  }, [churnPlatform, dateRange]);
+
   const churnCampaignsForPlatform = useMemo(() => {
-    const campaigns = adChurnCampaigns[churnAgePlatform] || [];
+    const campaigns = adChurnCampaigns[churnPlatform] || [];
     return campaigns.filter(c => c.status === 'Active');
-  }, [churnAgePlatform]);
+  }, [churnPlatform]);
   const churnFilteredCampaigns = useMemo(() => {
     if (churnCampaignFilter === 'all') return churnCampaignsForPlatform;
     return churnCampaignsForPlatform.filter(c => c.campaign === churnCampaignFilter);
@@ -1281,6 +1287,18 @@ export default function CreativePage() {
       {/* ═══════════════════════ AD CHURN (Stacked Bar by Age + Cohort Analysis) ═══════════════════════ */}
       {activeTab === 'Ad Churn' && (
         <div className="space-y-4 sm:space-y-6 mx-1">
+          {/* Shared Platform Toggle for both Ad Churn charts */}
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
+            <div className="flex gap-1">
+              {platforms.map(p => (
+                <button key={p} onClick={() => setChurnPlatform(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${churnPlatform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Creative Age Analysis */}
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-2">
@@ -1288,15 +1306,6 @@ export default function CreativePage() {
                 <span className="truncate">Churn & Retesting Control, Spend by Creative Age</span>
                 <InfoTooltip metric="Ad Churn" />
               </h3>
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1">
-                  {platforms.map(p => (
-                    <button key={p} onClick={() => setChurnAgePlatform(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${churnAgePlatform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
             {churnAgeKeys.map((key, i) => (
@@ -1343,15 +1352,6 @@ export default function CreativePage() {
                 <span className="truncate">Creative Churn, Spend by Launch Cohort</span>
                 <InfoTooltip metric="Creative Churn Cohorts" />
               </h3>
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1">
-                  {platforms.map(p => (
-                    <button key={p} onClick={() => setChurnCohortPlatform(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${churnCohortPlatform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
-                      {p}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
             <div className="flex gap-2 sm:gap-3 mb-4 flex-wrap">
               {cohortKeys.map((key) => (
@@ -1363,7 +1363,7 @@ export default function CreativePage() {
             </div>
             <div className="min-h-[320px] sm:min-h-[380px]" style={{ width: '100%', height: '380px' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={creativeChurnCohortsByPlatform[churnCohortPlatform] || creativeChurnCohorts} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                <AreaChart data={filteredCohortData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="week" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-30} textAnchor="end" height={60} />
                   <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
