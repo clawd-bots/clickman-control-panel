@@ -174,16 +174,14 @@ export default function CreativePage() {
   const [attrModel, setAttrModel] = useState('Triple Attribution');
   const [attrWindow, setAttrWindow] = useState('7 days');
 
-  // Fetch TW ad-level data for Account Control (depends on attribution model/window)
+  // Fetch TW ad-level data for Account Control — always lifetime (all-time data, detached from global date range)
   useEffect(() => {
     setTwAdsLoading(true);
-    const startDate = toLocalDateString(dateRange.startDate);
-    const endDate = toLocalDateString(dateRange.endDate);
-    fetchTWAds(startDate, endDate, attrModel, attrWindow)
+    fetchTWAds('2020-01-01', toLocalDateString(new Date()), attrModel, 'Lifetime')
       .then(setTwAds)
       .catch(console.error)
       .finally(() => setTwAdsLoading(false));
-  }, [dateRange, attrModel, attrWindow]);
+  }, [attrModel]);
   const [accountControlFilter, setAccountControlFilter] = useState('all');
   const [accountControlCampaign, setAccountControlCampaign] = useState('all');
   const [acPageSize, setAcPageSize] = useState(10);
