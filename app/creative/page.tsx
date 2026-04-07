@@ -236,17 +236,32 @@ export default function CreativePage() {
   const targetNCCPA = useMemo(() => targets.find(t => t.metric === 'nCAC')?.target || 750, []);
   const churnCpaTarget = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
-  // Wasted spend: spend on ads above CPA target
+  // Wasted spend: computed from TW ad-level data (or fallback to sample)
   const wastedSpend = useMemo(() => {
+    if (twAds.length > 0) {
+      const platformAds = twAds.filter(a => a.platform === platform && a.spend > 0);
+      const avgCpaAds = platformAds.filter(a => (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa) > 0);
+      const avgCpa = avgCpaAds.length > 0 ? avgCpaAds.reduce((s, a) => s + (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa), 0) / avgCpaAds.length : 0;
+      return platformAds.reduce((total, a) => {
+        const cpa = churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa;
+        if (cpa > avgCpa || cpa === 0) return total + a.spend;
+        return total;
+      }, 0);
+    }
     const target = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
     return churnFilteredCampaigns.reduce((total, c) => {
       const cpa = churnCpaMode === 'cpa' ? c.cpa : c.ncCpa;
       if (cpa > target) return total + c.spend;
       return total;
     }, 0);
-  }, [churnFilteredCampaigns, churnCpaMode, targetCPA, targetNCCPA]);
+  }, [twAds, platform, churnFilteredCampaigns, churnCpaMode, targetCPA, targetNCCPA]);
 
-  const totalChurnSpend = useMemo(() => churnFilteredCampaigns.reduce((t, c) => t + c.spend, 0), [churnFilteredCampaigns]);
+  const totalChurnSpend = useMemo(() => {
+    if (twAds.length > 0) {
+      return twAds.filter(a => a.platform === platform && a.spend > 0).reduce((t, a) => t + a.spend, 0);
+    }
+    return churnFilteredCampaigns.reduce((t, c) => t + c.spend, 0);
+  }, [twAds, platform, churnFilteredCampaigns]);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -970,7 +985,7 @@ export default function CreativePage() {
                   )}
                 </div>
                 <span className="text-[10px] text-text-tertiary">
-                  Campaigns above {churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'} target of {formatCurrencyValue(churnCpaTarget)}
+                  Ads above avg {churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'} or with no conversions
                 </span>
               </div>
             </div>
