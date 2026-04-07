@@ -16,6 +16,7 @@ export interface MetaAd {
   cpm: number;
   purchases: number;
   cpa: number;
+  resultType: string;
   roas: number;
 }
 
@@ -66,17 +67,7 @@ export async function fetchMetaOverview(startDate: string, endDate: string): Pro
  */
 export function classifyMetaAdZone(ad: MetaAd, cpaTarget: number, spendThreshold: number = 500): string {
   const highSpend = ad.spend >= spendThreshold;
-  
-  // If no purchases, classify based on spend alone
-  if (ad.purchases === 0) {
-    // High spend with no purchases = zombie (wasting budget)
-    if (highSpend) return 'zombie';
-    // Low spend with no purchases = still testing
-    return 'testing';
-  }
-  
-  // Has purchases — classify by CPA vs target
-  const highCpa = ad.cpa > cpaTarget;
+  const highCpa = ad.cpa > cpaTarget || ad.cpa === 0;
   
   if (highSpend && !highCpa) return 'scaling';
   if (highSpend && highCpa) return 'zombie';

@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
           fields: 'name,status,objective,created_time',
         }),
         metaFetchAll(`/${accountId}/insights`, {
-          fields: 'ad_id,ad_name,campaign_id,campaign_name,adset_name,spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,action_values,website_purchase_roas',
+          fields: 'ad_id,ad_name,campaign_id,campaign_name,adset_name,spend,impressions,clicks,ctr,cpc,cpm,actions,cost_per_action_type,action_values,website_purchase_roas,cost_per_unique_action_type',
           level: 'ad',
           time_range: timeRange,
         }),
@@ -143,22 +143,39 @@ export async function GET(request: NextRequest) {
       ]);
 
       // Process ad insights into a clean format
-      const ads = adInsights.map((ad: any) => ({
-        adId: ad.ad_id,
-        adName: ad.ad_name || 'Unknown',
-        campaignId: ad.campaign_id,
-        campaignName: ad.campaign_name || 'Unknown',
-        adsetName: ad.adset_name || '',
-        spend: parseFloat(ad.spend) || 0,
-        impressions: parseInt(ad.impressions) || 0,
-        clicks: parseInt(ad.clicks) || 0,
-        ctr: parseFloat(ad.ctr) || 0,
-        cpc: parseFloat(ad.cpc) || 0,
-        cpm: parseFloat(ad.cpm) || 0,
-        purchases: extractPurchases(ad.actions),
-        cpa: extractCostPerPurchase(ad.cost_per_action_type),
-        roas: 0, // Will calculate below
-      }));
+      const ads = adInsights.map((ad: any) => {
+        const purchaseCpa = extractCostPerPurchase(ad.cost_per_action_type);
+        const purchases = extractPurchases(ad.actions);
+        
+        // "Cost per result" — use purchase CPA if available, otherwise use the first 
+        // cost_per_action_type entry (which matches Meta's "Cost per result" column)
+        let cpa = purchaseCpa;
+        let resultType = purchases > 0 ? 'purchase' : '';
+        if (cpa === 0 && ad.cost_per_action_type && ad.cost_per_action_type.length > 0) {
+          // Use first cost_per_action_type as "Cost per result" 
+          const first = ad.cost_per_action_type[0];
+          cpa = parseFloat(first.value) || 0;
+          resultType = first.action_type || '';
+        }
+        
+        return {
+          adId: ad.ad_id,
+          adName: ad.ad_name || 'Unknown',
+          campaignId: ad.campaign_id,
+          campaignName: ad.campaign_name || 'Unknown',
+          adsetName: ad.adset_name || '',
+          spend: parseFloat(ad.spend) || 0,
+          impressions: parseInt(ad.impressions) || 0,
+          clicks: parseInt(ad.clicks) || 0,
+          ctr: parseFloat(ad.ctr) || 0,
+          cpc: parseFloat(ad.cpc) || 0,
+          cpm: parseFloat(ad.cpm) || 0,
+          purchases,
+          cpa,
+          resultType,
+          roas: 0, // Will calculate below
+        };
+      });
 
       // Calculate ROAS: prefer website_purchase_roas, then action_values, then compute from purchases * CPA
       adInsights.forEach((ad: any, i: number) => {
