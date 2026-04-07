@@ -344,22 +344,17 @@ export default function CreativePage() {
       if (accountControlCampaign !== 'all') {
         ads = ads.filter(a => a.campaignName === accountControlCampaign);
       }
-      // For ads with 0 purchases, set CPA = total spend (effective CPA of infinity, capped)
-      // This correctly places them high on the chart as zombies/testing
-      return ads.map(a => {
-        const effectiveCpa = a.purchases > 0 ? a.cpa : a.spend; // spend = cost per 0 conversions (effectively infinite)
-        return {
-          name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
-          adId: (a as any).adId || '',
-          spend: a.spend,
-          cpa: effectiveCpa,
-          roas: (a as any).roas || 0,
-          purchases: a.purchases,
-          platform: 'Meta' as const,
-          zone: classifyMetaAdZone(a, cpaTarget),
-          previewUrl: '',
-        };
-      });
+      return ads.map(a => ({
+        name: a.adName.length > 60 ? a.adName.substring(0, 57) + '...' : a.adName,
+        adId: (a as any).adId || '',
+        spend: a.spend,
+        cpa: a.cpa,
+        roas: (a as any).roas || 0,
+        purchases: a.purchases,
+        platform: 'Meta' as const,
+        zone: classifyMetaAdZone(a, cpaTarget),
+        previewUrl: '',
+      }));
     }
 
     let data = accountControlData.filter(d => d.platform === platform);
