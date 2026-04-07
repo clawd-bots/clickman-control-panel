@@ -189,6 +189,8 @@ export default function CreativePage() {
   const [accountControlCampaign, setAccountControlCampaign] = useState('all');
   const [acPageSize, setAcPageSize] = useState(10);
   const [acCurrentPage, setAcCurrentPage] = useState(1);
+  const [acSortKey, setAcSortKey] = useState<string>('spend');
+  const [acSortDir, setAcSortDir] = useState<'asc' | 'desc'>('desc');
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [genderFilter, setGenderFilter] = useState('all');
@@ -1244,18 +1246,40 @@ export default function CreativePage() {
                     <tr className="border-b border-border text-text-secondary uppercase">
                       <th className="text-left py-2 px-2 font-medium w-[70px]">Zone</th>
                       <th className="text-left py-2 px-2 font-medium w-[300px] min-w-[300px] max-w-[300px]">Ad Name</th>
-                      <th className="text-right py-2 px-2 font-medium min-w-[80px]">Spend</th>
-                      <th className="text-right py-2 px-2 font-medium min-w-[80px]">CPA</th>
-                      <th className="text-right py-2 px-2 font-medium min-w-[80px]">NCCPA</th>
-                      <th className="text-right py-2 px-2 font-medium min-w-[70px]">ROAS</th>
-                      <th className="text-right py-2 px-2 font-medium min-w-[70px]">NCROAS</th>
+                      {[
+                        { key: 'spend', label: 'Spend', width: 'min-w-[80px]' },
+                        { key: 'cpa', label: 'CPA', width: 'min-w-[80px]' },
+                        { key: 'nccpa', label: 'NCCPA', width: 'min-w-[80px]' },
+                        { key: 'roas', label: 'ROAS', width: 'min-w-[70px]' },
+                        { key: 'ncroas', label: 'NCROAS', width: 'min-w-[70px]' },
+                      ].map(col => (
+                        <th
+                          key={col.key}
+                          className={`text-right py-2 px-2 font-medium ${col.width} cursor-pointer select-none hover:text-text-primary transition-colors`}
+                          onClick={() => {
+                            if (acSortKey === col.key) {
+                              setAcSortDir(d => d === 'desc' ? 'asc' : 'desc');
+                            } else {
+                              setAcSortKey(col.key);
+                              setAcSortDir('desc');
+                            }
+                            setAcCurrentPage(1);
+                          }}
+                        >
+                          {col.label} {acSortKey === col.key ? (acSortDir === 'desc' ? '↓' : '↑') : ''}
+                        </th>
+                      ))}
                       <th className="text-center py-2 px-2 font-medium min-w-[50px]">View</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredAccountControlData
                       .filter(ad => accountControlFilter === 'all' || ad.zone === accountControlFilter)
-                      .sort((a, b) => b.spend - a.spend)
+                      .sort((a, b) => {
+                        const valA = Number((a as any)[acSortKey]) || 0;
+                        const valB = Number((b as any)[acSortKey]) || 0;
+                        return acSortDir === 'desc' ? valB - valA : valA - valB;
+                      })
                       .slice((acCurrentPage - 1) * acPageSize, acCurrentPage * acPageSize)
                       .map((ad) => {
                         // Build platform ad URL
