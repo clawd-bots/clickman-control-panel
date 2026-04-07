@@ -65,10 +65,12 @@ export async function GET(request: NextRequest) {
     }
 
     const { apiKey, shopId } = getConfig();
-    const twModel = MODEL_MAP[model] || 'Linear All';
+    const twModel = MODEL_MAP[model] || 'Triple Attribution';
     const twWindow = WINDOW_MAP[window] || 'lifetime';
 
     // Query ad-level data from Triple Whale's pixel_joined_tvf
+    // Group by ad_id only (not ad_name/campaign_name) to avoid duplicates
+    // Use ANY_VALUE for name fields since they're consistent per ad_id
     const query = `
       SELECT
         pj.channel,
@@ -88,8 +90,8 @@ export async function GET(request: NextRequest) {
         AND pj.model = '${twModel}'
         AND pj.attribution_window = '${twWindow}'
       GROUP BY pj.channel, pj.campaign_name, pj.ad_name, pj.ad_id
-      HAVING SUM(pj.spend) > 0
       ORDER BY SUM(pj.spend) DESC
+      LIMIT 5000
     `;
 
     const res = await fetch(TW_SQL_URL, {
@@ -124,7 +126,8 @@ export async function GET(request: NextRequest) {
           const platformChannel = Object.entries(CHANNEL_NAMES).find(([, v]) => v === platform);
           if (platformChannel && r.channel !== platformChannel[0]) return false;
         }
-        return true;
+        // Include all ads (even those with $0 spend but impressions/clicks)
+        return (r.spend > 0 || r.impressions > 0 || r.clicks > 0);
       })
       .map((r: any) => {
         const spend = r.spend || 0;

@@ -41,7 +41,7 @@ const tabDescriptions: Record<string, string> = {
   'Demographics': 'Are you producing for the audience that is actually buying? If women 25-34 drive your profit but you keep producing TikTok-style ads for Gen Z, you\'re burning cash. Align your production queue with your paying demographic.',
 };
 
-const attributionModels = ['Triple Attribution', 'First Click', 'Last Click', 'Linear All', 'Linear Paid'];
+const attributionModels = ['First Click', 'Last Click', 'Linear Paid', 'Triple Attribution'];
 const attributionWindows = ['1 day', '7 days', '14 days', '28 days', 'Lifetime'];
 
 // Zone colors for account control scatter
