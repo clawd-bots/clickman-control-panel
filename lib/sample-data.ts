@@ -244,41 +244,68 @@ export const trackingHealth = [
   { 
     system: 'Meta Pixel', 
     status: 'healthy' as const, 
-    events: '14,230/day', 
+    events: '18,547/day', 
     matchRate: '9.2/10',
     source: 'Multiple Sources' as const,
     eventBreakdown: [
       { event: 'PageView', count: '8,450', matchRate: '9.5/10', type: 'Multiple' },
+      { event: 'ViewContent', count: '2,180', matchRate: '9.3/10', type: 'Multiple' },
       { event: 'AddToCart', count: '3,210', matchRate: '9.1/10', type: 'Multiple' },
       { event: 'InitiateCheckout', count: '1,820', matchRate: '8.9/10', type: 'Multiple' },
-      { event: 'Purchase', count: '750', matchRate: '9.4/10', type: 'Multiple' }
+      { event: 'AddPaymentInfo', count: '1,240', matchRate: '9.0/10', type: 'Multiple' },
+      { event: 'Purchase', count: '750', matchRate: '9.4/10', type: 'Multiple' },
+      { event: 'Lead', count: '320', matchRate: '8.7/10', type: 'Multiple' },
+      { event: 'CompleteRegistration', count: '185', matchRate: '8.8/10', type: 'Multiple' },
+      { event: 'Subscribe', count: '112', matchRate: '9.1/10', type: 'Multiple' },
+      { event: 'StartTrial', count: '95', matchRate: '8.6/10', type: 'Multiple' },
+      { event: 'ScheduleAppointment', count: '68', matchRate: '9.2/10', type: 'Multiple' },
+      { event: 'Contact', count: '47', matchRate: '8.5/10', type: 'Multiple' },
+      { event: 'FindLocation', count: '35', matchRate: '8.3/10', type: 'Multiple' },
+      { event: 'CustomizeProduct', count: '25', matchRate: '8.9/10', type: 'Multiple' },
+      { event: 'SubmitApplication', count: '10', matchRate: '9.0/10', type: 'Multiple' }
     ]
   },
 
   { 
     system: 'Google Ads Tag', 
     status: 'healthy' as const, 
-    events: '8,920/day', 
+    events: '12,485/day', 
     matchRate: '9.4/10',
     source: 'Multiple Sources' as const,
     eventBreakdown: [
       { event: 'page_view', count: '5,200', matchRate: '9.6/10', type: 'Multiple' },
+      { event: 'view_item', count: '1,580', matchRate: '9.4/10', type: 'Multiple' },
       { event: 'add_to_cart', count: '1,870', matchRate: '9.3/10', type: 'Multiple' },
       { event: 'begin_checkout', count: '1,120', matchRate: '9.2/10', type: 'Multiple' },
-      { event: 'purchase', count: '730', matchRate: '9.7/10', type: 'Multiple' }
+      { event: 'add_payment_info', count: '890', matchRate: '9.1/10', type: 'Multiple' },
+      { event: 'purchase', count: '730', matchRate: '9.7/10', type: 'Multiple' },
+      { event: 'sign_up', count: '185', matchRate: '9.3/10', type: 'Multiple' },
+      { event: 'generate_lead', count: '310', matchRate: '9.0/10', type: 'Multiple' },
+      { event: 'book_appointment', count: '68', matchRate: '9.5/10', type: 'Multiple' },
+      { event: 'view_item_list', count: '420', matchRate: '9.2/10', type: 'Multiple' },
+      { event: 'select_item', count: '95', matchRate: '9.1/10', type: 'Multiple' },
+      { event: 'contact', count: '17', matchRate: '8.8/10', type: 'Multiple' }
     ]
   },
   { 
     system: 'TikTok Pixel', 
     status: 'warning' as const, 
-    events: '5,100/day', 
+    events: '6,385/day', 
     matchRate: '7.1/10',
     source: 'Browser' as const,
     eventBreakdown: [
       { event: 'ViewContent', count: '3,200', matchRate: '7.3/10', type: 'Browser' },
+      { event: 'ClickButton', count: '680', matchRate: '6.5/10', type: 'Browser' },
       { event: 'AddToCart', count: '1,250', matchRate: '6.8/10', type: 'Browser' },
       { event: 'InitiateCheckout', count: '520', matchRate: '6.9/10', type: 'Browser' },
-      { event: 'CompletePayment', count: '130', matchRate: '7.5/10', type: 'Browser' }
+      { event: 'AddPaymentInfo', count: '340', matchRate: '6.7/10', type: 'Browser' },
+      { event: 'CompletePayment', count: '130', matchRate: '7.5/10', type: 'Browser' },
+      { event: 'SubmitForm', count: '85', matchRate: '7.0/10', type: 'Browser' },
+      { event: 'Subscribe', count: '62', matchRate: '6.9/10', type: 'Browser' },
+      { event: 'Contact', count: '48', matchRate: '7.1/10', type: 'Browser' },
+      { event: 'CompleteRegistration', count: '42', matchRate: '7.2/10', type: 'Browser' },
+      { event: 'PlaceAnOrder', count: '18', matchRate: '7.4/10', type: 'Browser' },
+      { event: 'Download', count: '10', matchRate: '6.6/10', type: 'Browser' }
     ]
   },
   { 
@@ -289,9 +316,22 @@ export const trackingHealth = [
     source: 'Multiple Sources' as const,
     eventBreakdown: [
       { event: 'page_view', count: '15,400', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'view_item', count: '2,850', matchRate: 'N/A', type: 'Multiple' },
       { event: 'add_to_cart', count: '3,800', matchRate: 'N/A', type: 'Multiple' },
       { event: 'begin_checkout', count: '2,200', matchRate: 'N/A', type: 'Multiple' },
-      { event: 'purchase', count: '1,000', matchRate: 'N/A', type: 'Multiple' }
+      { event: 'add_payment_info', count: '1,650', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'purchase', count: '1,000', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'sign_up', count: '280', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'generate_lead', count: '345', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'view_item_list', count: '1,920', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'select_item', count: '680', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'scroll', count: '8,450', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'click', count: '5,230', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'form_start', count: '420', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'form_submit', count: '185', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'file_download', count: '62', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'video_start', count: '310', matchRate: 'N/A', type: 'Multiple' },
+      { event: 'video_complete', count: '95', matchRate: 'N/A', type: 'Multiple' }
     ]
   },
   { 
@@ -302,9 +342,13 @@ export const trackingHealth = [
     source: 'Server' as const,
     eventBreakdown: [
       { event: 'page_view', count: '0', matchRate: '0/10', type: 'Server' },
+      { event: 'view_item', count: '0', matchRate: '0/10', type: 'Server' },
       { event: 'add_to_cart', count: '0', matchRate: '0/10', type: 'Server' },
       { event: 'begin_checkout', count: '0', matchRate: '0/10', type: 'Server' },
-      { event: 'purchase', count: '0', matchRate: '0/10', type: 'Server' }
+      { event: 'add_payment_info', count: '0', matchRate: '0/10', type: 'Server' },
+      { event: 'purchase', count: '0', matchRate: '0/10', type: 'Server' },
+      { event: 'sign_up', count: '0', matchRate: '0/10', type: 'Server' },
+      { event: 'generate_lead', count: '0', matchRate: '0/10', type: 'Server' }
     ]
   },
 ];

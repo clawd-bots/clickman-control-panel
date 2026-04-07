@@ -69,6 +69,7 @@ export default function AttributionPage() {
   const [cohortAttrWindow, setCohortAttrWindow] = useState('7-day click / 1-day view');
   const [expandedSystems, setExpandedSystems] = useState<Set<string>>(new Set());
   const [hiddenIntel, setHiddenIntel] = useState<Set<string>>(new Set());
+  const [eventPages, setEventPages] = useState<Record<string, number>>({});
   const [liveTrackingData, setLiveTrackingData] = useState<{
     totalEventsPerDay: number;
     status: 'healthy' | 'warning' | 'error';
@@ -558,16 +559,7 @@ export default function AttributionPage() {
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-text-secondary">
                     <span>Events: {item.events}</span>
                     {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && <span>Match Quality: {item.matchRate}</span>}
-                    {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && !(item.system === 'Meta Pixel') && item.source && (
-                      <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                        item.source === 'Browser' ? 'bg-blue-500/15 text-blue-500' :
-                        item.source === 'Server' ? 'bg-purple-500/15 text-purple-500' :
-                        item.source === 'Multiple Sources' ? 'bg-orange-500/15 text-orange-500' :
-                        'bg-text-tertiary/15 text-text-tertiary'
-                      }`}>
-                        Source: {item.source}
-                      </span>
-                    )}
+                    {/* Source badge removed — redundant with event-level detail */}
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium self-start sm:self-auto ${
                       item.status === 'healthy' ? 'bg-success/15 text-success' :
                       item.status === 'warning' ? 'bg-warm-gold/15 text-warm-gold' :
@@ -579,10 +571,39 @@ export default function AttributionPage() {
                 </div>
                 
                 {/* Event Breakdown */}
-                {expandedSystems.has(item.system) && item.eventBreakdown && (
+                {expandedSystems.has(item.system) && item.eventBreakdown && (() => {
+                  const EVENTS_PER_PAGE = 10;
+                  const allEvents = item.eventBreakdown;
+                  const totalEvents = allEvents.length;
+                  const currentPage = eventPages[item.system] || 1;
+                  const totalPages = Math.ceil(totalEvents / EVENTS_PER_PAGE);
+                  const startIdx = (currentPage - 1) * EVENTS_PER_PAGE;
+                  const visibleEvents = allEvents.slice(startIdx, startIdx + EVENTS_PER_PAGE);
+                  return (
                   <div className="mt-2 ml-6 bg-bg-surface border border-border rounded-md p-3 space-y-3">
-                    <div className="text-xs font-medium text-text-primary mb-2">Event Breakdown:</div>
-                    {item.eventBreakdown.map((event) => (
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="text-xs font-medium text-text-primary">Event Breakdown ({totalEvents} events):</div>
+                      {totalPages > 1 && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <button
+                            onClick={() => setEventPages(p => ({ ...p, [item.system]: Math.max(1, currentPage - 1) }))}
+                            disabled={currentPage === 1}
+                            className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          >
+                            ←
+                          </button>
+                          <span className="text-text-secondary">{currentPage}/{totalPages}</span>
+                          <button
+                            onClick={() => setEventPages(p => ({ ...p, [item.system]: Math.min(totalPages, currentPage + 1) }))}
+                            disabled={currentPage === totalPages}
+                            className="px-2 py-0.5 rounded bg-bg-elevated border border-border text-text-secondary hover:text-text-primary disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          >
+                            →
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {visibleEvents.map((event) => (
                       <div key={event.event} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div className="flex items-center gap-3">
                           <span className={`w-2 h-2 rounded-full shrink-0 ${
@@ -592,22 +613,10 @@ export default function AttributionPage() {
                             event.matchRate.includes('/10') ? 'bg-danger' : 'bg-text-tertiary'
                           }`} />
                           <span className="text-sm font-medium text-text-primary">{event.event}</span>
-                          {/* @ts-ignore - event.type is added to sample data */}
-                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && event.type && (
-                            <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                              event.type === 'Browser' ? 'bg-blue-500/15 text-blue-500' :
-                              event.type === 'Server' ? 'bg-purple-500/15 text-purple-500' :
-                              event.type === 'Multiple' ? 'bg-orange-500/15 text-orange-500' :
-                              'bg-text-tertiary/15 text-text-tertiary'
-                            }`}>
-                              {event.type}
-                            </span>
-                          )}
                         </div>
                         <div className="flex items-center gap-4 text-xs text-text-secondary">
                           <span>Count: {event.count}/day</span>
-                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && event.matchRate && <span>Match Quality: {event.matchRate}</span>}
-                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && event.type && <span>Source: {event.type === 'Multiple' ? 'Multiple Sources' : event.type}</span>}
+                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && event.matchRate && event.matchRate !== 'N/A' && <span>Match Quality: {event.matchRate}</span>}
                         </div>
                       </div>
                     ))}
@@ -632,7 +641,8 @@ export default function AttributionPage() {
                       </div>
                     )}
                   </div>
-                )}
+                  );
+                })()}
               </div>
             ))}
           </div>
