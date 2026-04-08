@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
     const twModel = MODEL_MAP[model] || 'Triple Attribution';
     const twWindow = WINDOW_MAP[window] || 'lifetime';
 
-    const cacheKey = `v5_${startDate}_${endDate}_${twModel}_${twWindow}`;
+    const cacheKey = `v6_${startDate}_${endDate}_${twModel}_${twWindow}`;
     if (!forceRefresh) {
       const cached = await getCached('tw-cohorts', cacheKey);
       if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
@@ -197,10 +197,10 @@ export async function GET(request: NextRequest) {
     const cohorts = (rows as Record<string, unknown>[]).map((r) => {
       const cohortMonth = String(r.cohort_month ?? '').split('T')[0] || '';
       
-      // Calculate how many complete months have elapsed since cohort start
+      // Calculate how many months have elapsed since cohort start (include current partial month)
       const [cYear, cMonth] = cohortMonth.split('-').map(Number);
       const maxValidMonth = cYear && cMonth
-        ? (nowYear - cYear) * 12 + (nowMonth - (cMonth - 1)) - 1  // -1 because current month is incomplete
+        ? (nowYear - cYear) * 12 + (nowMonth - (cMonth - 1))  // Include current month (partial data exists)
         : 12;
       const cappedMax = Math.min(Math.max(maxValidMonth, 0), 12);
 
