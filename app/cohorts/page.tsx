@@ -154,8 +154,12 @@ export default function CohortsPage() {
   const getFirstOrderValue = (row: TWCohortApiRow): string => {
     switch (metric) {
       case 'LTV':
-      case 'Total sales':
-        return row.firstOrderAov > 0 ? formatCohortNumber(row.firstOrderAov) : '';
+      case 'Total sales': {
+        // Use M0 value (total revenue in first month) to match TW's display
+        const m0 = row.ltvByMonth?.[0];
+        if (m0 === null || m0 === undefined || m0 <= 0) return '';
+        return formatCohortNumber(m0);
+      }
       case 'Number of customers':
         return formatCohortInt(row.customers);
       case 'Retention rate':
@@ -376,13 +380,13 @@ export default function CohortsPage() {
                 <table className="w-full text-[11px]">
                 <thead>
                   <tr className="border-b border-border text-text-secondary uppercase">
-                    <th className="sticky left-0 z-20 text-left py-1.5 px-1.5 font-medium bg-bg-surface shadow-[4px_0_12px_-4px_rgba(0,0,0,0.12)] whitespace-nowrap">Cohort</th>
-                    <th className="text-right py-1.5 px-1.5 font-medium whitespace-nowrap">Cust. <InfoTooltip metric="New Customers" /></th>
-                    <th className="text-right py-1.5 px-1.5 font-medium whitespace-nowrap">NCPA <InfoTooltip metric="nCAC" /></th>
-                    <th className="text-right py-1.5 px-1.5 font-medium whitespace-nowrap">RPR <InfoTooltip metric="Repeat Rate" /></th>
-                    <th className="text-right py-1.5 px-1.5 font-medium whitespace-nowrap">1st ord <InfoTooltip metric="AOV" /></th>
+                    <th className="sticky left-0 z-20 text-center py-1.5 px-1.5 font-medium bg-bg-surface shadow-[4px_0_12px_-4px_rgba(0,0,0,0.12)] whitespace-nowrap">Cohort</th>
+                    <th className="text-center py-1.5 px-1.5 font-medium whitespace-nowrap">Cust. <InfoTooltip metric="New Customers" /></th>
+                    <th className="text-center py-1.5 px-1.5 font-medium whitespace-nowrap">NCPA <InfoTooltip metric="nCAC" /></th>
+                    <th className="text-center py-1.5 px-1.5 font-medium whitespace-nowrap">RPR <InfoTooltip metric="Repeat Rate" /></th>
+                    <th className="text-center py-1.5 px-1.5 font-medium whitespace-nowrap">1st ord <InfoTooltip metric="AOV" /></th>
                     {COHORT_MONTH_KEYS.map((label) => (
-                      <th key={label} className="text-right py-1.5 px-1.5 font-medium whitespace-nowrap">{label}</th>
+                      <th key={label} className="text-center py-1.5 px-1.5 font-medium whitespace-nowrap">{label}</th>
                     ))}
                   </tr>
                 </thead>
