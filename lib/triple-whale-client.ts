@@ -142,8 +142,9 @@ export interface TWCohortApiRow {
   ncpa: number;
   rpr: number;
   firstOrderAov: number;
-  ltvByMonth: number[];
-  customersByMonth: number[];
+  ltvByMonth: (number | null)[];
+  customersByMonth: (number | null)[];
+  maxValidMonth?: number;
 }
 
 export interface TWCohortsResponse {

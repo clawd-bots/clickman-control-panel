@@ -159,7 +159,7 @@ export async function GET(request: NextRequest) {
     const twModel = MODEL_MAP[model] || 'Triple Attribution';
     const twWindow = WINDOW_MAP[window] || 'lifetime';
 
-    const cacheKey = `v4_${startDate}_${endDate}_${twModel}_${twWindow}`;
+    const cacheKey = `v5_${startDate}_${endDate}_${twModel}_${twWindow}`;
     if (!forceRefresh) {
       const cached = await getCached('tw-cohorts', cacheKey);
       if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
@@ -189,14 +189,29 @@ export async function GET(request: NextRequest) {
     const rawData = await res.json();
     const rows = Array.isArray(rawData) ? rawData : rawData.data || [];
 
+    // Calculate max valid month index for each cohort based on today's date
+    const now = new Date();
+    const nowYear = now.getFullYear();
+    const nowMonth = now.getMonth(); // 0-indexed
+
     const cohorts = (rows as Record<string, unknown>[]).map((r) => {
       const cohortMonth = String(r.cohort_month ?? '').split('T')[0] || '';
+      
+      // Calculate how many complete months have elapsed since cohort start
+      const [cYear, cMonth] = cohortMonth.split('-').map(Number);
+      const maxValidMonth = cYear && cMonth
+        ? (nowYear - cYear) * 12 + (nowMonth - (cMonth - 1)) - 1  // -1 because current month is incomplete
+        : 12;
+      const cappedMax = Math.min(Math.max(maxValidMonth, 0), 12);
+
       const ltvByMonth = Array.from({ length: 13 }, (_, k) => {
+        if (k > cappedMax) return null; // Future month — no data possible
         const v = r[`ltv_m${k}`];
         const n = typeof v === 'string' ? parseFloat(v) : Number(v);
         return Number.isFinite(n) ? n : 0;
       });
       const customersByMonth = Array.from({ length: 13 }, (_, k) => {
+        if (k > cappedMax) return null; // Future month — no data possible
         const v = r[`cust_in_m${k}`];
         const n = typeof v === 'string' ? parseInt(v, 10) : Number(v);
         return Number.isFinite(n) ? n : 0;
@@ -214,6 +229,7 @@ export async function GET(request: NextRequest) {
         firstOrderAov,
         ltvByMonth,
         customersByMonth,
+        maxValidMonth: cappedMax,
       };
     });
 

@@ -15,7 +15,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 
-const COHORT_MONTH_KEYS = Array.from({ length: 13 }, (_, i) => `Month ${i}`);
+const COHORT_MONTH_KEYS = Array.from({ length: 13 }, (_, i) => `M${i}`);
 
 type CohortMetric = 'LTV' | 'Total sales' | 'Number of customers' | 'Retention rate';
 
@@ -92,34 +92,43 @@ export default function CohortsPage() {
   }, [twCohortRows]);
 
   const getCellValue = (row: TWCohortApiRow, monthIdx: number): number | null => {
+    // If this month is beyond what's valid for this cohort (future), return null
+    if (row.maxValidMonth !== undefined && monthIdx > row.maxValidMonth) return null;
+    
     switch (metric) {
       case 'LTV': {
-        const val = row.ltvByMonth?.[monthIdx] ?? 0;
+        const raw = row.ltvByMonth?.[monthIdx];
+        if (raw === null || raw === undefined) return null;
+        const val = raw;
         if (val <= 0) return null;
         if (!cumulative && monthIdx > 0) {
           const prev = row.ltvByMonth?.[monthIdx - 1] ?? 0;
-          return val - prev > 0 ? val - prev : null;
+          return val - (prev ?? 0) > 0 ? val - (prev ?? 0) : null;
         }
         return val;
       }
       case 'Total sales': {
-        const ltv = row.ltvByMonth?.[monthIdx] ?? 0;
+        const raw = row.ltvByMonth?.[monthIdx];
+        if (raw === null || raw === undefined) return null;
+        const ltv = raw;
         if (ltv <= 0) return null;
         if (!cumulative && monthIdx > 0) {
           const prevLtv = row.ltvByMonth?.[monthIdx - 1] ?? 0;
-          const diff = ltv - prevLtv;
+          const diff = ltv - (prevLtv ?? 0);
           return diff > 0 ? diff * row.customers : null;
         }
         return ltv * row.customers;
       }
       case 'Number of customers': {
-        const custCount = row.customersByMonth?.[monthIdx] ?? 0;
-        return custCount > 0 ? custCount : null;
+        const raw = row.customersByMonth?.[monthIdx];
+        if (raw === null || raw === undefined) return null;
+        return raw > 0 ? raw : null;
       }
       case 'Retention rate': {
-        const custCount = row.customersByMonth?.[monthIdx] ?? 0;
-        if (custCount <= 0 || row.customers <= 0) return null;
-        return (custCount / row.customers) * 100;
+        const raw = row.customersByMonth?.[monthIdx];
+        if (raw === null || raw === undefined) return null;
+        if (raw <= 0 || row.customers <= 0) return null;
+        return (raw / row.customers) * 100;
       }
       default:
         return null;
@@ -469,7 +478,7 @@ export default function CohortsPage() {
                       const val = getCellValue(row, mi);
                       return (
                         <div key={mi} className="text-center">
-                          <div className="text-text-secondary">Month {mi}</div>
+                          <div className="text-text-secondary">M{mi}</div>
                           <div className={`font-medium ${heatmap && val !== null ? getHeatmapClass(val, maxCellValue) : ''}`}>
                             {val !== null ? formatCellValue(val) : '—'}
                           </div>
