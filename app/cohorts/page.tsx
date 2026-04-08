@@ -53,7 +53,7 @@ export default function CohortsPage() {
   const [activeTab, setActiveTab] = useState<'analysis' | 'comparison'>('analysis');
   const [metric, setMetric] = useState<CohortMetric>('LTV');
   const [heatmap] = useState(true);
-  const [cumulative, setCumulative] = useState(true);
+  const [cumulative, setCumulative] = useState(false);
 
   const formatCurrencyValue = (value: number) => {
     return formatCurrency(convertValue(value), currency);
@@ -61,7 +61,8 @@ export default function CohortsPage() {
 
   const formatCohortNumber = (value: number): string => {
     if (value === 0) return '0';
-    return convertValue(value).toLocaleString('en-US', {
+    // Cohort data is in shop currency (PHP) — do NOT convert, show raw values to match TW
+    return value.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
@@ -372,16 +373,16 @@ export default function CohortsPage() {
             {/* Desktop Table */}
             <div className="hidden lg:block overflow-x-auto -mx-1 sm:mx-0">
               <div className="min-w-[1180px]">
-                <table className="w-full text-xs">
+                <table className="w-full text-[11px]">
                 <thead>
                   <tr className="border-b border-border text-text-secondary uppercase">
-                    <th className="sticky left-0 z-20 text-left py-2 px-2 font-medium bg-bg-surface shadow-[4px_0_12px_-4px_rgba(0,0,0,0.12)]">Cohort</th>
-                    <th className="text-right py-2 px-2 font-medium">Customers <InfoTooltip metric="New Customers" /></th>
-                    <th className="text-right py-2 px-2 font-medium">NCPA <InfoTooltip metric="nCAC" /></th>
-                    <th className="text-right py-2 px-2 font-medium">RPR <InfoTooltip metric="Repeat Rate" /></th>
-                    <th className="text-right py-2 px-2 font-medium">1st order <InfoTooltip metric="AOV" /></th>
+                    <th className="sticky left-0 z-20 text-left py-1.5 px-1.5 font-medium bg-bg-surface shadow-[4px_0_12px_-4px_rgba(0,0,0,0.12)] whitespace-nowrap">Cohort</th>
+                    <th className="text-right py-1.5 px-1.5 font-medium whitespace-nowrap">Cust. <InfoTooltip metric="New Customers" /></th>
+                    <th className="text-right py-1.5 px-1.5 font-medium whitespace-nowrap">NCPA <InfoTooltip metric="nCAC" /></th>
+                    <th className="text-right py-1.5 px-1.5 font-medium whitespace-nowrap">RPR <InfoTooltip metric="Repeat Rate" /></th>
+                    <th className="text-right py-1.5 px-1.5 font-medium whitespace-nowrap">1st ord <InfoTooltip metric="AOV" /></th>
                     {COHORT_MONTH_KEYS.map((label) => (
-                      <th key={label} className="text-right py-2 px-2 font-medium whitespace-nowrap min-w-[4.5rem]">{label}</th>
+                      <th key={label} className="text-right py-1.5 px-1.5 font-medium whitespace-nowrap">{label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -396,17 +397,17 @@ export default function CohortsPage() {
                     <>
                   {displayCohortRows.map((row) => (
                     <tr key={row.cohortMonth} className="border-b border-border/30">
-                      <td className="sticky left-0 z-10 py-2.5 px-2 font-medium text-text-primary bg-bg-surface shadow-[4px_0_12px_-4px_rgba(0,0,0,0.08)]">{row.cohortLabel}</td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{row.customers.toLocaleString()}</td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{row.ncpa > 0 ? `${currency}${row.ncpa.toFixed(2)}` : ''}</td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{row.rpr > 0 ? `${row.rpr.toFixed(2)}%` : ''}</td>
-                      <td className="py-2.5 px-2 text-right text-text-secondary">{getFirstOrderValue(row)}</td>
+                      <td className="sticky left-0 z-10 py-1.5 px-1.5 font-medium text-text-primary bg-bg-surface shadow-[4px_0_12px_-4px_rgba(0,0,0,0.08)] whitespace-nowrap">{row.cohortLabel}</td>
+                      <td className="py-1.5 px-1.5 text-right text-text-secondary whitespace-nowrap">{row.customers.toLocaleString()}</td>
+                      <td className="py-1.5 px-1.5 text-right text-text-secondary whitespace-nowrap">{row.ncpa > 0 ? `₱${row.ncpa.toFixed(2)}` : ''}</td>
+                      <td className="py-1.5 px-1.5 text-right text-text-secondary whitespace-nowrap">{row.rpr > 0 ? `${row.rpr.toFixed(2)}%` : ''}</td>
+                      <td className="py-1.5 px-1.5 text-right text-text-secondary whitespace-nowrap">{getFirstOrderValue(row)}</td>
                       {COHORT_MONTH_KEYS.map((_, i) => {
                         const val = getCellValue(row, i);
                         const show = val !== null;
                         const hClass = heatmap && show ? getHeatmapClass(val, maxCellValue) : '';
                         return (
-                          <td key={i} className={`py-2.5 px-2 text-right whitespace-nowrap ${show ? 'text-text-secondary' : 'text-text-tertiary'} ${hClass}`}>
+                          <td key={i} className={`py-1.5 px-1.5 text-right whitespace-nowrap ${show ? 'text-text-secondary' : 'text-text-tertiary'} ${hClass}`}>
                             {show ? formatCellValue(val) : ''}
                           </td>
                         );
@@ -417,13 +418,13 @@ export default function CohortsPage() {
                   {/* Total row */}
                   {totals && (
                     <tr className="border-t-2 border-border font-medium">
-                      <td className="sticky left-0 z-10 py-2.5 px-2 text-text-primary bg-bg-surface">Total</td>
-                      <td className="py-2.5 px-2 text-right text-text-primary">{totals.totalCustomers.toLocaleString()}</td>
-                      <td className="py-2.5 px-2 text-right text-text-primary">{totals.avgNcpa > 0 ? `${currency}${totals.avgNcpa.toFixed(2)}` : ''}</td>
-                      <td className="py-2.5 px-2 text-right text-text-primary">{totals.totalRpr > 0 ? `${totals.totalRpr.toFixed(2)}%` : ''}</td>
-                      <td className="py-2.5 px-2 text-right text-text-primary"></td>
+                      <td className="sticky left-0 z-10 py-1.5 px-1.5 text-text-primary bg-bg-surface whitespace-nowrap">Total</td>
+                      <td className="py-1.5 px-1.5 text-right text-text-primary whitespace-nowrap">{totals.totalCustomers.toLocaleString()}</td>
+                      <td className="py-1.5 px-1.5 text-right text-text-primary whitespace-nowrap">{totals.avgNcpa > 0 ? `₱${totals.avgNcpa.toFixed(2)}` : ''}</td>
+                      <td className="py-1.5 px-1.5 text-right text-text-primary whitespace-nowrap">{totals.totalRpr > 0 ? `${totals.totalRpr.toFixed(2)}%` : ''}</td>
+                      <td className="py-1.5 px-1.5 text-right text-text-primary"></td>
                       {totals.monthValues.map((val, i) => (
-                        <td key={i} className="py-2.5 px-2 text-right text-text-primary whitespace-nowrap">
+                        <td key={i} className="py-1.5 px-1.5 text-right text-text-primary whitespace-nowrap">
                           {val !== null ? formatCellValue(val) : ''}
                         </td>
                       ))}
@@ -433,13 +434,13 @@ export default function CohortsPage() {
                   {/* Average row */}
                   {averages && (
                     <tr className="border-t border-border/50 font-medium">
-                      <td className="sticky left-0 z-10 py-2.5 px-2 text-text-primary bg-bg-surface">Average</td>
-                      <td className="py-2.5 px-2 text-right text-text-primary"></td>
-                      <td className="py-2.5 px-2 text-right text-text-primary"></td>
-                      <td className="py-2.5 px-2 text-right text-text-primary"></td>
-                      <td className="py-2.5 px-2 text-right text-text-primary"></td>
+                      <td className="sticky left-0 z-10 py-1.5 px-1.5 text-text-primary bg-bg-surface whitespace-nowrap">Average</td>
+                      <td className="py-1.5 px-1.5 text-right text-text-primary"></td>
+                      <td className="py-1.5 px-1.5 text-right text-text-primary"></td>
+                      <td className="py-1.5 px-1.5 text-right text-text-primary"></td>
+                      <td className="py-1.5 px-1.5 text-right text-text-primary"></td>
                       {averages.monthValues.map((val, i) => (
-                        <td key={i} className="py-2.5 px-2 text-right text-text-primary whitespace-nowrap">
+                        <td key={i} className="py-1.5 px-1.5 text-right text-text-primary whitespace-nowrap">
                           {val !== null ? formatCellValue(val) : ''}
                         </td>
                       ))}
@@ -463,7 +464,7 @@ export default function CohortsPage() {
                     <div>
                       <h4 className="text-sm font-medium text-text-primary">{row.cohortLabel}</h4>
                       <p className="text-xs text-text-secondary">
-                        {row.customers.toLocaleString()} customers • {row.ncpa > 0 ? `${currency}${row.ncpa.toFixed(2)}` : '—'} NCPA
+                        {row.customers.toLocaleString()} customers • {row.ncpa > 0 ? `₱${row.ncpa.toFixed(2)}` : '—'} NCPA
                       </p>
                     </div>
                     <div className="text-right">
