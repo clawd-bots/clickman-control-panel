@@ -77,6 +77,13 @@ const initialMonthlyTargets: MonthlyTarget[] = [
     lastUpdated: 'Never',
   },
   {
+    metric: 'CPA',
+    unit: 'currency',
+    Apr26: '', May26: '', Jun26: '', Jul26: '', Aug26: '', Sep26: '',
+    Oct26: '', Nov26: '', Dec26: '', Jan27: '', Feb27: '', Mar27: '',
+    lastUpdated: 'Never',
+  },
+  {
     metric: 'nCAC',
     unit: 'currency', 
     Apr26: '', May26: '', Jun26: '', Jul26: '', Aug26: '', Sep26: '',
@@ -113,7 +120,7 @@ const monthColumns = ['Apr26', 'May26', 'Jun26', 'Jul26', 'Aug26', 'Sep26', 'Oct
 const monthLabels = ['Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26', 'Sep 26', 'Oct 26', 'Nov 26', 'Dec 26', 'Jan 27', 'Feb 27', 'Mar 27'];
 
 export default function TargetsPage() {
-  const { currency, convertValue } = useCurrency();
+  const { currency, convertValue, exchangeRate } = useCurrency();
   const [monthlyTargets, setMonthlyTargets] = useState<MonthlyTarget[]>(initialMonthlyTargets);
   const [editingCell, setEditingCell] = useState<{row: number, col: string} | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -192,6 +199,31 @@ export default function TargetsPage() {
     return formatCurrency(convertValue(value), currency);
   };
 
+  /** Stored target numbers for money rows are always PHP (shop currency), same as TW/API. */
+  const formatStoredCurrencyCell = (phpString: string) => {
+    const n = parseFloat(phpString);
+    if (!Number.isFinite(n)) return phpString;
+    return formatCurrencyValue(n);
+  };
+
+  const displayInputFromStoredPhp = (phpString: string) => {
+    if (!phpString?.trim()) return '';
+    const n = parseFloat(phpString);
+    if (!Number.isFinite(n)) return '';
+    const d = convertValue(n);
+    const rounded = Math.round(d * 1e6) / 1e6;
+    return String(rounded);
+  };
+
+  const storedPhpFromDisplayInput = (raw: string): string => {
+    const t = raw.trim();
+    if (!t) return '';
+    const n = parseFloat(t);
+    if (!Number.isFinite(n)) return '';
+    const php = currency === '$' ? n * exchangeRate : n;
+    return String(Math.round(php * 100) / 100);
+  };
+
   // Resolve unit display: 'currency' becomes the active currency symbol
   const getUnitDisplay = (unit: string): string => {
     if (unit === 'currency') return currency;
@@ -201,13 +233,15 @@ export default function TargetsPage() {
   // Start editing a cell
   const startEdit = (rowIndex: number, colKey: string, currentValue: string) => {
     // Don't allow editing auto-calculated metrics
-    const metric = monthlyTargets[rowIndex].metric;
-    if (isAutoCalculated(metric)) {
+    const row = monthlyTargets[rowIndex];
+    if (isAutoCalculated(row.metric)) {
       return; // Block editing for auto-calculated targets
     }
     
     setEditingCell({ row: rowIndex, col: colKey });
-    setEditValue(currentValue);
+    const initial =
+      row.unit === 'currency' ? displayInputFromStoredPhp(currentValue) : currentValue;
+    setEditValue(initial);
   };
 
   // Check if a metric is auto-calculated
@@ -218,13 +252,18 @@ export default function TargetsPage() {
   // Save edit with auto-calculation logic
   const saveEdit = () => {
     if (!editingCell) return;
+    const editingRow = monthlyTargets[editingCell.row];
+    const cellStored =
+      editingRow.unit === 'currency' && editingCell.col !== 'lastUpdated'
+        ? storedPhpFromDisplayInput(editValue)
+        : editValue.trim();
     
     setMonthlyTargets(prev => {
       const updatedTargets = prev.map((target, i) => 
         i === editingCell.row 
           ? { 
               ...target, 
-              [editingCell.col]: editValue,
+              [editingCell.col]: cellStored,
               lastUpdated: 'Just now' 
             }
           : target
@@ -336,6 +375,7 @@ export default function TargetsPage() {
         <h2 className="text-lg sm:text-xl font-semibold">Targets & Goals</h2>
         <p className="text-sm text-text-secondary mt-1">
           Set monthly targets in table format. Each month gets specific goals per metric.
+          Money rows are stored in PHP (shop currency); switching $ / ₱ in the top bar converts display and what you type when editing.
         </p>
       </div>
 
@@ -390,6 +430,12 @@ export default function TargetsPage() {
                             const unitDisplay = getUnitDisplay(row.unit);
                             const prefix = row.unit === 'currency' ? unitDisplay : '';
                             const suffix = row.unit === 'x' ? 'x' : row.unit === '%' ? '%' : '';
+                            const amountLabel =
+                              cellValue && row.unit === 'currency'
+                                ? formatStoredCurrencyCell(cellValue)
+                                : cellValue
+                                  ? `${prefix}${cellValue}${suffix}`
+                                  : '';
                             
                             if (isEditing) return (
                               <div className="flex items-center gap-1">
@@ -423,11 +469,11 @@ export default function TargetsPage() {
                                     ? 'text-brand-blue-light bg-brand-blue/10 border border-brand-blue/25' 
                                     : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
                                 }`}
-                                title={cellValue ? `Auto-calculated: ${prefix}${cellValue}${suffix}` : `Will be auto-calculated`}
+                                title={cellValue ? `Auto-calculated: ${amountLabel}` : `Will be auto-calculated`}
                               >
                                 {cellValue ? (
                                   <span className="flex items-center justify-center gap-1">
-                                    <span>{prefix}{cellValue}{suffix}</span>
+                                    <span>{amountLabel}</span>
                                     <span className="text-brand-blue-light text-[8px]">⚙</span>
                                   </span>
                                 ) : (
@@ -444,9 +490,9 @@ export default function TargetsPage() {
                                     : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-primary border border-dashed border-text-tertiary hover:border-text-secondary'
                                 }`}
                                 onClick={() => startEdit(rowIndex, colKey, cellValue)}
-                                title={cellValue ? `${prefix}${cellValue}${suffix}` : `Set target`}
+                                title={amountLabel || `Set target`}
                               >
-                                {cellValue ? `${prefix}${cellValue}${suffix}` : 'Set'}
+                                {cellValue ? amountLabel : 'Set'}
                               </button>
                             );
                           })()}
@@ -502,9 +548,14 @@ export default function TargetsPage() {
                       <td key={`${rowIndex}-${colIndex}`} className="py-2 px-3 text-center">
                         {(() => {
                           const unitDisplay = getUnitDisplay(row.unit);
-                          const isPrefix = ['currency'].includes(row.unit) || row.unit === '%';
                           const prefix = row.unit === 'currency' ? unitDisplay : '';
                           const suffix = row.unit === 'x' ? 'x' : row.unit === '%' ? '%' : '';
+                          const amountLabel =
+                            cellValue && row.unit === 'currency'
+                              ? formatStoredCurrencyCell(cellValue)
+                              : cellValue
+                                ? `${prefix}${cellValue}${suffix}`
+                                : '';
                           
                           if (isEditing) return (
                             <div className="flex items-center justify-center gap-1">
@@ -539,13 +590,13 @@ export default function TargetsPage() {
                                   : 'text-text-tertiary bg-bg-elevated border border-dashed border-text-tertiary opacity-60'
                               }`}
                               title={cellValue 
-                                ? `Auto-calculated: ${prefix}${cellValue}${suffix}` 
+                                ? `Auto-calculated: ${amountLabel}` 
                                 : `Will be auto-calculated from other targets`
                               }
                             >
                               {cellValue ? (
                                 <span className="flex items-center justify-center gap-1">
-                                  <span>{prefix}{cellValue}{suffix}</span>
+                                  <span>{amountLabel}</span>
                                   <span className="text-brand-blue-light text-[10px]">⚙</span>
                                 </span>
                               ) : (
@@ -562,9 +613,9 @@ export default function TargetsPage() {
                                   : 'text-text-tertiary hover:text-text-secondary hover:bg-bg-primary border border-dashed border-text-tertiary hover:border-text-secondary'
                               }`}
                               onClick={() => startEdit(rowIndex, colKey, cellValue)}
-                              title={cellValue ? `${prefix}${cellValue}${suffix}` : `Set ${row.metric} target for ${currentMonthLabels[colIndex]}`}
+                              title={amountLabel || `Set ${row.metric} target for ${currentMonthLabels[colIndex]}`}
                             >
-                              {cellValue ? `${prefix}${cellValue}${suffix}` : 'Set target'}
+                              {cellValue ? amountLabel : 'Set target'}
                             </button>
                           );
                         })()}

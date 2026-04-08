@@ -57,11 +57,13 @@ function getDatesFromPreset(preset: string): { startDate: Date; endDate: Date } 
       lastMonthEnd.setHours(23, 59, 59, 999);
       return { startDate: lastMonthStart, endDate: lastMonthEnd };
     }
-    case 'this-quarter':
+    case 'this-quarter': {
+      // Calendar quarter (Q1 Jan–Mar, Q2 Apr–Jun, …), start through today (not “this month”).
       const quarter = Math.floor(today.getMonth() / 3);
       startDate = new Date(today.getFullYear(), quarter * 3, 1);
       startDate.setHours(0, 0, 0, 0);
       break;
+    }
     default: // custom - default to past 7 days
       startDate.setDate(today.getDate() - 6);
       startDate.setHours(0, 0, 0, 0);
@@ -133,31 +135,6 @@ export function DateProvider({ children }: { children: ReactNode }) {
   const setDateRange = (range: DateRange) => {
     setDateRangeState(range);
   };
-
-  // Custom event listener for external updates (from TopBar)
-  useEffect(() => {
-    const handleDateChange = (event: CustomEvent) => {
-      const { preset, comparison, comparisonEnabled } = event.detail;
-      
-      if (preset !== undefined) {
-        updatePreset(preset);
-      }
-      
-      if (comparison !== undefined) {
-        updateComparison(comparison);
-      }
-      
-      if (comparisonEnabled !== undefined) {
-        setComparisonEnabled(comparisonEnabled);
-      }
-    };
-
-    window.addEventListener('dateRangeChanged', handleDateChange as EventListener);
-    
-    return () => {
-      window.removeEventListener('dateRangeChanged', handleDateChange as EventListener);
-    };
-  }, []);
 
   return (
     <DateContext.Provider value={{

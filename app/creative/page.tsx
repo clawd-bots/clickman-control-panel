@@ -13,8 +13,8 @@ import {
   creativePerformance, creativeAISuggestions,
   accountControlData, adChurnDataByPlatform, adChurnCampaigns, creativeChurnCohorts,
   productionSlugging, demographicsAge, demographicsGender, demographicsGenderAge, creativeChurnCohortsByPlatform,
-  targets,
 } from '@/lib/sample-data';
+import { useTargets } from '@/lib/useTargets';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { filterByDateRange, formatDateLabel, toLocalDateString } from '@/lib/dateUtils';
@@ -29,7 +29,8 @@ import {
 const tabs = [/* 'Performance', */ 'Ad Churn', 'Account Control', 'Slugging Rate', 'Pareto', 'Demographics'];
 const platforms = ['Meta', 'TikTok', 'Reddit'];
 const platformsWithGoogle = ['Meta', 'TikTok', 'Reddit', 'Google'];
-const sluggingPlatforms = ['All', 'Meta', 'Google', 'TikTok'];
+/** Slugging Rate tab only — no Google (creative-focused platforms). */
+const sluggingTabPlatforms = ['All', 'Meta', 'TikTok'];
 
 const tabDescriptions: Record<string, string> = {
   'Performance': 'Overview of all active ad creatives with spend, engagement, and conversion metrics. Use this to monitor your live ads and spot issues quickly.',
@@ -57,10 +58,6 @@ const cohortColors = { oct: '#C5D8FB', nov: '#93B4F5', dec: '#6B8DE8', jan: '#4A
 const cohortKeys = ['oct', 'nov', 'dec', 'jan', 'feb', 'mar'] as const;
 const cohortLabels: Record<string, string> = { oct: 'Oct Creatives', nov: 'Nov Creatives', dec: 'Dec Creatives', jan: 'Jan Creatives', feb: 'Feb Creatives', mar: 'Mar Creatives' };
 
-// Demographics stacked area colors
-const demoKeys = ['F 18-24', 'F 25-34', 'F 35-44', 'F 45-54', 'F 55+', 'M 18-24', 'M 25-34', 'M 35-44', 'M 45-54', 'M 55+'];
-const demoColors = ['#fca5a5', '#ef4444', '#dc2626', '#b91c1c', '#7f1d1d', '#93c5fd', '#3b82f6', '#2563eb', '#1d4ed8', '#1e3a8a'];
-
 // Function to get tab-specific AI analysis title
 function getAITitle(tab: string): string {
   const aiTitles: Record<string, string> = {
@@ -86,6 +83,7 @@ function getAIPromptId(tab: string): string {
 export default function CreativePage() {
   const { currency, convertValue } = useCurrency();
   const { dateRange } = useDateRange();
+  const { getTarget, targets } = useTargets();
   const [activeTab, setActiveTab] = useState('Ad Churn');
   const [twData, setTwData] = useState<TWData | null>(null);
   const [twLoading, setTwLoading] = useState(true);
@@ -174,20 +172,17 @@ export default function CreativePage() {
   const [attrModel, setAttrModel] = useState('Triple Attribution');
   const [attrWindow, setAttrWindow] = useState('7 days');
 
-  // Fetch TW ad-level data for Account Control — date range based on Window dropdown
+  // Fetch TW ad-level data for Account Control — same calendar period as the top bar (TW report dates).
+  // The Window dropdown is only the conversion attribution window (e.g. 7-day), not the report range.
+  const twAdsStart = toLocalDateString(dateRange.startDate);
+  const twAdsEnd = toLocalDateString(dateRange.endDate);
   useEffect(() => {
     setTwAdsLoading(true);
-    const today = new Date();
-    const start = new Date(today);
-    // Window dropdown controls the lookback period
-    const windowDays: Record<string, number> = { '1 day': 0, '7 days': 6, '14 days': 13, '28 days': 27, 'Lifetime': 364 };
-    const days = windowDays[attrWindow] ?? 6;
-    start.setDate(start.getDate() - days);
-    fetchTWAds(toLocalDateString(start), toLocalDateString(today), attrModel, attrWindow)
+    fetchTWAds(twAdsStart, twAdsEnd, attrModel, attrWindow)
       .then(setTwAds)
       .catch(console.error)
       .finally(() => setTwAdsLoading(false));
-  }, [attrModel, attrWindow]);
+  }, [attrModel, attrWindow, twAdsStart, twAdsEnd]);
   const [accountControlFilter, setAccountControlFilter] = useState('all');
   const [accountControlCampaign, setAccountControlCampaign] = useState('all');
   const [acPageSize, setAcPageSize] = useState(10);
@@ -197,12 +192,20 @@ export default function CreativePage() {
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [genderFilter, setGenderFilter] = useState('all');
+  /** Spend-by-age chart: single gender at a time (default male). */
+  const [demoSpendGender, setDemoSpendGender] = useState<'male' | 'female'>('male');
   const [churnCpaMode, setChurnCpaMode] = useState<'cpa' | 'nccpa'>('cpa');
   const [churnPlatform, setChurnPlatform] = useState('Meta');
   const [sluggingPlatform, setSluggingPlatform] = useState('All');
   const [sluggingMonths, setSluggingMonths] = useState<number>(6);
   const [sluggingCpaMode, setSluggingCpaMode] = useState<'cpa' | 'nccpa'>('cpa');
   const [churnCampaignFilter, setChurnCampaignFilter] = useState('all');
+
+  useEffect(() => {
+    if (activeTab === 'Slugging Rate' && sluggingPlatform === 'Google') {
+      setSluggingPlatform('All');
+    }
+  }, [activeTab, sluggingPlatform]);
 
   // ─── Ad Churn derived data ───
   const churnPlatformData = useMemo(() => {
@@ -237,9 +240,11 @@ export default function CreativePage() {
     return churnCampaignsForPlatform.filter(c => c.campaign === churnCampaignFilter);
   }, [churnCampaignsForPlatform, churnCampaignFilter]);
 
-  // Target CPA values from targets
-  const targetCPA = useMemo(() => targets.find(t => t.metric === 'CAC')?.target || 500, []);
-  const targetNCCPA = useMemo(() => targets.find(t => t.metric === 'nCAC')?.target || 750, []);
+  // CPA from Targets page; NC CPA is always 2× CPA (same for Account Control + Slugging)
+  const { targetCPA, targetNCCPA } = useMemo(() => {
+    const cpa = getTarget('CPA') ?? 500;
+    return { targetCPA: cpa, targetNCCPA: cpa * 2 };
+  }, [getTarget, targets, dateRange.startDate, dateRange.endDate]);
   const churnCpaTarget = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
   // Wasted spend: computed from TW ad-level data (or fallback to sample)
@@ -295,7 +300,7 @@ export default function CreativePage() {
         `Top-right "zombie" quadrant burns budget at high CPA. Pause any ads consistently above ${formatCurrencyValue(850)}.`,
         'Bottom-left testing quadrant shows new ads with potential. Scale winners that maintain CPA under target.',
         'Account Control Chart requires ad identification. Bubble colors should map to specific creative names below.',
-        `Horizontal line at ${formatCurrencyValue(787)} is your CPA target. Vertical line at ${formatCurrencyValue(20000)} separates testing from scale.`,
+        `Horizontal CPA/NCCPA targets follow Targets (NC = 2× CPA). Vertical spend threshold scales as 2× the active CPA target.`,
       ],
       'Slugging Rate': [
         'Production rate tracking shows creative "at bats" vs "hits" - launches vs successful scaling.',
@@ -321,7 +326,7 @@ export default function CreativePage() {
     };
     
     return suggestions[activeTab] || suggestions['Performance'];
-  }, [activeTab, platform, campaignFilter, formatCurrencyValue]);
+  }, [activeTab, platform, campaignFilter, formatCurrencyValue, targetCPA, targetNCCPA]);
 
   // Get active campaign names for the selected platform
   const activeCampaigns = useMemo(() => {
@@ -557,6 +562,20 @@ export default function CreativePage() {
     
     return buckets;
   }, [dateRange, demographicsGenderAge, platform]);
+
+  const demoSpendChartSeries = useMemo(() => {
+    if (demoSpendGender === 'male') {
+      return {
+        keys: ['M 18-24', 'M 25-34', 'M 35-44', 'M 45-54', 'M 55+'] as const,
+        colors: ['#93c5fd', '#3b82f6', '#2563eb', '#1d4ed8', '#1e3a8a'] as const,
+      };
+    }
+    return {
+      keys: ['F 18-24', 'F 25-34', 'F 35-44', 'F 45-54', 'F 55+'] as const,
+      colors: ['#fca5a5', '#ef4444', '#dc2626', '#b91c1c', '#7f1d1d'] as const,
+    };
+  }, [demoSpendGender]);
+
   const sluggingCpaTarget = sluggingCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
   // Filter demographics data based on gender selection
@@ -978,6 +997,9 @@ export default function CreativePage() {
               <div className="flex items-center gap-3">
               </div>
             </div>
+            <p className="text-[10px] text-text-tertiary leading-snug">
+              Report period matches the top bar ({formatDateLabel(twAdsStart, 'day')} – {formatDateLabel(twAdsEnd, 'day')}). &quot;Window&quot; is the conversion attribution window only — align model + window with Triple Whale for comparable CPA/ROAS.
+            </p>
             {/* CPA Target Toggle + Wasted Spend */}
             <div className="flex flex-col sm:flex-row gap-3 sm:items-end sm:justify-end">
               <div className="flex flex-col gap-1">
@@ -1550,7 +1572,7 @@ export default function CreativePage() {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
                 <div className="flex gap-1">
-                  {sluggingPlatforms.map(p => (
+                  {sluggingTabPlatforms.map(p => (
                     <button key={p} onClick={() => setSluggingPlatform(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${sluggingPlatform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
                       {p}
                     </button>
@@ -1858,16 +1880,42 @@ export default function CreativePage() {
             )}
           </div>
 
-          {/* Gender+Age Stacked Area over time */}
+          {/* Gender+Age stacked bars over time — one gender at a time */}
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium text-text-primary">Spend by Gender & Age Over Time</h3>
-              <span className="text-xs text-text-tertiary shrink-0">{platform} Ads</span>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
+              <h3 className="text-sm font-medium text-text-primary">Spend by Age Over Time</h3>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-1 rounded-lg border border-border overflow-hidden bg-bg-elevated">
+                  <button
+                    type="button"
+                    onClick={() => setDemoSpendGender('male')}
+                    className={`px-2.5 py-1 text-[10px] sm:text-xs font-medium transition-colors ${
+                      demoSpendGender === 'male'
+                        ? 'bg-brand-blue text-white'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    Male
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDemoSpendGender('female')}
+                    className={`px-2.5 py-1 text-[10px] sm:text-xs font-medium transition-colors ${
+                      demoSpendGender === 'female'
+                        ? 'bg-brand-blue text-white'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    Female
+                  </button>
+                </div>
+                <span className="text-xs text-text-tertiary shrink-0">{platform} Ads</span>
+              </div>
             </div>
             <div className="flex gap-1 sm:gap-2 mb-4 flex-wrap">
-              {demoKeys.map((key, i) => (
+              {demoSpendChartSeries.keys.map((key, i) => (
                 <div key={key} className="flex items-center gap-1">
-                  <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: demoColors[i] }} />
+                  <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: demoSpendChartSeries.colors[i] }} />
                   <span className="text-[10px] text-text-secondary">{key}</span>
                 </div>
               ))}
@@ -1888,16 +1936,15 @@ export default function CreativePage() {
                       contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11, color: 'var(--color-text-primary)' }}
                       formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
                     />
-                    <Bar dataKey="F 18-24" stackId="demo" fill="#fca5a5" />
-                    <Bar dataKey="F 25-34" stackId="demo" fill="#ef4444" />
-                    <Bar dataKey="F 35-44" stackId="demo" fill="#dc2626" />
-                    <Bar dataKey="F 45-54" stackId="demo" fill="#b91c1c" />
-                    <Bar dataKey="F 55+" stackId="demo" fill="#7f1d1d" />
-                    <Bar dataKey="M 18-24" stackId="demo" fill="#93c5fd" />
-                    <Bar dataKey="M 25-34" stackId="demo" fill="#3b82f6" />
-                    <Bar dataKey="M 35-44" stackId="demo" fill="#2563eb" />
-                    <Bar dataKey="M 45-54" stackId="demo" fill="#1d4ed8" />
-                    <Bar dataKey="M 55+" stackId="demo" fill="#1e3a8a" radius={[3, 3, 0, 0]} />
+                    {demoSpendChartSeries.keys.map((key, i, arr) => (
+                      <Bar
+                        key={key}
+                        dataKey={key}
+                        stackId="demo"
+                        fill={demoSpendChartSeries.colors[i]}
+                        radius={i === arr.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                      />
+                    ))}
                   </BarChart>
                 </ResponsiveContainer>
               </div>

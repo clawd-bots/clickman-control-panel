@@ -134,6 +134,48 @@ export async function fetchTWAds(
   return json.data;
 }
 
+/** Row from Orcabase cohort SQL (avg cumulative LTV by cohort month, aligned with TW Cohort Analysis). */
+export interface TWCohortApiRow {
+  cohortMonth: string;
+  cohortLabel: string;
+  customers: number;
+  ncpa: number;
+  rpr: number;
+  firstOrderAov: number;
+  ltvByMonth: number[];
+  customersByMonth: number[];
+}
+
+export interface TWCohortsResponse {
+  success: boolean;
+  source?: string;
+  dateRange: { startDate: string; endDate: string };
+  model?: string;
+  attributionWindow?: string;
+  cohorts: TWCohortApiRow[];
+  error?: string;
+}
+
+/**
+ * Cohort retention / LTV grid from Triple Whale (shop orders + pixel NCPA).
+ */
+export async function fetchTWCohorts(
+  startDate: string,
+  endDate: string,
+  model: string = 'Triple Attribution',
+  window: string = 'Lifetime',
+  refresh: boolean = false
+): Promise<TWCohortApiRow[]> {
+  const params = new URLSearchParams({ startDate, endDate, model, window });
+  if (refresh) params.set('refresh', 'true');
+  const res = await fetch(`/api/triple-whale/cohorts?${params.toString()}`);
+  const json: TWCohortsResponse = await res.json();
+  if (!json.success) {
+    throw new Error(json.error || 'Failed to fetch TW cohort data');
+  }
+  return json.cohorts ?? [];
+}
+
 /**
  * Format a number as currency (PHP ₱ or USD $).
  */

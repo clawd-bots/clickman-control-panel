@@ -663,13 +663,13 @@ export const creativeAISuggestions = [
 
 // ─── Cohort Analysis ───
 export const cohortRetention = [
-  { cohort: 'Sep 2025', customers: 380, cac: 820, nccpa: 985, firstOrder: 1580, periods: [100, 28.5, 22.1, 18.4, 15.8, 13.2, 11.5] },
-  { cohort: 'Oct 2025', customers: 420, cac: 795, nccpa: 950, firstOrder: 1620, periods: [100, 30.2, 23.8, 19.5, 16.8, 14.1, 0] },
-  { cohort: 'Nov 2025', customers: 465, cac: 780, nccpa: 920, firstOrder: 1685, periods: [100, 31.5, 24.7, 20.2, 17.1, 0, 0] },
-  { cohort: 'Dec 2025', customers: 510, cac: 770, nccpa: 895, firstOrder: 1710, periods: [100, 32.8, 25.9, 21.0, 0, 0, 0] },
-  { cohort: 'Jan 2026', customers: 545, cac: 800, nccpa: 940, firstOrder: 1750, periods: [100, 29.8, 23.5, 0, 0, 0, 0] },
-  { cohort: 'Feb 2026', customers: 590, cac: 790, nccpa: 910, firstOrder: 1820, periods: [100, 31.2, 0, 0, 0, 0, 0] },
-  { cohort: 'Mar 2026', customers: 635, cac: 787, nccpa: 880, firstOrder: 1850, periods: [100, 0, 0, 0, 0, 0, 0] },
+  { cohort: 'Sep 2025', customers: 380, cac: 820, nccpa: 985, firstOrder: 1580, periods: [100, 28.5, 22.1, 18.4, 15.8, 13.2, 11.5, 10.2, 9.1, 8.5, 0, 0, 0] },
+  { cohort: 'Oct 2025', customers: 420, cac: 795, nccpa: 950, firstOrder: 1620, periods: [100, 30.2, 23.8, 19.5, 16.8, 14.1, 0, 0, 0, 0, 0, 0, 0] },
+  { cohort: 'Nov 2025', customers: 465, cac: 780, nccpa: 920, firstOrder: 1685, periods: [100, 31.5, 24.7, 20.2, 17.1, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { cohort: 'Dec 2025', customers: 510, cac: 770, nccpa: 895, firstOrder: 1710, periods: [100, 32.8, 25.9, 21.0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { cohort: 'Jan 2026', customers: 545, cac: 800, nccpa: 940, firstOrder: 1750, periods: [100, 29.8, 23.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { cohort: 'Feb 2026', customers: 590, cac: 790, nccpa: 910, firstOrder: 1820, periods: [100, 31.2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  { cohort: 'Mar 2026', customers: 635, cac: 787, nccpa: 880, firstOrder: 1850, periods: [100, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
 ];
 
 export const clvExtension = [

@@ -48,7 +48,7 @@ export function useTargets() {
     if (target === null || target === 0) return null;
     
     // For inverse metrics (lower is better), invert the calculation
-    const inverseMetrics = new Set(['CAC', 'ncCAC', 'nCAC']);
+    const inverseMetrics = new Set(['CAC', 'CPA', 'ncCAC', 'nCAC']);
     const resolved = resolveMetricName(metric);
     if (inverseMetrics.has(resolved)) {
       return (target / actual) * 100;

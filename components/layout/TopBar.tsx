@@ -1,10 +1,12 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Calendar, ChevronDown, RefreshCw, User, Sun, Moon, Menu, DollarSign } from 'lucide-react';
+import { Calendar, ChevronDown, RefreshCw, Sun, Moon, Menu, DollarSign } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { useSidebar } from '@/components/layout/SidebarContext';
 import { useCurrency } from '@/components/CurrencyProvider';
+import { useDateRange } from '@/components/DateProvider';
+import { toLocalDateString } from '@/lib/dateUtils';
 
 const datePresets = [
   { label: 'Today', value: 'today' },
@@ -28,46 +30,13 @@ function fmtDate(d: Date, opts: Intl.DateTimeFormatOptions): string {
   return d.toLocaleDateString('en-US', opts);
 }
 
-function getDisplayDate(preset: string): string {
-  const today = new Date();
+/** Primary label: always reflects the actual range in context (fixes Custom + preset drift). */
+function getRangeLabel(start: Date, end: Date, preset: string): string {
   const fmt = (d: Date) => fmtDate(d, { month: 'short', day: 'numeric', year: 'numeric' });
   const fmtShort = (d: Date) => fmtDate(d, { month: 'short', day: 'numeric' });
-
-  switch (preset) {
-    case 'today':
-      return fmt(today);
-    case 'yesterday': {
-      const y = new Date(today);
-      y.setDate(y.getDate() - 1);
-      return fmt(y);
-    }
-    case '7d': {
-      const start = new Date(today);
-      start.setDate(today.getDate() - 6);
-      return `${fmtShort(start)} - ${fmt(today)}`;
-    }
-    case '30d': {
-      const start = new Date(today);
-      start.setDate(today.getDate() - 29);
-      return `${fmtShort(start)} - ${fmt(today)}`;
-    }
-    case 'this-month': {
-      const start = new Date(today.getFullYear(), today.getMonth(), 1);
-      return `${fmtShort(start)} - ${fmt(today)}`;
-    }
-    case 'last-month': {
-      const start = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-      const end = new Date(today.getFullYear(), today.getMonth(), 0);
-      return `${fmtShort(start)} - ${fmt(end)}`;
-    }
-    case 'this-quarter': {
-      const q = Math.floor(today.getMonth() / 3);
-      const start = new Date(today.getFullYear(), q * 3, 1);
-      return `${fmtShort(start)} - ${fmt(today)}`;
-    }
-    default:
-      return `${fmtShort(today)} (Custom)`;
-  }
+  if (preset === 'today') return fmt(start);
+  if (preset === 'yesterday') return fmt(start);
+  return `${fmtShort(start)} - ${fmt(end)}`;
 }
 
 function getShortDisplayDate(preset: string): string {
@@ -91,19 +60,20 @@ function getShortDisplayDate(preset: string): string {
   }
 }
 
-// Pages where date picker should NOT show
-const hideDatePickerPages: string[] = [];
+// Pages where date picker + comparison controls are hidden (page uses its own time semantics).
+const hideDatePickerPages: string[] = ['/cohorts'];
 
 export default function TopBar() {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const { toggleMobile } = useSidebar();
   const { currency, setCurrency } = useCurrency();
-  const [datePreset, setDatePreset] = useState('7d');
-  const [comparison, setComparison] = useState('prev-period');
-  const [comparisonEnabled, setComparisonEnabled] = useState(true);
+  const { dateRange, setDateRange, updatePreset, updateComparison, setComparisonEnabled } = useDateRange();
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [showCompDropdown, setShowCompDropdown] = useState(false);
+  const [customMode, setCustomMode] = useState(false);
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const dateRef = useRef<HTMLDivElement>(null);
@@ -111,18 +81,9 @@ export default function TopBar() {
 
   const showDatePicker = !hideDatePickerPages.includes(pathname);
 
-  // Load comparison preference from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem('clickman-comparison-enabled');
-    if (stored !== null) {
-      setComparisonEnabled(stored === 'true');
-    }
-  }, []);
-
-  // Save comparison preference to localStorage
-  useEffect(() => {
-    localStorage.setItem('clickman-comparison-enabled', comparisonEnabled.toString());
-  }, [comparisonEnabled]);
+    if (!showDateDropdown) setCustomMode(false);
+  }, [showDateDropdown]);
 
   // Global refresh function
   const handleRefresh = async () => {
@@ -181,33 +142,103 @@ export default function TopBar() {
                 className="flex items-center gap-1 md:gap-2 bg-bg-elevated border border-border rounded-md px-2 md:px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary hover:border-text-tertiary transition-colors"
               >
                 <Calendar size={13} />
-                <span className="hidden md:inline">{getDisplayDate(datePreset)}</span>
-                <span className="md:hidden">{getShortDisplayDate(datePreset)}</span>
+                <span className="hidden md:inline">{getRangeLabel(dateRange.startDate, dateRange.endDate, dateRange.preset)}</span>
+                <span className="md:hidden">{getShortDisplayDate(dateRange.preset)}</span>
                 <ChevronDown size={12} />
               </button>
               {showDateDropdown && (
-                <div className="absolute right-0 top-full mt-1 w-52 bg-bg-elevated border border-border rounded-lg shadow-xl z-50 py-1">
-                  {datePresets.map((p) => (
-                    <button
-                      key={p.value}
-                      onClick={() => { 
-                        setDatePreset(p.value); 
-                        setShowDateDropdown(false);
-                        // Dispatch date change event for global consumption
-                        const event = new CustomEvent('dateRangeChanged', { 
-                          detail: { preset: p.value, comparison, comparisonEnabled }
-                        });
-                        window.dispatchEvent(event);
-                      }}
-                      className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                        datePreset === p.value
-                          ? 'bg-brand-blue/15 text-brand-blue-light'
-                          : 'text-text-secondary hover:bg-bg-surface hover:text-text-primary'
-                      }`}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
+                <div className="absolute right-0 top-full mt-1 w-[min(100vw-1.5rem,16rem)] sm:w-60 bg-bg-elevated border border-border rounded-lg shadow-xl z-50 py-1">
+                  {customMode ? (
+                    <div className="px-3 py-2 space-y-2">
+                      <button
+                        type="button"
+                        onClick={() => setCustomMode(false)}
+                        className="text-xs text-text-secondary hover:text-text-primary"
+                      >
+                        ← Back to presets
+                      </button>
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase tracking-wide text-text-tertiary font-medium">Start</label>
+                        <input
+                          type="date"
+                          value={customStart}
+                          onChange={(e) => setCustomStart(e.target.value)}
+                          className="w-full rounded-md border border-border bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-brand-blue"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] uppercase tracking-wide text-text-tertiary font-medium">End</label>
+                        <input
+                          type="date"
+                          value={customEnd}
+                          min={customStart}
+                          onChange={(e) => setCustomEnd(e.target.value)}
+                          className="w-full rounded-md border border-border bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-brand-blue"
+                        />
+                      </div>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!customStart || !customEnd) return;
+                            let start = new Date(`${customStart}T00:00:00`);
+                            let end = new Date(`${customEnd}T23:59:59.999`);
+                            if (start > end) {
+                              [start, end] = [
+                                new Date(`${customEnd}T00:00:00`),
+                                new Date(`${customStart}T23:59:59.999`),
+                              ];
+                            }
+                            setDateRange({
+                              ...dateRange,
+                              startDate: start,
+                              endDate: end,
+                              preset: 'custom',
+                            });
+                            setShowDateDropdown(false);
+                            setCustomMode(false);
+                          }}
+                          className="flex-1 rounded-md bg-brand-blue text-white py-1.5 text-xs font-medium hover:opacity-90"
+                        >
+                          Apply
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomMode(false);
+                            setShowDateDropdown(false);
+                          }}
+                          className="rounded-md border border-border px-2 py-1.5 text-xs text-text-secondary hover:bg-bg-surface"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    datePresets.map((p) => (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => {
+                          if (p.value === 'custom') {
+                            setCustomStart(toLocalDateString(dateRange.startDate));
+                            setCustomEnd(toLocalDateString(dateRange.endDate));
+                            setCustomMode(true);
+                            return;
+                          }
+                          updatePreset(p.value);
+                          setShowDateDropdown(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-xs transition-colors ${
+                          dateRange.preset === p.value
+                            ? 'bg-brand-blue/15 text-brand-blue-light'
+                            : 'text-text-secondary hover:bg-bg-surface hover:text-text-primary'
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))
+                  )}
                 </div>
               )}
             </div>
@@ -219,7 +250,7 @@ export default function TopBar() {
                   className="flex items-center gap-1.5 bg-bg-elevated border border-border rounded-md px-2.5 py-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors"
                 >
                   <span className="text-text-tertiary">vs</span>
-                  <span className="text-text-secondary">{comparisonOptions.find(o => o.value === comparison)?.label}</span>
+                  <span className="text-text-secondary">{comparisonOptions.find(o => o.value === dateRange.comparison)?.label}</span>
                   <ChevronDown size={12} />
                 </button>
                 {showCompDropdown && (
@@ -227,19 +258,15 @@ export default function TopBar() {
                     {comparisonOptions.map((o) => (
                       <button
                         key={o.value}
-                        onClick={() => { 
-                          setComparison(o.value); 
-                          setShowCompDropdown(false);
+                        type="button"
+                        onClick={() => {
+                          updateComparison(o.value);
                           const newEnabled = o.value !== 'none';
                           setComparisonEnabled(newEnabled);
-                          // Dispatch date change event for global consumption
-                          const event = new CustomEvent('dateRangeChanged', { 
-                            detail: { preset: datePreset, comparison: o.value, comparisonEnabled: newEnabled }
-                          });
-                          window.dispatchEvent(event);
+                          setShowCompDropdown(false);
                         }}
                         className={`w-full text-left px-3 py-2 text-xs transition-colors ${
-                          comparison === o.value
+                          dateRange.comparison === o.value
                             ? 'bg-brand-blue/15 text-brand-blue-light'
                             : 'text-text-secondary hover:bg-bg-surface hover:text-text-primary'
                         }`}

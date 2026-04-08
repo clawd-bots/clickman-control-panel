@@ -1,8 +1,8 @@
 'use client';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
-import { useState, useEffect } from 'react';
 import InfoTooltip from './InfoTooltip';
 import DataSource from './DataSource';
+import { useDateRange } from '@/components/DateProvider';
 
 interface KPICardProps {
   label: string;
@@ -21,29 +21,8 @@ interface KPICardProps {
 export default function KPICard({ label, value, change, sparkline, target, targetAchievement, secondary, testId, dataSource }: KPICardProps) {
   const isPositive = change >= 0;
   const data = sparkline.map((v, i) => ({ v, i }));
-  const [comparisonEnabled, setComparisonEnabled] = useState(true);
-
-  // Listen for comparison state changes from TopBar
-  useEffect(() => {
-    const handleDateChange = (event: CustomEvent) => {
-      const { comparisonEnabled: enabled } = event.detail;
-      if (enabled !== undefined) {
-        setComparisonEnabled(enabled);
-      }
-    };
-
-    // Load initial state from localStorage
-    const stored = localStorage.getItem('clickman-comparison-enabled');
-    if (stored !== null) {
-      setComparisonEnabled(stored === 'true');
-    }
-
-    window.addEventListener('dateRangeChanged', handleDateChange as EventListener);
-    
-    return () => {
-      window.removeEventListener('dateRangeChanged', handleDateChange as EventListener);
-    };
-  }, []);
+  const { dateRange } = useDateRange();
+  const comparisonEnabled = dateRange.comparisonEnabled;
 
   return (
     <div 

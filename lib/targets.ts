@@ -18,7 +18,7 @@ export interface MonthlyTargetData {
 }
 
 // Metrics that should NOT be prorated (they're ratios/percentages, not cumulative)
-const RATIO_METRICS = new Set(['MER', 'aMER', 'CAC', 'nCAC', 'CM3%', 'AOV', 'Repeat Rate (30d)']);
+const RATIO_METRICS = new Set(['MER', 'aMER', 'CAC', 'CPA', 'nCAC', 'CM3%', 'AOV', 'Repeat Rate (30d)']);
 
 /**
  * Save all monthly targets to localStorage AND to the server (Vercel Blob).
@@ -204,6 +204,7 @@ const METRIC_ALIAS: Record<string, string> = {
   'Orders': 'Total Orders',
   'NC Orders': 'NC Orders',
   'CAC': 'CAC',
+  'CPA': 'CPA',
   'ncCAC': 'nCAC',
   'nCAC': 'nCAC',
   'CM3': 'CM3',

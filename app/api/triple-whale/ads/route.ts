@@ -58,8 +58,8 @@ export async function GET(request: NextRequest) {
     }
 
     const forceRefresh = searchParams.get('refresh') === 'true';
-    // v2 cache key — invalidates old cached data with wrong currency conversion
-    const cacheKey = `v2_ads_${startDate}_${endDate}_${model}_${window}_${platform || 'all'}`;
+    // v3: attributed orders (orders_quantity) preferred for CPA/ROAS to match TW Triple Attribution UI
+    const cacheKey = `v3_ads_${startDate}_${endDate}_${model}_${window}_${platform || 'all'}`;
     if (!forceRefresh) {
       const cached = await getCached('tw-ads', cacheKey);
       if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
@@ -147,10 +147,12 @@ export async function GET(request: NextRequest) {
         // Convert monetary values to PHP for consistency with Summary Page API
         const spend = (r.spend || 0) * usdToPhp;
         const revenue = (r.order_revenue || 0) * usdToPhp;
-        // Use website_purchases for order count (matches TW UI better than orders_quantity)
-        // orders_quantity can overcount due to attribution model splits
-        const purchases = r.pixel_purchases || 0;
-        const orders = purchases > 0 ? purchases : (r.orders || 0);
+        // Prefer model-attributed purchases (orders_quantity === r.orders) so CPA / ROAS match TW
+        // "Triple Attribution Purchases" & CV columns. Pixel website_purchases is platform-level volume
+        // and diverges from attributed orders (especially for Triple Attribution).
+        const attributedOrders = Math.round(r.orders || 0);
+        const pixelPurchases = Math.round(r.pixel_purchases || 0);
+        const orders = attributedOrders > 0 ? attributedOrders : pixelPurchases;
         // NC orders can't exceed total orders
         const rawNcOrders = r.nc_orders || 0;
         const ncOrders = Math.min(rawNcOrders, orders);
