@@ -178,7 +178,7 @@ export default function CohortsPage() {
     const weightedNcpa = displayCohortRows.reduce((s, c) => s + c.ncpa * c.customers, 0);
     const avgNcpa = totalCustomers > 0 ? weightedNcpa / totalCustomers : 0;
 
-    const allCustByMonth = displayCohortRows.reduce((s, c) => s + (c.customersByMonth?.reduce((a, b) => a + b, 0) ?? 0), 0);
+    const allCustByMonth = displayCohortRows.reduce((s, c) => s + (c.customersByMonth?.reduce((a, b) => (a ?? 0) + (b ?? 0), 0) ?? 0), 0);
     const repeatCust = displayCohortRows.reduce((s, c) => s + Math.round(c.customers * c.rpr / 100), 0);
     const totalRpr = totalCustomers > 0 ? (repeatCust / totalCustomers) * 100 : 0;
 
