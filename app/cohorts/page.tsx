@@ -98,27 +98,50 @@ export default function CohortsPage() {
     
     switch (metric) {
       case 'LTV': {
+        // TW separates 1st order from monthly columns:
+        // cumLTV[k] = firstOrderAov + M0 + M1 + ... + Mk
+        // So Mk (non-cumulative) = cumLTV[k] - cumLTV[k-1]
+        // And cumulative display Mk = cumLTV[k] - firstOrderAov
+        // Non-cumulative M0 = cumLTV[0] - firstOrderAov (extra revenue in month 0 beyond first order)
         const raw = row.ltvByMonth?.[monthIdx];
         if (raw === null || raw === undefined) return null;
-        const val = raw;
-        if (val <= 0) return null;
-        if (!cumulative && monthIdx > 0) {
-          const prev = row.ltvByMonth?.[monthIdx - 1] ?? 0;
-          return val - (prev ?? 0) > 0 ? val - (prev ?? 0) : null;
+        const firstOrder = row.firstOrderAov ?? 0;
+        
+        if (cumulative) {
+          // Cumulative: total LTV up to this month MINUS first order (TW shows it separately)
+          const val = raw - firstOrder;
+          return val > 0 ? val : 0;
+        } else {
+          // Non-cumulative: incremental revenue in this specific month
+          if (monthIdx === 0) {
+            // M0 = total month 0 revenue minus first order
+            const val = raw - firstOrder;
+            return val > 0 ? val : 0;
+          } else {
+            const prev = row.ltvByMonth?.[monthIdx - 1] ?? 0;
+            const diff = raw - (prev ?? 0);
+            return diff > 0 ? diff : 0;
+          }
         }
-        return val;
       }
       case 'Total sales': {
         const raw = row.ltvByMonth?.[monthIdx];
         if (raw === null || raw === undefined) return null;
-        const ltv = raw;
-        if (ltv <= 0) return null;
-        if (!cumulative && monthIdx > 0) {
-          const prevLtv = row.ltvByMonth?.[monthIdx - 1] ?? 0;
-          const diff = ltv - (prevLtv ?? 0);
-          return diff > 0 ? diff * row.customers : null;
+        const firstOrder = row.firstOrderAov ?? 0;
+        
+        if (cumulative) {
+          const val = raw - firstOrder;
+          return val > 0 ? val * row.customers : 0;
+        } else {
+          if (monthIdx === 0) {
+            const val = raw - firstOrder;
+            return val > 0 ? val * row.customers : 0;
+          } else {
+            const prev = row.ltvByMonth?.[monthIdx - 1] ?? 0;
+            const diff = raw - (prev ?? 0);
+            return diff > 0 ? diff * row.customers : 0;
+          }
         }
-        return ltv * row.customers;
       }
       case 'Number of customers': {
         const raw = row.customersByMonth?.[monthIdx];
@@ -155,10 +178,8 @@ export default function CohortsPage() {
     switch (metric) {
       case 'LTV':
       case 'Total sales': {
-        // Use M0 value (total revenue in first month) to match TW's display
-        const m0 = row.ltvByMonth?.[0];
-        if (m0 === null || m0 === undefined || m0 <= 0) return '';
-        return formatCohortNumber(m0);
+        // TW shows first order AOV separately from monthly LTV columns
+        return row.firstOrderAov > 0 ? formatCohortNumber(row.firstOrderAov) : '';
       }
       case 'Number of customers':
         return formatCohortInt(row.customers);
