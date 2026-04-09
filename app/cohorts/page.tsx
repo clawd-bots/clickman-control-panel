@@ -61,8 +61,8 @@ export default function CohortsPage() {
 
   const formatCohortNumber = (value: number): string => {
     if (value === 0) return '0';
-    // TW cohort page displays raw total_price values (shop currency) without conversion
-    return value.toLocaleString('en-US', {
+    // TW cohort page displays values in USD — convert from shop currency (PHP)
+    return convertValue(value).toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
@@ -424,7 +424,7 @@ export default function CohortsPage() {
                     <tr key={row.cohortMonth} className="border-b border-border/30">
                       <td className="sticky left-0 z-10 py-1.5 px-1.5 font-medium text-text-primary bg-bg-surface shadow-[4px_0_12px_-4px_rgba(0,0,0,0.08)] whitespace-nowrap">{row.cohortLabel}</td>
                       <td className="py-1.5 px-1.5 text-right text-text-secondary whitespace-nowrap">{row.customers.toLocaleString()}</td>
-                      <td className="py-1.5 px-1.5 text-right text-text-secondary whitespace-nowrap">{row.ncpa > 0 ? row.ncpa.toFixed(2) : ''}</td>
+                      <td className="py-1.5 px-1.5 text-right text-text-secondary whitespace-nowrap">{row.ncpa > 0 ? convertValue(row.ncpa).toFixed(2) : ''}</td>
                       <td className="py-1.5 px-1.5 text-right text-text-secondary whitespace-nowrap">{row.rpr > 0 ? `${row.rpr.toFixed(2)}%` : ''}</td>
                       <td className="py-1.5 px-1.5 text-right text-text-secondary whitespace-nowrap">{getFirstOrderValue(row)}</td>
                       {COHORT_MONTH_KEYS.map((_, i) => {
@@ -445,7 +445,7 @@ export default function CohortsPage() {
                     <tr className="border-t-2 border-border font-medium">
                       <td className="sticky left-0 z-10 py-1.5 px-1.5 text-text-primary bg-bg-surface whitespace-nowrap">Total</td>
                       <td className="py-1.5 px-1.5 text-right text-text-primary whitespace-nowrap">{totals.totalCustomers.toLocaleString()}</td>
-                      <td className="py-1.5 px-1.5 text-right text-text-primary whitespace-nowrap">{totals.avgNcpa > 0 ? totals.avgNcpa.toFixed(2) : ''}</td>
+                      <td className="py-1.5 px-1.5 text-right text-text-primary whitespace-nowrap">{totals.avgNcpa > 0 ? convertValue(totals.avgNcpa).toFixed(2) : ''}</td>
                       <td className="py-1.5 px-1.5 text-right text-text-primary whitespace-nowrap">{totals.totalRpr > 0 ? `${totals.totalRpr.toFixed(2)}%` : ''}</td>
                       <td className="py-1.5 px-1.5 text-right text-text-primary"></td>
                       {totals.monthValues.map((val, i) => (
@@ -489,7 +489,7 @@ export default function CohortsPage() {
                     <div>
                       <h4 className="text-sm font-medium text-text-primary">{row.cohortLabel}</h4>
                       <p className="text-xs text-text-secondary">
-                        {row.customers.toLocaleString()} customers • {row.ncpa > 0 ? `${row.ncpa.toFixed(2)}` : '—'} NCPA
+                        {row.customers.toLocaleString()} customers • {row.ncpa > 0 ? `$${convertValue(row.ncpa).toFixed(2)}` : '—'} NCPA
                       </p>
                     </div>
                     <div className="text-right">
