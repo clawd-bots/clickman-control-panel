@@ -367,6 +367,7 @@ export default function CohortsPage() {
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
                 <span>Retention by Cohort</span>
+                <span className="text-xs font-normal text-text-tertiary ml-1">(in USD)</span>
                 <InfoTooltip metric="Cohort" />
               </h3>
               <div className="flex items-center gap-2 shrink-0">
