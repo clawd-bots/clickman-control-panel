@@ -98,25 +98,18 @@ export default function CohortsPage() {
     
     switch (metric) {
       case 'LTV': {
-        // TW separates 1st order from monthly columns:
-        // cumLTV[k] = firstOrderAov + M0 + M1 + ... + Mk
-        // So Mk (non-cumulative) = cumLTV[k] - cumLTV[k-1]
-        // And cumulative display Mk = cumLTV[k] - firstOrderAov
-        // Non-cumulative M0 = cumLTV[0] - firstOrderAov (extra revenue in month 0 beyond first order)
+        // Moby pattern: ltvByMonth[k] = cumulative LTV through month k
+        // M0 = month 0 total (same as first_order_aov in the query)
+        // Cumulative: show raw cumulative value
+        // Non-cumulative: show incremental (Mk - Mk-1)
         const raw = row.ltvByMonth?.[monthIdx];
         if (raw === null || raw === undefined) return null;
-        const firstOrder = row.firstOrderAov ?? 0;
         
         if (cumulative) {
-          // Cumulative: total LTV up to this month MINUS first order (TW shows it separately)
-          const val = raw - firstOrder;
-          return val > 0 ? val : 0;
+          return raw > 0 ? raw : 0;
         } else {
-          // Non-cumulative: incremental revenue in this specific month
           if (monthIdx === 0) {
-            // M0 = total month 0 revenue minus first order
-            const val = raw - firstOrder;
-            return val > 0 ? val : 0;
+            return raw > 0 ? raw : 0;
           } else {
             const prev = row.ltvByMonth?.[monthIdx - 1] ?? 0;
             const diff = raw - (prev ?? 0);
@@ -127,15 +120,12 @@ export default function CohortsPage() {
       case 'Total sales': {
         const raw = row.ltvByMonth?.[monthIdx];
         if (raw === null || raw === undefined) return null;
-        const firstOrder = row.firstOrderAov ?? 0;
         
         if (cumulative) {
-          const val = raw - firstOrder;
-          return val > 0 ? val * row.customers : 0;
+          return raw > 0 ? raw * row.customers : 0;
         } else {
           if (monthIdx === 0) {
-            const val = raw - firstOrder;
-            return val > 0 ? val * row.customers : 0;
+            return raw > 0 ? raw * row.customers : 0;
           } else {
             const prev = row.ltvByMonth?.[monthIdx - 1] ?? 0;
             const diff = raw - (prev ?? 0);
