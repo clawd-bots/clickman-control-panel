@@ -77,110 +77,38 @@ function buildCohortQuery(startDate: string, endDate: string, twModel: string, t
     `SUM(IF(rp.months_since_first = ${k}, rp.cust_count, 0)) AS cust_in_m${k}`
   ).join(',\n  ');
 
-  return `
-WITH
-  -- Cohort query v9b
-  first_orders AS (
-    SELECT
-      customer_id,
-      MIN(created_at) AS first_order_created_at,
-      toStartOfMonth(MIN(event_date)) AS cohort_month,
-      argMin(order_id, created_at) AS first_order_id,
-      argMin(total_price, created_at) AS first_order_revenue
-    FROM sonic_system.orders
-    WHERE (is_deleted IS NULL OR is_deleted = 0)
-      AND (tw_ignore_order IS NULL OR tw_ignore_order = 0)
-      AND total_price > 0
-      AND customer_id IS NOT NULL
-      AND customer_id != ''
-    GROUP BY customer_id
-    HAVING MIN(event_date) >= toDate('${startDate}')
-      AND MIN(event_date) <= toDate('${endDate}')
-  ),
-
-  -- Step 2: Cohort sizes and first order totals
-  cohort_sizes AS (
-    SELECT
-      cohort_month,
-      COUNT(DISTINCT customer_id) AS cohort_size,
-      SUM(first_order_revenue) AS first_order_total
-    FROM first_orders
-    GROUP BY cohort_month
-  ),
-
-  -- Step 3: Revenue by period (all orders)
-  revenue_by_period AS (
-    SELECT
-      fo.cohort_month,
-      dateDiff('month', fo.cohort_month, toStartOfMonth(ot.event_date)) AS months_since_first,
-      SUM(ot.total_price) AS revenue,
-      COUNT(DISTINCT ot.customer_id) AS cust_count
-    FROM first_orders fo
-    INNER JOIN sonic_system.orders ot ON fo.customer_id = ot.customer_id
-    WHERE (ot.is_deleted IS NULL OR ot.is_deleted = 0)
-      AND (ot.tw_ignore_order IS NULL OR ot.tw_ignore_order = 0)
-      AND ot.total_price > 0
-      AND toStartOfMonth(ot.event_date) >= fo.cohort_month
-    GROUP BY fo.cohort_month, months_since_first
-  ),
-
-  -- Step 4: RPR
-  rpr_data AS (
-    SELECT
-      fo.cohort_month,
-      ROUND(
-        countIf(coc.total_orders > 1) * 100.0 / NULLIF(count(), 0),
-        2
-      ) AS rpr
-    FROM first_orders fo
-    INNER JOIN (
-      SELECT customer_id, COUNT(DISTINCT order_id) AS total_orders
-      FROM sonic_system.orders
-      WHERE (is_deleted IS NULL OR is_deleted = 0)
-        AND (tw_ignore_order IS NULL OR tw_ignore_order = 0)
-        AND total_price > 0
-      GROUP BY customer_id
-    ) coc ON fo.customer_id = coc.customer_id
-    GROUP BY fo.cohort_month
-  ),
-
-  -- Step 5: Ad spend for NCPA
-  monthly_spend AS (
-    SELECT
-      toStartOfMonth(event_date) AS cohort_month,
-      SUM(spend) AS total_spend
-    FROM pixel_joined_tvf
-    WHERE event_date BETWEEN toDate('${startDate}') AND toDate('${endDate}')
-      AND model = '${twModel}'
-      AND attribution_window = '${twWindow}'
-    GROUP BY cohort_month
-  )
-
-SELECT
-  cs.cohort_month AS cohort_month,
-  cs.cohort_size AS customers,
-  rd.rpr AS rpr,
-  ROUND(COALESCE(ms.total_spend / NULLIF(cs.cohort_size, 0), 0), 2) AS ncpa,
-
-  -- First order AOV (1st Order column)
-  ROUND(cs.first_order_total / NULLIF(cs.cohort_size, 0), 2) AS first_order_aov,
-
-  -- Cumulative LTV columns
-  ${cumulativeLtvCols},
-
-  -- Incremental (non-cumulative) columns
-  ${incrementalCols},
-
-  -- Retention columns
-  ${retentionCols}
-
-FROM cohort_sizes cs
-LEFT JOIN revenue_by_period rp ON cs.cohort_month = rp.cohort_month
-LEFT JOIN rpr_data rd ON cs.cohort_month = rd.cohort_month
-LEFT JOIN monthly_spend ms ON cs.cohort_month = ms.cohort_month
-GROUP BY cs.cohort_month, cs.cohort_size, cs.first_order_total, ms.total_spend, rd.rpr
-ORDER BY cs.cohort_month ASC
-`;
+  return [
+    `WITH first_orders AS (`,
+    `SELECT customer_id, MIN(created_at) AS first_order_created_at, toStartOfMonth(MIN(event_date)) AS cohort_month, argMin(order_id, created_at) AS first_order_id, argMin(total_price, created_at) AS first_order_revenue`,
+    `FROM sonic_system.orders`,
+    `WHERE (is_deleted IS NULL OR is_deleted = 0) AND (tw_ignore_order IS NULL OR tw_ignore_order = 0) AND total_price > 0 AND customer_id IS NOT NULL AND customer_id != ''`,
+    `GROUP BY customer_id`,
+    `HAVING MIN(event_date) >= toDate('${startDate}') AND MIN(event_date) <= toDate('${endDate}')`,
+    `),`,
+    `cohort_sizes AS (`,
+    `SELECT cohort_month, COUNT(DISTINCT customer_id) AS cohort_size, SUM(first_order_revenue) AS first_order_total FROM first_orders GROUP BY cohort_month`,
+    `),`,
+    `revenue_by_period AS (`,
+    `SELECT fo.cohort_month, dateDiff('month', fo.cohort_month, toStartOfMonth(ot.event_date)) AS months_since_first, SUM(ot.total_price) AS revenue, COUNT(DISTINCT ot.customer_id) AS cust_count`,
+    `FROM first_orders fo INNER JOIN sonic_system.orders ot ON fo.customer_id = ot.customer_id`,
+    `WHERE (ot.is_deleted IS NULL OR ot.is_deleted = 0) AND (ot.tw_ignore_order IS NULL OR ot.tw_ignore_order = 0) AND ot.total_price > 0 AND toStartOfMonth(ot.event_date) >= fo.cohort_month`,
+    `GROUP BY fo.cohort_month, months_since_first`,
+    `),`,
+    `rpr_data AS (`,
+    `SELECT fo.cohort_month, ROUND(countIf(coc.total_orders > 1) * 100.0 / NULLIF(count(), 0), 2) AS rpr`,
+    `FROM first_orders fo INNER JOIN (SELECT customer_id, COUNT(DISTINCT order_id) AS total_orders FROM sonic_system.orders WHERE (is_deleted IS NULL OR is_deleted = 0) AND (tw_ignore_order IS NULL OR tw_ignore_order = 0) AND total_price > 0 GROUP BY customer_id) coc ON fo.customer_id = coc.customer_id`,
+    `GROUP BY fo.cohort_month`,
+    `),`,
+    `monthly_spend AS (`,
+    `SELECT toStartOfMonth(event_date) AS cohort_month, SUM(spend) AS total_spend FROM pixel_joined_tvf WHERE event_date BETWEEN toDate('${startDate}') AND toDate('${endDate}') AND model = '${twModel}' AND attribution_window = '${twWindow}' GROUP BY cohort_month`,
+    `)`,
+    `SELECT cs.cohort_month AS cohort_month, cs.cohort_size AS customers, rd.rpr AS rpr, ROUND(COALESCE(ms.total_spend / NULLIF(cs.cohort_size, 0), 0), 2) AS ncpa, ROUND(cs.first_order_total / NULLIF(cs.cohort_size, 0), 2) AS first_order_aov,`,
+    cumulativeLtvCols + ',',
+    incrementalCols + ',',
+    retentionCols,
+    `FROM cohort_sizes cs LEFT JOIN revenue_by_period rp ON cs.cohort_month = rp.cohort_month LEFT JOIN rpr_data rd ON cs.cohort_month = rd.cohort_month LEFT JOIN monthly_spend ms ON cs.cohort_month = ms.cohort_month`,
+    `GROUP BY cs.cohort_month, cs.cohort_size, cs.first_order_total, ms.total_spend, rd.rpr ORDER BY cs.cohort_month ASC`,
+  ].join(' ');
 }
 
 export async function GET(request: NextRequest) {
@@ -199,7 +127,7 @@ export async function GET(request: NextRequest) {
     const twModel = MODEL_MAP[model] || 'Triple Attribution';
     const twWindow = WINDOW_MAP[window] || 'lifetime';
 
-    const cacheKey = `v10_moby_inc_${startDate}_${endDate}_${twModel}_${twWindow}`;
+    const cacheKey = `v11_${startDate}_${endDate}_${twModel}_${twWindow}`;
     if (!forceRefresh) {
       const cached = await getCached('tw-cohorts', cacheKey);
       if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
