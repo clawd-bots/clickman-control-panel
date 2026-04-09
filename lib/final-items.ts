@@ -107,36 +107,38 @@ export const finalItems: FinalItem[] = [
     actions: [{ label: 'Completed', steps: ['Unified prompt registry backed by Vercel Blob. 13 prompts across Dashboard, Targets, Creative (4 tabs), Attribution (5 layers), Cohorts, P&L. History + restore works across sessions.'] }],
   },
 
-  // ═══ PENDING ═══
   {
-    id: 'fi-1',
-    title: 'BigQuery Access',
-    why: 'Powers Cohorts page with live cohort retention and LTV data. Currently using sample data.',
-    owner: 'jordan',
-    status: 'pending',
+    id: 'fi-cohorts',
+    title: 'Cohort Analysis (Triple Whale SQL)',
+    why: 'Cohorts page powered by TW SQL API using orders_table with order_revenue (USD). Matches TW cohort display for M2-M12. M0/M1 have minor display-layer differences.',
+    owner: 'alfred',
+    status: 'done',
     category: 'data',
     pages: ['Cohorts'],
-    actions: [
-      {
-        label: 'Option A: Share a Service Account key',
-        steps: [
-          'Go to console.cloud.google.com → IAM → Service Accounts',
-          'Create a service account (e.g. "clickman-read")',
-          'Grant BigQuery Data Viewer + BigQuery Job User roles',
-          'Create a JSON key and send it to Alfred via WhatsApp',
-        ],
-      },
-      {
-        label: 'Option B: Invite Alfred\'s Google account',
-        steps: [
-          'Go to console.cloud.google.com → IAM',
-          'Click "Grant Access"',
-          'Add alfred@mail.andyou.ph with BigQuery Data Viewer role',
-          'Share the project ID and dataset name',
-        ],
-      },
-    ],
+    actions: [{ label: 'Completed', steps: ['Cohort data pulled from TW orders_table via SQL API. LTV, RPR, NCPA, customer counts, retention — all live. Cumulative/non-cumulative toggle working. Values in USD (pre-converted by TW).'] }],
   },
+  {
+    id: 'fi-attribution-sql',
+    title: 'Channel Attribution (Triple Whale SQL)',
+    why: 'Channel Attribution table on Dashboard powered by TW pixel_joined_tvf table with attribution model tabs and window dropdown.',
+    owner: 'alfred',
+    status: 'done',
+    category: 'integration',
+    pages: ['Dashboard'],
+    actions: [{ label: 'Completed', steps: ['Five attribution model tabs (Last Click, Linear, First Click, Linear Paid, Triple). Attribution window dropdown (1d, 7d, 14d, 28d, Lifetime). All columns: Spend, CPA, NC CPA, AOV, CV, Purchases, ROAS, NC ROAS, NCP, CR.'] }],
+  },
+  {
+    id: 'fi-tracking-infra',
+    title: 'Tracking Infrastructure Events',
+    why: 'Attribution Tree Tracking Infra tab shows all platform events with live data from GA4 and Google Ads APIs.',
+    owner: 'alfred',
+    status: 'done',
+    category: 'integration',
+    pages: ['Attribution Tree'],
+    actions: [{ label: 'Completed', steps: ['Meta Pixel (15 events), Google Ads Tag (12 events, live), TikTok Pixel (12 events), GA4 (live from API), Server-side GTM. Pagination for 10+ events. Match quality ratings.'] }],
+  },
+
+  // ═══ PENDING ═══
   {
     id: 'fi-7',
     title: 'Reddit Ads API Access',
