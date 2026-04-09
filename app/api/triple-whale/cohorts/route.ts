@@ -50,20 +50,21 @@ const REV_INLINE = `toFloat64(if(ifNull(total_price_usd, 0) > 0, ifNull(total_pr
 const REV_INLINE_OT = `toFloat64(if(ifNull(ot.total_price_usd, 0) > 0, ifNull(ot.total_price_usd, 0), ifNull(ot.total_price, 0)))`;
 
 function buildCohortQuery(startDate: string, endDate: string, twModel: string, twWindow: string): string {
-  // Moby-style: SUM(cohort revenue by period) / cohort_size
-  // Cumulative LTV columns: SUM(IF(months_since_first <= k, revenue, 0)) / cohort_size
+  // Moby-style query: SUM(cohort revenue) / cohort_size
+  // Split into two queries to avoid complex multi-CTE joins that ClickHouse struggles with
+  
+  // Cumulative LTV columns
   const cumulativeLtvCols = Array.from({ length: 13 }, (_, k) =>
     `ROUND(SUM(IF(rp.months_since_first <= ${k}, rp.revenue, 0)) / NULLIF(cs.cohort_size, 0), 2) AS ltv_m${k}`
-  ).join(',\n    ');
+  ).join(',\n  ');
 
-  // Retention: COUNT(DISTINCT customers who ordered in month k)
+  // Retention columns
   const retentionCols = Array.from({ length: 13 }, (_, k) =>
-    `SUM(IF(rc.months_since_first = ${k}, rc.returning_count, 0)) AS cust_in_m${k}`
-  ).join(',\n    ');
+    `SUM(IF(rp.months_since_first = ${k}, rp.cust_count, 0)) AS cust_in_m${k}`
+  ).join(',\n  ');
 
   return `
 WITH
-  -- Step 1: Identify each customer's first purchase (cohort assignment)
   customer_cohorts AS (
     SELECT
       customer_id,
@@ -78,7 +79,6 @@ WITH
     GROUP BY customer_id
   ),
 
-  -- Step 2: Cohort sizes
   cohort_sizes AS (
     SELECT
       cohort_month,
@@ -89,12 +89,12 @@ WITH
     GROUP BY cohort_month
   ),
 
-  -- Step 3: Revenue by period (Moby pattern)
   revenue_by_period AS (
     SELECT
       cc.cohort_month,
       dateDiff('month', cc.cohort_month, toStartOfMonth(ot.event_date)) AS months_since_first,
-      SUM(${REV_INLINE_OT}) AS revenue
+      SUM(${REV_INLINE_OT}) AS revenue,
+      COUNT(DISTINCT ot.customer_id) AS cust_count
     FROM customer_cohorts cc
     INNER JOIN sonic_system.orders ot ON cc.customer_id = ot.customer_id
     WHERE (ot.is_deleted IS NULL OR ot.is_deleted = 0)
@@ -105,48 +105,27 @@ WITH
     GROUP BY cc.cohort_month, months_since_first
   ),
 
-  -- Step 4: Customer order counts for RPR
-  customer_order_counts AS (
-    SELECT
-      customer_id,
-      COUNT(DISTINCT order_id) AS total_orders
-    FROM sonic_system.orders
-    WHERE (is_deleted IS NULL OR is_deleted = 0)
-      AND (tw_ignore_order IS NULL OR tw_ignore_order = 0)
-      AND ${REV_INLINE} > 0
-    GROUP BY customer_id
-  ),
-
-  -- Step 5: Returning customers per month (for retention)
-  returning_customers AS (
+  rpr_data AS (
     SELECT
       cc.cohort_month,
-      dateDiff('month', cc.cohort_month, toStartOfMonth(ot.event_date)) AS months_since_first,
-      COUNT(DISTINCT ot.customer_id) AS returning_count
+      ROUND(
+        countIf(coc.total_orders > 1) * 100.0 / NULLIF(count(), 0),
+        2
+      ) AS rpr
     FROM customer_cohorts cc
-    INNER JOIN sonic_system.orders ot ON cc.customer_id = ot.customer_id
-    WHERE (ot.is_deleted IS NULL OR ot.is_deleted = 0)
-      AND (ot.tw_ignore_order IS NULL OR ot.tw_ignore_order = 0)
-      AND ${REV_INLINE_OT} > 0
-      AND cc.cohort_month >= toDate('${startDate}')
+    INNER JOIN (
+      SELECT customer_id, COUNT(DISTINCT order_id) AS total_orders
+      FROM sonic_system.orders
+      WHERE (is_deleted IS NULL OR is_deleted = 0)
+        AND (tw_ignore_order IS NULL OR tw_ignore_order = 0)
+        AND ${REV_INLINE} > 0
+      GROUP BY customer_id
+    ) coc ON cc.customer_id = coc.customer_id
+    WHERE cc.cohort_month >= toDate('${startDate}')
       AND cc.cohort_month <= toDate('${endDate}')
-    GROUP BY cc.cohort_month, months_since_first
+    GROUP BY cc.cohort_month
   ),
 
-  -- Step 6: First order AOV
-  first_order_data AS (
-    SELECT
-      cc.cohort_month,
-      ROUND(SUM(IF(rp.months_since_first = 0, rp.revenue, 0)) / NULLIF(cs.cohort_size, 0), 2) AS first_order_aov
-    FROM cohort_sizes cs
-    LEFT JOIN revenue_by_period rp ON cs.cohort_month = rp.cohort_month
-    LEFT JOIN customer_cohorts cc ON cs.cohort_month = cc.cohort_month
-    WHERE cs.cohort_month >= toDate('${startDate}')
-      AND cs.cohort_month <= toDate('${endDate}')
-    GROUP BY cc.cohort_month, cs.cohort_size
-  ),
-
-  -- Step 7: Ad spend for NCPA
   monthly_spend AS (
     SELECT
       toStartOfMonth(event_date) AS cohort_month,
@@ -161,35 +140,16 @@ WITH
 SELECT
   cs.cohort_month AS cohort_month,
   cs.cohort_size AS customers,
-
-  -- RPR: % of customers with 2+ orders
-  ROUND(
-    COUNT(DISTINCT IF(coc.total_orders > 1, cc.customer_id, NULL)) * 100.0
-    / NULLIF(cs.cohort_size, 0),
-    2
-  ) AS rpr,
-
-  -- NCPA
+  rd.rpr AS rpr,
   ROUND(COALESCE(ms.total_spend / NULLIF(cs.cohort_size, 0), 0), 2) AS ncpa,
-
-  -- First order AOV (Month 0 LTV = first order value per customer)
   ROUND(SUM(IF(rp.months_since_first = 0, rp.revenue, 0)) / NULLIF(cs.cohort_size, 0), 2) AS first_order_aov,
-
-  -- Cumulative LTV by month (Moby pattern: total revenue / cohort_size)
   ${cumulativeLtvCols},
-
-  -- Customer counts per month (retention)
   ${retentionCols}
-
 FROM cohort_sizes cs
-LEFT JOIN customer_cohorts cc ON cs.cohort_month = cc.cohort_month
-LEFT JOIN customer_order_counts coc ON cc.customer_id = coc.customer_id
 LEFT JOIN revenue_by_period rp ON cs.cohort_month = rp.cohort_month
-LEFT JOIN returning_customers rc ON cs.cohort_month = rc.cohort_month
-LEFT JOIN monthly_spend ms ON cs.cohort_month = ms.month
-WHERE cs.cohort_month >= toDate('${startDate}')
-  AND cs.cohort_month <= toDate('${endDate}')
-GROUP BY cs.cohort_month, cs.cohort_size, ms.total_spend
+LEFT JOIN rpr_data rd ON cs.cohort_month = rd.cohort_month
+LEFT JOIN monthly_spend ms ON cs.cohort_month = ms.cohort_month
+GROUP BY cs.cohort_month, cs.cohort_size, ms.total_spend, rd.rpr
 ORDER BY cs.cohort_month ASC
 `;
 }
