@@ -511,7 +511,15 @@ export default function CohortsPage() {
       )}
 
       {activeTab === 'comparison' && (
-        <>
+        <div className="relative mx-1">
+          {/* Coming Soon overlay */}
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-bg-surface/60 backdrop-blur-sm rounded-lg">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-text-primary mb-2">Coming Soon</div>
+              <div className="text-sm text-text-secondary">Cohort comparison will be available once product-level cohort data is connected.</div>
+            </div>
+          </div>
+          <div className="space-y-4 sm:space-y-6 blur-[2px] pointer-events-none select-none">
           {/* CLV Extension Chart */}
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
             <div className="flex items-center justify-between mb-4">
@@ -644,7 +652,8 @@ export default function CohortsPage() {
               ))}
             </div>
           </div>
-        </>
+        </div>
+        </div>
       )}
     </div>
   );
