@@ -79,7 +79,7 @@ function buildCohortQuery(startDate: string, endDate: string, twModel: string, t
 
   return `
 WITH
-  -- Step 1: Identify first order per customer (using created_at for precise ordering)
+  -- Cohort query v9b
   first_orders AS (
     SELECT
       customer_id,
@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
     const twModel = MODEL_MAP[model] || 'Triple Attribution';
     const twWindow = WINDOW_MAP[window] || 'lifetime';
 
-    const cacheKey = `v9_moby_inc_${startDate}_${endDate}_${twModel}_${twWindow}`;
+    const cacheKey = `v10_moby_inc_${startDate}_${endDate}_${twModel}_${twWindow}`;
     if (!forceRefresh) {
       const cached = await getCached('tw-cohorts', cacheKey);
       if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
