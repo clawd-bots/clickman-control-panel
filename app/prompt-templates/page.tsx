@@ -82,6 +82,11 @@ export default function PromptTemplatesPage() {
     'pnl-intelligence': 'Profit & Loss → (future)',
   };
 
+  // Get unique categories for filter pills
+  const categories = Array.from(new Set(prompts.map(p => p.category)));
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+  const filteredPrompts = activeCategory === 'All' ? prompts : prompts.filter(p => p.category === activeCategory);
+
   return (
     <div className="space-y-6">
       <div>
@@ -92,14 +97,40 @@ export default function PromptTemplatesPage() {
         <p className="text-sm text-text-secondary mt-1">
           Edit intelligence prompts here. Changes sync instantly to their respective pages.
         </p>
+        {/* Category filter pills */}
+        <div className="flex gap-1.5 flex-wrap mt-3">
+          <button
+            onClick={() => setActiveCategory('All')}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              activeCategory === 'All'
+                ? 'bg-brand-blue/15 text-brand-blue-light'
+                : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated border border-border'
+            }`}
+          >
+            All
+          </button>
+          {categories.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                activeCategory === cat
+                  ? 'bg-brand-blue/15 text-brand-blue-light'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated border border-border'
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Prompt List */}
         <div className="bg-bg-surface border border-border rounded-lg p-4">
-          <h3 className="text-sm font-medium text-text-primary mb-3">All Prompts</h3>
+          <h3 className="text-sm font-medium text-text-primary mb-3">{activeCategory === 'All' ? 'All Prompts' : activeCategory}</h3>
           <div className="space-y-1">
-            {prompts.map(p => (
+            {filteredPrompts.map(p => (
               <button
                 key={p.id}
                 onClick={() => selectPrompt(p.id)}
