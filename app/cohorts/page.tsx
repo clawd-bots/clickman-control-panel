@@ -98,39 +98,29 @@ export default function CohortsPage() {
     
     switch (metric) {
       case 'LTV': {
-        // Moby pattern: ltvByMonth[k] = cumulative LTV through month k
-        // M0 = month 0 total (same as first_order_aov in the query)
-        // Cumulative: show raw cumulative value
-        // Non-cumulative: show incremental (Mk - Mk-1)
-        const raw = row.ltvByMonth?.[monthIdx];
-        if (raw === null || raw === undefined) return null;
-        
         if (cumulative) {
+          // Cumulative: use ltvByMonth (cumulative totals from SQL)
+          const raw = row.ltvByMonth?.[monthIdx];
+          if (raw === null || raw === undefined) return null;
           return raw > 0 ? raw : 0;
         } else {
-          if (monthIdx === 0) {
-            return raw > 0 ? raw : 0;
-          } else {
-            const prev = row.ltvByMonth?.[monthIdx - 1] ?? 0;
-            const diff = raw - (prev ?? 0);
-            return diff > 0 ? diff : 0;
-          }
+          // Non-cumulative: use incByMonth (TW's exact non-cumulative values)
+          // M0 = additional revenue in month 0 AFTER first order
+          // M1+ = all orders in that specific month
+          const inc = row.incByMonth?.[monthIdx];
+          if (inc === null || inc === undefined) return null;
+          return inc > 0 ? inc : 0;
         }
       }
       case 'Total sales': {
-        const raw = row.ltvByMonth?.[monthIdx];
-        if (raw === null || raw === undefined) return null;
-        
         if (cumulative) {
+          const raw = row.ltvByMonth?.[monthIdx];
+          if (raw === null || raw === undefined) return null;
           return raw > 0 ? raw * row.customers : 0;
         } else {
-          if (monthIdx === 0) {
-            return raw > 0 ? raw * row.customers : 0;
-          } else {
-            const prev = row.ltvByMonth?.[monthIdx - 1] ?? 0;
-            const diff = raw - (prev ?? 0);
-            return diff > 0 ? diff * row.customers : 0;
-          }
+          const inc = row.incByMonth?.[monthIdx];
+          if (inc === null || inc === undefined) return null;
+          return inc > 0 ? inc * row.customers : 0;
         }
       }
       case 'Number of customers': {

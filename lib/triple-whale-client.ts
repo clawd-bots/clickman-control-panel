@@ -143,6 +143,7 @@ export interface TWCohortApiRow {
   rpr: number;
   firstOrderAov: number;
   ltvByMonth: (number | null)[];
+  incByMonth?: (number | null)[];
   customersByMonth: (number | null)[];
   maxValidMonth?: number;
 }
