@@ -79,9 +79,9 @@ function buildCohortQuery(startDate: string, endDate: string, twModel: string, t
 
   return [
     `WITH first_orders AS (`,
-    `SELECT customer_id, MIN(created_at) AS first_order_created_at, toStartOfMonth(MIN(event_date)) AS cohort_month, argMin(order_id, created_at) AS first_order_id, argMin(total_price, created_at) AS first_order_revenue`,
-    `FROM sonic_system.orders`,
-    `WHERE (is_deleted IS NULL OR is_deleted = 0) AND (tw_ignore_order IS NULL OR tw_ignore_order = 0) AND total_price > 0 AND customer_id IS NOT NULL AND customer_id != ''`,
+    `SELECT customer_id, MIN(created_at) AS first_order_created_at, toStartOfMonth(MIN(event_date)) AS cohort_month, argMin(order_revenue, created_at) AS first_order_revenue`,
+    `FROM orders_table`,
+    `WHERE order_revenue > 0 AND customer_id IS NOT NULL AND customer_id != ''`,
     `GROUP BY customer_id`,
     `HAVING MIN(event_date) >= toDate('${startDate}') AND MIN(event_date) <= toDate('${endDate}')`,
     `),`,
@@ -89,14 +89,14 @@ function buildCohortQuery(startDate: string, endDate: string, twModel: string, t
     `SELECT cohort_month, COUNT(DISTINCT customer_id) AS cohort_size, SUM(first_order_revenue) AS first_order_total FROM first_orders GROUP BY cohort_month`,
     `),`,
     `revenue_by_period AS (`,
-    `SELECT fo.cohort_month, dateDiff('month', fo.cohort_month, toStartOfMonth(ot.event_date)) AS months_since_first, SUM(ot.total_price) AS revenue, COUNT(DISTINCT ot.customer_id) AS cust_count`,
-    `FROM first_orders fo INNER JOIN sonic_system.orders ot ON fo.customer_id = ot.customer_id`,
-    `WHERE (ot.is_deleted IS NULL OR ot.is_deleted = 0) AND (ot.tw_ignore_order IS NULL OR ot.tw_ignore_order = 0) AND ot.total_price > 0 AND toStartOfMonth(ot.event_date) >= fo.cohort_month`,
+    `SELECT fo.cohort_month, dateDiff('month', fo.cohort_month, toStartOfMonth(ot.event_date)) AS months_since_first, SUM(ot.order_revenue) AS revenue, COUNT(DISTINCT ot.customer_id) AS cust_count`,
+    `FROM first_orders fo INNER JOIN orders_table ot ON fo.customer_id = ot.customer_id`,
+    `WHERE ot.order_revenue > 0 AND toStartOfMonth(ot.event_date) >= fo.cohort_month`,
     `GROUP BY fo.cohort_month, months_since_first`,
     `),`,
     `rpr_data AS (`,
     `SELECT fo.cohort_month, ROUND(countIf(coc.total_orders > 1) * 100.0 / NULLIF(count(), 0), 2) AS rpr`,
-    `FROM first_orders fo INNER JOIN (SELECT customer_id, COUNT(DISTINCT order_id) AS total_orders FROM sonic_system.orders WHERE (is_deleted IS NULL OR is_deleted = 0) AND (tw_ignore_order IS NULL OR tw_ignore_order = 0) AND total_price > 0 GROUP BY customer_id) coc ON fo.customer_id = coc.customer_id`,
+    `FROM first_orders fo INNER JOIN (SELECT customer_id, COUNT(DISTINCT order_id) AS total_orders FROM orders_table WHERE order_revenue > 0 GROUP BY customer_id) coc ON fo.customer_id = coc.customer_id`,
     `GROUP BY fo.cohort_month`,
     `),`,
     `monthly_spend AS (`,
@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
     const twModel = MODEL_MAP[model] || 'Triple Attribution';
     const twWindow = WINDOW_MAP[window] || 'lifetime';
 
-    const cacheKey = `v11_${startDate}_${endDate}_${twModel}_${twWindow}`;
+    const cacheKey = `v12_ot_${startDate}_${endDate}_${twModel}_${twWindow}`;
     if (!forceRefresh) {
       const cached = await getCached('tw-cohorts', cacheKey);
       if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
