@@ -223,6 +223,8 @@ export async function GET(request: NextRequest) {
 
     if (!res.ok) {
       const errText = await res.text();
+      console.error('TW SQL query length:', query.length, 'First 500:', query.substring(0, 500));
+      console.error('TW SQL query last 500:', query.substring(query.length - 500));
       throw new Error(`TW SQL API error (${res.status}): ${errText.substring(0, 400)}`);
     }
 
