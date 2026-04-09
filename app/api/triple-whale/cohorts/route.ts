@@ -69,6 +69,7 @@ WITH
       AND (tw_ignore_order IS NULL OR tw_ignore_order = 0)
       AND event_date IS NOT NULL
       AND customer_id IS NOT NULL AND customer_id != ''
+      AND total_price > 0
     GROUP BY customer_id
     HAVING min(event_date) >= toDate('${startDate}')
       AND min(event_date) <= toDate('${endDate}')
@@ -82,6 +83,7 @@ WITH
     INNER JOIN sonic_system.orders o ON o.order_id = c.first_order_id AND o.customer_id = c.customer_id
     WHERE (o.is_deleted IS NULL OR o.is_deleted = 0)
       AND (o.tw_ignore_order IS NULL OR o.tw_ignore_order = 0)
+      AND o.total_price > 0
   ),
   ord AS (
     SELECT
@@ -94,6 +96,7 @@ WITH
     WHERE (o.is_deleted IS NULL OR o.is_deleted = 0)
       AND (o.tw_ignore_order IS NULL OR o.tw_ignore_order = 0)
       AND o.event_date IS NOT NULL
+      AND o.total_price > 0
       AND toStartOfMonth(o.event_date) >= c.cohort_month
   ),
   cust_cum AS (
@@ -159,7 +162,7 @@ export async function GET(request: NextRequest) {
     const twModel = MODEL_MAP[model] || 'Triple Attribution';
     const twWindow = WINDOW_MAP[window] || 'lifetime';
 
-    const cacheKey = `v6_${startDate}_${endDate}_${twModel}_${twWindow}`;
+    const cacheKey = `v7_${startDate}_${endDate}_${twModel}_${twWindow}`;
     if (!forceRefresh) {
       const cached = await getCached('tw-cohorts', cacheKey);
       if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
