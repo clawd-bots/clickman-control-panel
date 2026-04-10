@@ -14,12 +14,13 @@ import {
   Download,
   ChevronLeft,
   ChevronRight,
+  Cog,
   X,
 } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { useSidebar } from '@/components/layout/SidebarContext';
 
-const navItems = [
+const mainNavItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/pnl', label: 'Profit & Loss', icon: Receipt },
   { href: '/cashflow', label: 'Cash Flow', icon: Banknote },
@@ -30,8 +31,9 @@ const navItems = [
   { href: '/pdf-export', label: 'PDF Export', icon: Download },
   { href: '/prompt-templates', label: 'Prompt Templates', icon: FileText },
   { href: '/final-items', label: 'Final Items', icon: ChevronRight },
-  { href: '/settings', label: 'Settings', icon: ChevronRight },
 ];
+
+const settingsNavItem = { href: '/settings', label: 'Settings', icon: Cog };
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -74,8 +76,8 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto">
-        {navItems.map(({ href, label, icon: Icon }) => {
+      <nav className="flex-1 py-3 px-2 space-y-1 overflow-y-auto min-h-0">
+        {mainNavItems.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + '/');
           return (
             <Link
@@ -97,6 +99,27 @@ export default function Sidebar() {
         })}
       </nav>
 
+      <div className="shrink-0 py-2 px-2 border-t border-border">
+        {[settingsNavItem].map(({ href, label, icon: Icon }) => {
+          const active = pathname === href || pathname.startsWith(href + '/');
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={handleNavClick}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
+                active
+                  ? 'bg-brand-blue/15 text-brand-blue-light'
+                  : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'
+              }`}
+              title={collapsed ? label : undefined}
+            >
+              <Icon size={18} className="shrink-0" />
+              <span className={collapsed ? 'lg:hidden' : ''}>{label}</span>
+            </Link>
+          );
+        })}
+      </div>
 
     </>
   );

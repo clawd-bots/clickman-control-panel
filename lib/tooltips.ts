@@ -59,7 +59,7 @@ export const tooltips: Record<string, string> = {
   'MTA': 'Multi-Touch Attribution - assigns credit to touchpoints in the customer journey using tracking data. Good for ad-level optimization.',
   'Platform Reporting': 'Native reporting from Meta, Google, TikTok dashboards. Often inflated due to overlapping attribution windows.',
   'CAPI': 'Conversions API - server-side event tracking that bypasses browser limitations and ad blockers.',
-  'Meta Pixel': 'Client-side tracking pixel that fires events in the browser when users interact with your site after seeing Meta ads.',
+  'Meta Pixel': 'Client-side tracking pixel that fires events in the browser when users interact with your site after seeing Meta ads. In Tracking Infrastructure, event lists use Ads Insights offsite pixel / CAPI action types (aligned with Events Manager names), not on-Facebook actions like post save or messaging.',
   'Meta CAPI': 'Server-side Conversions API for Meta - sends events directly from your server, bypassing ad blockers for better match rates.',
   'Google Ads Tag': 'Google\'s conversion tracking tag that measures actions users take after clicking or viewing your Google ads.',
   'TikTok Pixel': 'TikTok\'s tracking pixel and Conversions API for measuring conversions from TikTok ad campaigns. Like Meta, supports both browser-side pixel and server-side cAPI.',

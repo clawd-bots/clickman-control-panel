@@ -49,6 +49,36 @@ export async function GET(request: NextRequest) {
     }
 
     const forceRefresh = searchParams.get('refresh') === 'true';
+
+    if (mode === 'events') {
+      const cacheParams = `${startDate}_${endDate}_events`;
+      if (!forceRefresh) {
+        const cached = await getCached('ga4', cacheParams);
+        if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
+      }
+      const { client, propertyId } = getClient();
+      const [eventsResponse] = await client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate, endDate }],
+        dimensions: [{ name: 'eventName' }],
+        metrics: [{ name: 'eventCount' }],
+        orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+        limit: 100,
+      });
+      const events = (eventsResponse.rows || []).map((row) => ({
+        eventName: row.dimensionValues?.[0]?.value || '(not set)',
+        eventCount: parseFloat(row.metricValues?.[0]?.value || '0') || 0,
+      }));
+      const payload = {
+        success: true,
+        source: 'ga4',
+        dateRange: { startDate, endDate },
+        data: { events },
+      };
+      setCache('ga4', cacheParams, payload).catch(() => {});
+      return NextResponse.json(payload);
+    }
+
     const cacheParams = `${startDate}_${endDate}_${mode}`;
     if (!forceRefresh) {
       const cached = await getCached('ga4', cacheParams);

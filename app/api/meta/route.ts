@@ -88,6 +88,42 @@ function extractPurchaseRoas(actionValues: any[], spend: number): number {
   return 0;
 }
 
+/**
+ * Ads Insights `actions` mix many action_type values. For parity with Events Manager (web Pixel + CAPI),
+ * keep only offsite pixel / custom-conversion rows — not on-Facebook `onsite_conversion.*` (post save,
+ * messaging threads, etc.), which is why those looked "wrong" next to PageView / custom pixel names.
+ */
+function isOffsitePixelActionType(actionType: string): boolean {
+  const t = actionType;
+  return (
+    t.startsWith('offsite_conversion.fb_pixel_custom.') ||
+    t.startsWith('offsite_conversion.fb_pixel_') ||
+    t.startsWith('offsite_conversion.custom.')
+  );
+}
+
+/** Standard event names roughly aligned with Meta Events Manager UI labels */
+const FB_PIXEL_STANDARD_EVENT_LABELS: Record<string, string> = {
+  page_view: 'PageView',
+  view_content: 'View content',
+  search: 'Search',
+  add_to_cart: 'Add to cart',
+  add_to_wishlist: 'Add to wishlist',
+  initiate_checkout: 'Initiate checkout',
+  add_payment_info: 'Add payment info',
+  purchase: 'Purchase',
+  lead: 'Lead',
+  complete_registration: 'Complete registration',
+  contact: 'Contact',
+  customize_product: 'Customize product',
+  donate: 'Donate',
+  find_location: 'Find location',
+  schedule: 'Schedule',
+  start_trial: 'Start trial',
+  submit_application: 'Submit application',
+  subscribe: 'Subscribe',
+};
+
 export async function GET(request: NextRequest) {
   try {
     const { accountId } = getConfig();
@@ -124,6 +160,87 @@ export async function GET(request: NextRequest) {
         time_range: timeRange,
       });
       return NextResponse.json({ success: true, data: insights });
+    }
+
+    if (mode === 'tracking-events') {
+      const cacheParams = `${startDate}_${endDate}_tracking-events-v2`;
+      if (!forceRefresh) {
+        const cached = await getCached('meta', cacheParams);
+        if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
+      }
+      const { accountId } = getConfig();
+
+      const formatOffsitePixelLabel = (actionType: string): string => {
+        const t = actionType;
+        if (t.startsWith('offsite_conversion.fb_pixel_custom.')) {
+          return t.slice('offsite_conversion.fb_pixel_custom.'.length);
+        }
+        if (t.startsWith('offsite_conversion.custom.')) {
+          const id = t.slice('offsite_conversion.custom.'.length);
+          return id ? `Custom conversion (${id})` : 'Custom conversion';
+        }
+        if (t.startsWith('offsite_conversion.fb_pixel_')) {
+          let rest = t.slice('offsite_conversion.fb_pixel_'.length);
+          const norm = rest.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
+          if (FB_PIXEL_STANDARD_EVENT_LABELS[norm]) {
+            return FB_PIXEL_STANDARD_EVENT_LABELS[norm];
+          }
+          const under = norm.replace(/-/g, '_');
+          if (FB_PIXEL_STANDARD_EVENT_LABELS[under]) {
+            return FB_PIXEL_STANDARD_EVENT_LABELS[under];
+          }
+          // Fallback: snake_case → Title Case (unknown standard names)
+          return rest
+            .replace(/_/g, ' ')
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+        }
+        return t.replace(/_/g, ' ');
+      };
+
+      try {
+        const insights = await metaFetch(`/${accountId}/insights`, {
+          fields: 'actions',
+          level: 'account',
+          time_range: timeRange,
+        });
+        const row = insights.data?.[0];
+        const actions = row?.actions || [];
+        const allParsed = (actions as { action_type?: string; value?: string }[])
+          .map((a) => ({
+            rawType: String(a.action_type || ''),
+            count: parseInt(String(a.value ?? '0'), 10) || 0,
+          }))
+          .filter((a) => a.count > 0 && a.rawType);
+
+        const pixelOnly = allParsed
+          .filter((a) => isOffsitePixelActionType(a.rawType))
+          .sort((a, b) => b.count - a.count);
+
+        const events = pixelOnly.slice(0, 80).map((a) => ({
+          event: formatOffsitePixelLabel(a.rawType),
+          rawType: a.rawType,
+          count: a.count,
+        }));
+
+        const payload = {
+          success: true,
+          data: {
+            events,
+            /** Offsite pixel / custom conversion rows only (excludes onsite_conversion.*) */
+            actionTypesIncluded: pixelOnly.length,
+            actionTypesExcluded: Math.max(0, allParsed.length - pixelOnly.length),
+            actionTypesTotal: allParsed.length,
+            dateRange: { startDate, endDate },
+            note:
+              'Counts come from Ads Insights (account-level), attribution windows can differ slightly from Events Manager totals.',
+          },
+        };
+        setCache('meta', cacheParams, payload).catch(() => {});
+        return NextResponse.json(payload);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Meta tracking-events failed';
+        return NextResponse.json({ success: false, error: msg }, { status: 502 });
+      }
     }
 
     if (mode === 'overview') {
@@ -243,7 +360,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    return NextResponse.json({ success: false, error: 'Invalid mode. Use: overview | account | campaigns | ad-performance' }, { status: 400 });
+    return NextResponse.json({
+      success: false,
+      error: 'Invalid mode. Use: overview | account | campaigns | ad-performance | tracking-events',
+    }, { status: 400 });
   } catch (error: any) {
     console.error('Meta API error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

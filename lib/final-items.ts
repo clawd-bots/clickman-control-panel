@@ -221,26 +221,26 @@ export const finalItems: FinalItem[] = [
       },
     ],
   },
-  {
-    id: 'fi-11',
-    title: 'Anthropic API Key',
-    why: 'AI Intelligence sections need Claude API to generate real insights from live data instead of static analysis text.',
-    owner: 'jordan',
-    status: 'pending',
-    category: 'integration',
-    pages: ['All Intelligence Sections'],
-    actions: [
-      {
-        label: 'Provide Anthropic Claude API key',
-        steps: [
-          'Go to console.anthropic.com',
-          'Generate a new API key',
-          'Set appropriate usage limits',
-          'Send the API key to Alfred',
-        ],
-      },
-    ],
-  },
+  // {
+  //   id: 'fi-11',
+  //   title: 'Anthropic API Key',
+  //   why: 'AI Intelligence sections need Claude API to generate real insights from live data instead of static analysis text.',
+  //   owner: 'jordan',
+  //   status: 'pending',
+  //   category: 'integration',
+  //   pages: ['All Intelligence Sections'],
+  //   actions: [
+  //     {
+  //       label: 'Provide Anthropic Claude API key',
+  //       steps: [
+  //         'Go to console.anthropic.com',
+  //         'Generate a new API key',
+  //         'Set appropriate usage limits',
+  //         'Send the API key to Alfred',
+  //       ],
+  //     },
+  //   ],
+  // },
   {
     id: 'fi-tw-survey',
     title: 'Triple Whale Post-Purchase Surveys',
