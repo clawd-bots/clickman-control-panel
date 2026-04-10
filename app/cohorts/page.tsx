@@ -5,6 +5,7 @@ import DataSource from '@/components/ui/DataSource';
 import { LiveBadge } from '@/components/ui/LiveBadge';
 import { SkeletonMetricCard, SkeletonTable } from '@/components/ui/Skeleton';
 import { useCurrency } from '@/components/CurrencyProvider';
+import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
 import { toLocalDateString } from '@/lib/dateUtils';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
@@ -21,6 +22,7 @@ type CohortMetric = 'LTV' | 'Total sales' | 'Number of customers' | 'Retention r
 
 export default function CohortsPage() {
   const { currency, convertValue } = useCurrency();
+  const { dateRange } = useDateRange();
   const [twData, setTwData] = useState<TWData | null>(null);
   const [twLoading, setTwLoading] = useState(true);
   const [twCohortRows, setTwCohortRows] = useState<TWCohortApiRow[]>([]);
@@ -91,6 +93,39 @@ export default function CohortsPage() {
   const displayCohortRows: TWCohortApiRow[] = useMemo(() => {
     return twCohortRows;
   }, [twCohortRows]);
+
+  const cohortsAnalysisContext = useMemo(
+    () => ({
+      note: 'Cohort grid uses Triple Whale API fixed ~12M window; top-bar dates are also included for context.',
+      topBarRange: {
+        start: toLocalDateString(dateRange.startDate),
+        end: toLocalDateString(dateRange.endDate),
+      },
+      metric,
+      cumulative,
+      heatmap,
+      twSummary: twData
+        ? {
+            orderRevenue: getMetric(twData, 'orderRevenue'),
+            orders: getMetric(twData, 'orders'),
+            newCustomerOrders: getMetric(twData, 'newCustomerOrders'),
+          }
+        : null,
+      cohortRows: displayCohortRows.slice(0, 36).map((r) => ({
+        cohortMonth: r.cohortMonth,
+        cohortLabel: r.cohortLabel,
+        customers: r.customers,
+        ncpa: r.ncpa,
+        rpr: r.rpr,
+        firstOrderAov: r.firstOrderAov,
+        ltvM0: r.ltvByMonth?.[0] ?? null,
+        ltvM1: r.ltvByMonth?.[1] ?? null,
+        ltvM3: r.ltvByMonth?.[3] ?? null,
+        ltvM6: r.ltvByMonth?.[6] ?? null,
+      })),
+    }),
+    [dateRange, metric, cumulative, heatmap, twData, displayCohortRows]
+  );
 
   const getCellValue = (row: TWCohortApiRow, monthIdx: number): number | null => {
     // If this month is beyond what's valid for this cohort (future), return null
@@ -505,6 +540,8 @@ export default function CohortsPage() {
               suggestions={getDynamicAISuggestions()} 
               title="Retention Intelligence"
               promptId="cohorts-intelligence"
+              pageLabel="Cohorts"
+              analysisContext={cohortsAnalysisContext}
             />
           </div>
         </>

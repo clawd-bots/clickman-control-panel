@@ -4,7 +4,7 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { targets as initialTargets, targetTrend, targetAISuggestions } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
-import { filterByDateRange, formatDateLabel } from '@/lib/dateUtils';
+import { filterByDateRange, formatDateLabel, toLocalDateString } from '@/lib/dateUtils';
 import { Pencil, Check, X, Users as UsersIcon } from 'lucide-react';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
@@ -121,6 +121,7 @@ const monthLabels = ['Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26', 'Sep 26',
 
 export default function TargetsPage() {
   const { currency, convertValue, exchangeRate } = useCurrency();
+  const { dateRange } = useDateRange();
   const [monthlyTargets, setMonthlyTargets] = useState<MonthlyTarget[]>(initialMonthlyTargets);
   const [editingCell, setEditingCell] = useState<{row: number, col: string} | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -353,6 +354,27 @@ export default function TargetsPage() {
 
     setShowAddMonthDialog(false);
   };
+
+  const targetsAnalysisContext = useMemo(
+    () => ({
+      topBarDateRange: {
+        start: toLocalDateString(dateRange.startDate),
+        end: toLocalDateString(dateRange.endDate),
+      },
+      storedMoneyUnitNote: 'Money rows in the grid are stored in PHP (shop); display may be toggled to USD in the top bar.',
+      displayCurrencyToggle: currency === '$' ? 'USD' : 'PHP',
+      exchangeRate,
+      monthLabels: currentMonthLabels,
+      targetsTable: monthlyTargets.map((row) => {
+        const cells: Record<string, string> = {};
+        for (const col of currentMonthColumns) {
+          cells[col] = String((row as any)[col] ?? '');
+        }
+        return { metric: row.metric, unit: row.unit, cells };
+      }),
+    }),
+    [dateRange, currency, exchangeRate, currentMonthColumns, currentMonthLabels, monthlyTargets]
+  );
 
   // Dynamic AI suggestions with historical data analysis linked to prompt templates
   const getDynamicTargetIntelligence = () => {
@@ -655,6 +677,8 @@ export default function TargetsPage() {
           suggestions={getDynamicTargetIntelligence()} 
           title="Target Intelligence"
           promptId="target-intelligence"
+          pageLabel="Targets & Goals"
+          analysisContext={targetsAnalysisContext}
         />
       </div>
 

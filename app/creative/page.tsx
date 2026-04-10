@@ -464,6 +464,61 @@ export default function CreativePage() {
   }, [platform]);
   const paretoTotal = paretoData.reduce((s, c) => s + c.conversions, 0);
 
+  const creativeAnalysisContext = useMemo(
+    () => ({
+      dateRangeIso: { start: twAdsStart, end: twAdsEnd },
+      activeTab,
+      platform,
+      attrModel,
+      attrWindow,
+      campaignFilter,
+      selectedCampaignsCount: selectedCampaigns.length,
+      churnCpaMode,
+      churnPlatform,
+      sluggingPlatform,
+      sluggingMonths,
+      twPlatformMetrics,
+      performanceRowCount: filtered.length,
+      paretoPreview: paretoData.slice(0, 10),
+      paretoTotalConversions: paretoTotal,
+      twAdsForPlatform: twAds
+        .filter((a) => a.platform === platform)
+        .slice(0, 45)
+        .map((a) => ({
+          campaignName: a.campaignName,
+          adName: a.adName,
+          spend: a.spend,
+          cpa: a.cpa,
+          ncCpa: a.ncCpa,
+          roas: a.roas,
+          orders: a.orders,
+        })),
+      totalChurnSpend,
+      wastedSpend,
+    }),
+    [
+      twAdsStart,
+      twAdsEnd,
+      activeTab,
+      platform,
+      attrModel,
+      attrWindow,
+      campaignFilter,
+      selectedCampaigns.length,
+      churnCpaMode,
+      churnPlatform,
+      sluggingPlatform,
+      sluggingMonths,
+      twPlatformMetrics,
+      filtered.length,
+      paretoData,
+      paretoTotal,
+      twAds,
+      totalChurnSpend,
+      wastedSpend,
+    ]
+  );
+
   // Slugging data filtered by platform, CPA mode, and selected month range
   const filteredSlugging = useMemo(() => {
     const cutoff = new Date();
@@ -1969,6 +2024,8 @@ export default function CreativePage() {
           suggestions={getDynamicAISuggestions()} 
           title={getAITitle(activeTab)}
           promptId={getAIPromptId(activeTab)}
+          pageLabel="Creative & MTA"
+          analysisContext={creativeAnalysisContext}
         />
       </div>
     </div>

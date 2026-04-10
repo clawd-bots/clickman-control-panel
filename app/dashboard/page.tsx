@@ -326,6 +326,43 @@ export default function DashboardPage() {
     };
   }, [chartData, twData]);
 
+  const dashboardAnalysisContext = useMemo(
+    () => ({
+      dateRangeIso: {
+        start: toLocalDateString(dateRange.startDate),
+        end: toLocalDateString(dateRange.endDate),
+      },
+      kpis: {
+        totalRevenue: aggregatedData.totalRevenue,
+        totalCosts: aggregatedData.totalCosts,
+        totalOrders: aggregatedData.totalOrders,
+        totalNewCustomers: aggregatedData.totalNewCustomers,
+        totalSessions: aggregatedData.totalSessions,
+        mer: aggregatedData.mer,
+        amer: aggregatedData.amer,
+        cac: aggregatedData.cac,
+        ncac: aggregatedData.ncac,
+        ncAov: aggregatedData.ncAov,
+        rcAov: aggregatedData.rcAov,
+        ltv: aggregatedData.ltv,
+        cacLtvRatio: aggregatedData.cacLtvRatio,
+      },
+      tripleWhaleConnected: Boolean(twData),
+      ga4Summary: ga4Data
+        ? {
+            sessions: getGA4Metric(ga4Data, 'sessions'),
+            conversions: getGA4Metric(ga4Data, 'conversions'),
+            engagementRate: getGA4Metric(ga4Data, 'engagementRate'),
+          }
+        : null,
+      channelAttributionRows: (attrData ?? []).slice(0, 30),
+      attributionModel,
+      attributionWindow,
+      productKpisSample: productKPIs.map((p) => ({ product: p.product, revenue: p.revenue, units: p.units })),
+    }),
+    [dateRange, aggregatedData, twData, ga4Data, attrData, attributionModel, attributionWindow]
+  );
+
   // Comprehensive cross-page AI analysis
   const getCrossPageInsights = () => {
     return [
@@ -874,6 +911,8 @@ export default function DashboardPage() {
           suggestions={getCrossPageInsights().map((item, i) => `${item.title}: ${item.insight}`)}
           title="Daily Summary & Intelligence"
           promptId="dashboard-intelligence"
+          pageLabel="Dashboard"
+          analysisContext={dashboardAnalysisContext}
         />
       </div>
     </div>

@@ -1,10 +1,10 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import DataSource from '@/components/ui/DataSource';
 import { LiveBadge } from '@/components/ui/LiveBadge';
 import { SkeletonMetricCard, SkeletonChart, SkeletonTable } from '@/components/ui/Skeleton';
-import AIIntelligenceControls from '@/components/ui/AIIntelligenceControls';
+import AIIntelligenceControls, { type LayerInsights } from '@/components/ui/AIIntelligenceControls';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
@@ -31,16 +31,21 @@ const treeLayers = [
   { id: 'roots', label: 'Cohort LTV', icon: Layers, description: 'Long-term value, measuring customer quality by acquisition source', color: '#A855F7' },
 ];
 
-interface LayerInsights {
-  working: string[];
-  notWorking: string[];
-  doNext: string[];
-  stopDoing: string[];
+type LayerKey = 'star' | 'upper' | 'lower' | 'trunk' | 'roots';
+
+const QUADRANT_LS_PREFIX = 'clickman-ai-quadrant:';
+
+const LAYER_INTELLIGENCE_ID: Record<LayerKey, string> = {
+  star: 'mer-ncac-intelligence',
+  upper: 'surveys-mmm-intelligence',
+  lower: 'mta-platform-intelligence',
+  trunk: 'tracking-infra-intelligence',
+  roots: 'cohort-ltv-intelligence',
+};
+
+function quadrantStorageKey(layer: LayerKey, startIso: string, endIso: string, currencyKey: string): string {
+  return `${QUADRANT_LS_PREFIX}${LAYER_INTELLIGENCE_ID[layer]}:${startIso}:${endIso}:${currencyKey}`;
 }
-
-// This will be created dynamically inside the component
-
-// This will be created dynamically inside the component
 
 export default function AttributionPage() {
   const { currency, convertValue } = useCurrency();
@@ -67,7 +72,54 @@ export default function AttributionPage() {
   }, [dateRange]);
   const [cohortAttrModel, setCohortAttrModel] = useState('First Click');
   const [cohortAttrWindow, setCohortAttrWindow] = useState('7-day click / 1-day view');
+  const [aiInsightOverrides, setAiInsightOverrides] = useState<Partial<Record<LayerKey, LayerInsights>>>({});
   const [expandedSystems, setExpandedSystems] = useState<Set<string>>(new Set());
+
+  const quadrantCurrencyKey = currency === '$' ? 'usd' : 'php';
+
+  const applyQuadrantFromAI = useCallback(
+    (layer: LayerKey, insights: LayerInsights) => {
+      const startIso = toLocalDateString(dateRange.startDate);
+      const endIso = toLocalDateString(dateRange.endDate);
+      try {
+        localStorage.setItem(
+          quadrantStorageKey(layer, startIso, endIso, quadrantCurrencyKey),
+          JSON.stringify({ insights })
+        );
+      } catch {
+        /* ignore */
+      }
+      setAiInsightOverrides((prev) => ({ ...prev, [layer]: insights }));
+    },
+    [dateRange.startDate, dateRange.endDate, quadrantCurrencyKey]
+  );
+
+  useEffect(() => {
+    const startIso = toLocalDateString(dateRange.startDate);
+    const endIso = toLocalDateString(dateRange.endDate);
+    const layers = Object.keys(LAYER_INTELLIGENCE_ID) as LayerKey[];
+    const next: Partial<Record<LayerKey, LayerInsights>> = {};
+    for (const layer of layers) {
+      try {
+        const raw = localStorage.getItem(quadrantStorageKey(layer, startIso, endIso, quadrantCurrencyKey));
+        if (!raw) continue;
+        const parsed = JSON.parse(raw) as { insights?: LayerInsights };
+        const ins = parsed.insights;
+        if (
+          ins &&
+          Array.isArray(ins.working) &&
+          Array.isArray(ins.notWorking) &&
+          Array.isArray(ins.doNext) &&
+          Array.isArray(ins.stopDoing)
+        ) {
+          next[layer] = ins;
+        }
+      } catch {
+        /* skip corrupt */
+      }
+    }
+    setAiInsightOverrides(next);
+  }, [dateRange.startDate, dateRange.endDate, quadrantCurrencyKey]);
   const [hiddenIntel, setHiddenIntel] = useState<Set<string>>(new Set());
   const [eventPages, setEventPages] = useState<Record<string, number>>({});
   const [liveTrackingData, setLiveTrackingData] = useState<{
@@ -168,7 +220,7 @@ export default function AttributionPage() {
   };
 
   // Dynamic layer insights with currency conversion
-  const getLayerInsights = (): Record<string, LayerInsights> => ({
+  const getLayerInsights = (): Record<LayerKey, LayerInsights> => ({
     star: {
       working: ['MER at 3.67x is above the 3.5x healthy threshold, marketing is generating strong returns', `nCAC trending down 2.6% MoM from ${formatCurrencyValue(808)} to ${formatCurrencyValue(787)}, acquisition getting more efficient`],
       notWorking: ['nMER at 1.92x means new customer revenue alone doesn\'t cover spend, reliant on repeats', 'MER variance across channels is high (Meta 3.91x vs Referral 0.40x)'],
@@ -213,7 +265,47 @@ export default function AttributionPage() {
   ];
 
   const activeInfo = treeLayers.find(l => l.id === activeLayer)!;
-  const insights = getLayerInsights()[activeLayer];
+
+  const attributionAnalysisContext = useMemo(() => {
+    const layerLabel = treeLayers.find((l) => l.id === activeLayer)?.label ?? activeLayer;
+    return {
+      attributionLayer: activeLayer,
+      treeLayerLabel: layerLabel,
+      cohortSurvey: attributionSurvey,
+      adScatterSample: adScatterData.slice(0, 50),
+      cohortAttrModel,
+      cohortAttrWindow,
+      tripleWhale: twData
+        ? {
+            orderRevenue: getMetric(twData, 'orderRevenue'),
+            orders: getMetric(twData, 'orders'),
+            newCustomerOrders: getMetric(twData, 'newCustomerOrders'),
+            ncpa: getMetric(twData, 'ncpa'),
+            blendedCpa: getMetric(twData, 'blendedCpa'),
+            twRoas: getMetric(twData, 'twRoas'),
+            blendedAttributedRoas: getMetric(twData, 'blendedAttributedRoas'),
+            metaAdSpend: getMetric(twData, 'metaAdSpend'),
+            googleAdSpend: getMetric(twData, 'googleAdSpend'),
+            tiktokAdSpend: getMetric(twData, 'tiktokAdSpend'),
+            redditAdSpend: getMetric(twData, 'redditAdSpend'),
+          }
+        : null,
+      ga4: ga4Data
+        ? {
+            sessions: getGA4Metric(ga4Data, 'sessions'),
+            conversions: getGA4Metric(ga4Data, 'conversions'),
+            eventCount: getGA4Metric(ga4Data, 'eventCount'),
+          }
+        : null,
+      trackingHealthSummary: trackingHealth.map((t) => ({
+        system: t.system,
+        status: t.status,
+        events: t.events,
+      })),
+    };
+  }, [activeLayer, twData, ga4Data, trackingHealth, cohortAttrModel, cohortAttrWindow]);
+
+  const insights = aiInsightOverrides[activeLayer as LayerKey] ?? getLayerInsights()[activeLayer as LayerKey];
 
 
 
@@ -334,6 +426,10 @@ export default function AttributionPage() {
             <AIIntelligenceControls 
               intelligenceId="mer-ncac-intelligence"
               title={`${activeInfo.label} AI Intelligence`}
+              pageLabel="Attribution"
+              analysisContext={{ ...attributionAnalysisContext, intelligenceSection: 'MER / nCAC' }}
+              quadrantMode
+              onQuadrantInsights={(ins) => applyQuadrantFromAI('star', ins)}
               onToggleVisibility={(v) => { const s = new Set(hiddenIntel); v ? s.delete('mer-ncac') : s.add('mer-ncac'); setHiddenIntel(s); }}
             />
           </div>
@@ -416,6 +512,10 @@ export default function AttributionPage() {
             <AIIntelligenceControls 
               intelligenceId="surveys-mmm-intelligence"
               title={`${activeInfo.label} AI Intelligence`}
+              pageLabel="Attribution"
+              analysisContext={{ ...attributionAnalysisContext, intelligenceSection: 'Surveys & MMM' }}
+              quadrantMode
+              onQuadrantInsights={(ins) => applyQuadrantFromAI('upper', ins)}
               onToggleVisibility={(v) => { const s = new Set(hiddenIntel); v ? s.delete('surveys-mmm') : s.add('surveys-mmm'); setHiddenIntel(s); }}
             />
           </div>
@@ -492,6 +592,10 @@ export default function AttributionPage() {
             <AIIntelligenceControls 
               intelligenceId="mta-platform-intelligence"
               title={`${activeInfo.label} AI Intelligence`}
+              pageLabel="Attribution"
+              analysisContext={{ ...attributionAnalysisContext, intelligenceSection: 'MTA & Platform' }}
+              quadrantMode
+              onQuadrantInsights={(ins) => applyQuadrantFromAI('lower', ins)}
               onToggleVisibility={(v) => { const s = new Set(hiddenIntel); v ? s.delete('mta-platform') : s.add('mta-platform'); setHiddenIntel(s); }}
             />
           </div>
@@ -660,6 +764,10 @@ export default function AttributionPage() {
             <AIIntelligenceControls 
               intelligenceId="tracking-infra-intelligence"
               title={`${activeInfo.label} AI Intelligence`}
+              pageLabel="Attribution"
+              analysisContext={{ ...attributionAnalysisContext, intelligenceSection: 'Tracking infrastructure' }}
+              quadrantMode
+              onQuadrantInsights={(ins) => applyQuadrantFromAI('trunk', ins)}
               onToggleVisibility={(v) => { const s = new Set(hiddenIntel); v ? s.delete('tracking-infra') : s.add('tracking-infra'); setHiddenIntel(s); }}
             />
           </div>
@@ -788,6 +896,10 @@ export default function AttributionPage() {
             <AIIntelligenceControls 
               intelligenceId="cohort-ltv-intelligence"
               title={`${activeInfo.label} AI Intelligence`}
+              pageLabel="Attribution"
+              analysisContext={{ ...attributionAnalysisContext, intelligenceSection: 'Cohort LTV' }}
+              quadrantMode
+              onQuadrantInsights={(ins) => applyQuadrantFromAI('roots', ins)}
               onToggleVisibility={(v) => { const s = new Set(hiddenIntel); v ? s.delete('cohort-ltv') : s.add('cohort-ltv'); setHiddenIntel(s); }}
             />
           </div>
