@@ -10,6 +10,11 @@ import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
 import { toLocalDateString } from '@/lib/dateUtils';
 import { fetchTripleWhaleData, getMetric, getPrevMetric, TWData } from '@/lib/triple-whale-client';
+
+function pctChange(curr: number, prev: number): number {
+  if (!prev || prev === 0) return 0;
+  return ((curr - prev) / prev) * 100;
+}
 import { fetchGA4Data, getGA4Metric, GA4Data } from '@/lib/ga4-client';
 import { attributionSurvey, trackingHealth as sampleTrackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
 import { Star, GitBranch, Activity, Database, Layers, Sparkles, ChevronDown } from 'lucide-react';
@@ -307,7 +312,47 @@ export default function AttributionPage() {
 
   const insights = aiInsightOverrides[activeLayer as LayerKey] ?? getLayerInsights()[activeLayer as LayerKey];
 
+  /** Same definitions as Dashboard Daily Overview KPIs (TW summary.current / .previous). */
+  const starEfficiencyMetrics = useMemo(() => {
+    if (!twData) return null;
+    const totalCosts =
+      getMetric(twData, 'metaAdSpend') +
+      getMetric(twData, 'googleAdSpend') +
+      getMetric(twData, 'tiktokAdSpend') +
+      getMetric(twData, 'redditAdSpend');
+    const prevCosts =
+      getPrevMetric(twData, 'metaAdSpend') +
+      getPrevMetric(twData, 'googleAdSpend') +
+      getPrevMetric(twData, 'tiktokAdSpend') +
+      getPrevMetric(twData, 'redditAdSpend');
 
+    const mer = getMetric(twData, 'twRoas') || getMetric(twData, 'topRoas');
+    const prevMer = getPrevMetric(twData, 'twRoas') || getPrevMetric(twData, 'topRoas');
+
+    const amer = totalCosts > 0 ? getMetric(twData, 'newCustomerRevenue') / totalCosts : 0;
+    const prevAmer = prevCosts > 0 ? getPrevMetric(twData, 'newCustomerRevenue') / prevCosts : 0;
+
+    const ncac = getMetric(twData, 'ncpa');
+    const prevNcac = getPrevMetric(twData, 'ncpa');
+
+    const blendedAttributedRoas = getMetric(twData, 'blendedAttributedRoas');
+    const prevBlendedAttributedRoas = getPrevMetric(twData, 'blendedAttributedRoas');
+
+    return {
+      mer,
+      merVsPrevPct: prevMer > 0 ? pctChange(mer, prevMer) : null,
+      amer,
+      amerVsPrevPct: prevAmer > 0 ? pctChange(amer, prevAmer) : null,
+      ncac,
+      ncacVsPrevPct: prevNcac > 0 ? pctChange(ncac, prevNcac) : null,
+      totalCosts,
+      costsVsPrevPct: prevCosts > 0 ? pctChange(totalCosts, prevCosts) : null,
+      blendedAttributedRoas,
+      blendedAttVsPrevPct:
+        prevBlendedAttributedRoas > 0 ? pctChange(blendedAttributedRoas, prevBlendedAttributedRoas) : null,
+      blendedCpa: getMetric(twData, 'blendedCpa'),
+    };
+  }, [twData]);
 
   if (twLoading || ga4Loading) {
     return (
@@ -376,40 +421,121 @@ export default function AttributionPage() {
                 <span>MER</span>
                 <InfoTooltip metric="MER" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{twData ? (() => { const rev = getMetric(twData, 'orderRevenue'); const spend = getMetric(twData, 'metaAdSpend') + getMetric(twData, 'googleAdSpend') + getMetric(twData, 'tiktokAdSpend') + getMetric(twData, 'redditAdSpend'); return spend > 0 ? `${(rev / spend).toFixed(2)}x` : '—'; })() : '3.67x'}</div>
-              <div className="text-xs text-success mt-2">{twData ? (() => { const rev = getMetric(twData, 'orderRevenue'); const spend = getMetric(twData, 'metaAdSpend') + getMetric(twData, 'googleAdSpend') + getMetric(twData, 'tiktokAdSpend') + getMetric(twData, 'redditAdSpend'); const prevRev = getPrevMetric(twData, 'orderRevenue'); const prevSpend = getPrevMetric(twData, 'metaAdSpend') + getPrevMetric(twData, 'googleAdSpend') + getPrevMetric(twData, 'tiktokAdSpend') + getPrevMetric(twData, 'redditAdSpend'); if (spend > 0 && prevSpend > 0) { const curr = rev / spend; const prev = prevRev / prevSpend; const chg = ((curr - prev) / prev) * 100; return `${chg >= 0 ? '↑' : '↓'} ${Math.abs(chg).toFixed(1)}% vs prev`; } return ''; })() : '↑ 3.1% MoM'}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">
+                {starEfficiencyMetrics ? `${starEfficiencyMetrics.mer.toFixed(2)}x` : '3.67x'}
+              </div>
+              <div
+                className={`text-xs mt-2 ${
+                  starEfficiencyMetrics?.merVsPrevPct != null
+                    ? starEfficiencyMetrics.merVsPrevPct >= 0
+                      ? 'text-success'
+                      : 'text-danger'
+                    : 'text-text-secondary'
+                }`}
+              >
+                {starEfficiencyMetrics?.merVsPrevPct != null
+                  ? `${starEfficiencyMetrics.merVsPrevPct >= 0 ? '↑' : '↓'} ${Math.abs(starEfficiencyMetrics.merVsPrevPct).toFixed(1)}% vs prev`
+                  : twData
+                    ? ''
+                    : '↑ 3.1% MoM'}
+              </div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary flex items-center gap-1">
                 <span>nCAC</span>
                 <InfoTooltip metric="nCAC" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(twData ? getMetric(twData, 'ncpa') : 787)}</div>
-              <div className="text-xs text-success mt-2">↓ 2.6% MoM</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">
+                {formatCurrencyValue(starEfficiencyMetrics?.ncac ?? (twData ? getMetric(twData, 'ncpa') : 787))}
+              </div>
+              <div
+                className={`text-xs mt-2 ${
+                  starEfficiencyMetrics?.ncacVsPrevPct != null
+                    ? starEfficiencyMetrics.ncacVsPrevPct <= 0
+                      ? 'text-success'
+                      : 'text-danger'
+                    : 'text-text-secondary'
+                }`}
+              >
+                {starEfficiencyMetrics?.ncacVsPrevPct != null
+                  ? `${starEfficiencyMetrics.ncacVsPrevPct <= 0 ? '↓' : '↑'} ${Math.abs(starEfficiencyMetrics.ncacVsPrevPct).toFixed(1)}% vs prev`
+                  : twData
+                    ? ''
+                    : '↓ 2.6% MoM'}
+              </div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary">Marketing Costs</div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(twData ? (getMetric(twData, 'metaAdSpend') + getMetric(twData, 'googleAdSpend') + getMetric(twData, 'tiktokAdSpend') + getMetric(twData, 'redditAdSpend')) : 680000)}</div>
-              <div className="text-xs text-text-secondary mt-2">At 25% CM3 target</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">
+                {formatCurrencyValue(starEfficiencyMetrics?.totalCosts ?? (twData ? (getMetric(twData, 'metaAdSpend') + getMetric(twData, 'googleAdSpend') + getMetric(twData, 'tiktokAdSpend') + getMetric(twData, 'redditAdSpend')) : 680000))}
+              </div>
+              <div
+                className={`text-xs mt-2 ${
+                  starEfficiencyMetrics?.costsVsPrevPct != null
+                    ? starEfficiencyMetrics.costsVsPrevPct <= 0
+                      ? 'text-success'
+                      : 'text-danger'
+                    : 'text-text-secondary'
+                }`}
+              >
+                {starEfficiencyMetrics?.costsVsPrevPct != null
+                  ? `${starEfficiencyMetrics.costsVsPrevPct >= 0 ? '↑' : '↓'} ${Math.abs(starEfficiencyMetrics.costsVsPrevPct).toFixed(1)}% vs prev`
+                  : 'At 25% CM3 target'}
+              </div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary">Blended CPA</div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{formatCurrencyValue(twData ? getMetric(twData, 'blendedCpa') : 750)}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">
+                {formatCurrencyValue(starEfficiencyMetrics?.blendedCpa ?? (twData ? getMetric(twData, 'blendedCpa') : 750))}
+              </div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary flex items-center gap-1">
                 <span>Blended ROAS</span>
                 <InfoTooltip metric="ROAS" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{twData ? `${(getMetric(twData, 'twRoas') || getMetric(twData, 'topRoas')).toFixed(2)}x` : '3.58x'}</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">
+                {starEfficiencyMetrics
+                  ? `${starEfficiencyMetrics.blendedAttributedRoas.toFixed(2)}x`
+                  : '3.58x'}
+              </div>
+              <div
+                className={`text-xs mt-2 ${
+                  starEfficiencyMetrics?.blendedAttVsPrevPct != null
+                    ? starEfficiencyMetrics.blendedAttVsPrevPct >= 0
+                      ? 'text-success'
+                      : 'text-danger'
+                    : 'text-text-secondary'
+                }`}
+              >
+                {starEfficiencyMetrics?.blendedAttVsPrevPct != null
+                  ? `${starEfficiencyMetrics.blendedAttVsPrevPct >= 0 ? '↑' : '↓'} ${Math.abs(starEfficiencyMetrics.blendedAttVsPrevPct).toFixed(1)}% vs prev`
+                  : ''}
+              </div>
             </div>
             <div className="bg-bg-elevated rounded-md p-4 min-h-[100px] flex flex-col justify-between">
               <div className="text-xs text-text-secondary flex items-center gap-1">
                 <span>aMER</span>
                 <InfoTooltip metric="aMER" />
               </div>
-              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">{twData ? `${getMetric(twData, 'blendedAttributedRoas').toFixed(2)}x` : '4.12x'}</div>
-              <div className="text-xs text-success mt-2">↑ 1.8% MoM</div>
+              <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">
+                {starEfficiencyMetrics ? `${starEfficiencyMetrics.amer.toFixed(2)}x` : '4.12x'}
+              </div>
+              <div
+                className={`text-xs mt-2 ${
+                  starEfficiencyMetrics?.amerVsPrevPct != null
+                    ? starEfficiencyMetrics.amerVsPrevPct >= 0
+                      ? 'text-success'
+                      : 'text-danger'
+                    : 'text-text-secondary'
+                }`}
+              >
+                {starEfficiencyMetrics?.amerVsPrevPct != null
+                  ? `${starEfficiencyMetrics.amerVsPrevPct >= 0 ? '↑' : '↓'} ${Math.abs(starEfficiencyMetrics.amerVsPrevPct).toFixed(1)}% vs prev`
+                  : twData
+                    ? ''
+                    : '↑ 1.8% MoM'}
+              </div>
             </div>
           </div>
         </div>
