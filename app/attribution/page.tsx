@@ -10,11 +10,6 @@ import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
 import { toLocalDateString } from '@/lib/dateUtils';
 import { fetchTripleWhaleData, getMetric, getPrevMetric, TWData } from '@/lib/triple-whale-client';
-
-function pctChange(curr: number, prev: number): number {
-  if (!prev || prev === 0) return 0;
-  return ((curr - prev) / prev) * 100;
-}
 import { fetchGA4Data, getGA4Metric, GA4Data } from '@/lib/ga4-client';
 import { attributionSurvey, trackingHealth as sampleTrackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
 import { Star, GitBranch, Activity, Database, Layers, Sparkles, ChevronDown } from 'lucide-react';
@@ -22,6 +17,25 @@ import {
   PieChart, Pie, Cell, ScatterChart, Scatter,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ZAxis,
 } from 'recharts';
+
+function pctChange(curr: number, prev: number): number {
+  if (!prev || prev === 0) return 0;
+  return ((curr - prev) / prev) * 100;
+}
+
+/**
+ * MER / Blended ROAS from Triple Whale Summary Page — same as Dashboard Daily Overview.
+ * Prefer `roas` / `topKpiRoas` (`twRoas` / `topRoas`): these match TW "Blended ROAS" in Moby (~3.5x).
+ * The `mer` id in this API often diverges (e.g. ~28x) and must not override ROAS.
+ * Never use `blendedAttributedRoas` here (different attributed mix, can be 10x+).
+ */
+function getTwBlendedRoas(data: TWData, pick: 'current' | 'previous'): number {
+  const g = pick === 'current' ? getMetric : getPrevMetric;
+  const fromRoas = g(data, 'twRoas') || g(data, 'topRoas');
+  if (fromRoas > 0) return fromRoas;
+  const mer = g(data, 'mer');
+  return mer > 0 ? mer : 0;
+}
 
 const COLORS = ['#334FB4', '#4A6BD6', '#EDBF63', '#34D399', '#EF4444', '#94A3B8'];
 
@@ -287,7 +301,11 @@ export default function AttributionPage() {
             newCustomerOrders: getMetric(twData, 'newCustomerOrders'),
             ncpa: getMetric(twData, 'ncpa'),
             blendedCpa: getMetric(twData, 'blendedCpa'),
+            twMer: getMetric(twData, 'mer'),
             twRoas: getMetric(twData, 'twRoas'),
+            topRoas: getMetric(twData, 'topRoas'),
+            /** Blended Stats style ROAS (matches Moby / TW UI), not attributed-model ROAS */
+            blendedRoasTw: getTwBlendedRoas(twData, 'current'),
             blendedAttributedRoas: getMetric(twData, 'blendedAttributedRoas'),
             metaAdSpend: getMetric(twData, 'metaAdSpend'),
             googleAdSpend: getMetric(twData, 'googleAdSpend'),
@@ -326,8 +344,8 @@ export default function AttributionPage() {
       getPrevMetric(twData, 'tiktokAdSpend') +
       getPrevMetric(twData, 'redditAdSpend');
 
-    const mer = getMetric(twData, 'twRoas') || getMetric(twData, 'topRoas');
-    const prevMer = getPrevMetric(twData, 'twRoas') || getPrevMetric(twData, 'topRoas');
+    const mer = getTwBlendedRoas(twData, 'current');
+    const prevMer = getTwBlendedRoas(twData, 'previous');
 
     const amer = totalCosts > 0 ? getMetric(twData, 'newCustomerRevenue') / totalCosts : 0;
     const prevAmer = prevCosts > 0 ? getPrevMetric(twData, 'newCustomerRevenue') / prevCosts : 0;
@@ -335,8 +353,8 @@ export default function AttributionPage() {
     const ncac = getMetric(twData, 'ncpa');
     const prevNcac = getPrevMetric(twData, 'ncpa');
 
-    const blendedAttributedRoas = getMetric(twData, 'blendedAttributedRoas');
-    const prevBlendedAttributedRoas = getPrevMetric(twData, 'blendedAttributedRoas');
+    const blendedRoas = mer;
+    const prevBlendedRoas = prevMer;
 
     return {
       mer,
@@ -347,9 +365,8 @@ export default function AttributionPage() {
       ncacVsPrevPct: prevNcac > 0 ? pctChange(ncac, prevNcac) : null,
       totalCosts,
       costsVsPrevPct: prevCosts > 0 ? pctChange(totalCosts, prevCosts) : null,
-      blendedAttributedRoas,
-      blendedAttVsPrevPct:
-        prevBlendedAttributedRoas > 0 ? pctChange(blendedAttributedRoas, prevBlendedAttributedRoas) : null,
+      blendedRoas,
+      blendedRoasVsPrevPct: prevBlendedRoas > 0 ? pctChange(blendedRoas, prevBlendedRoas) : null,
       blendedCpa: getMetric(twData, 'blendedCpa'),
     };
   }, [twData]);
@@ -495,21 +512,19 @@ export default function AttributionPage() {
                 <InfoTooltip metric="ROAS" />
               </div>
               <div className="text-2xl sm:text-3xl font-bold text-text-primary mt-2">
-                {starEfficiencyMetrics
-                  ? `${starEfficiencyMetrics.blendedAttributedRoas.toFixed(2)}x`
-                  : '3.58x'}
+                {starEfficiencyMetrics ? `${starEfficiencyMetrics.blendedRoas.toFixed(2)}x` : '3.58x'}
               </div>
               <div
                 className={`text-xs mt-2 ${
-                  starEfficiencyMetrics?.blendedAttVsPrevPct != null
-                    ? starEfficiencyMetrics.blendedAttVsPrevPct >= 0
+                  starEfficiencyMetrics?.blendedRoasVsPrevPct != null
+                    ? starEfficiencyMetrics.blendedRoasVsPrevPct >= 0
                       ? 'text-success'
                       : 'text-danger'
                     : 'text-text-secondary'
                 }`}
               >
-                {starEfficiencyMetrics?.blendedAttVsPrevPct != null
-                  ? `${starEfficiencyMetrics.blendedAttVsPrevPct >= 0 ? '↑' : '↓'} ${Math.abs(starEfficiencyMetrics.blendedAttVsPrevPct).toFixed(1)}% vs prev`
+                {starEfficiencyMetrics?.blendedRoasVsPrevPct != null
+                  ? `${starEfficiencyMetrics.blendedRoasVsPrevPct >= 0 ? '↑' : '↓'} ${Math.abs(starEfficiencyMetrics.blendedRoasVsPrevPct).toFixed(1)}% vs prev`
                   : ''}
               </div>
             </div>
