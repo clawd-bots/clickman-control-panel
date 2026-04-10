@@ -13,8 +13,9 @@ import { fetchTripleWhaleData, getMetric, getPrevMetric, getDelta, getDailyData,
 import { fetchGA4Data, getGA4Metric, GA4Data } from '@/lib/ga4-client';
 import { useTargets } from '@/lib/useTargets';
 
-import { kpiCards, dailyMetrics, channelAttribution, productKPIs, revenueInsights } from '@/lib/sample-data';
+import { kpiCards, dailyMetrics, productKPIs, revenueInsights } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
+import { ChevronDown } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -23,15 +24,24 @@ import {
 
 const COLORS = ['#334FB4', '#EDBF63', '#34D399', '#EF4444', '#4A6BD6', '#94A3B8'];
 
+/** Triple Whale `pixel_joined_tvf` model labels (order matches UI dropdown). */
+const CHANNEL_ATTRIBUTION_MODELS = [
+  'First Click',
+  'Last Click',
+  'Linear All',
+  'Linear Paid',
+  'Triple Attribution',
+] as const;
+
 function pctChange(curr: number, prev: number) {
   return ((curr - prev) / prev) * 100;
 }
 
 export default function DashboardPage() {
-  const { currency, convertValue } = useCurrency();
+  const { currency, convertValue, exchangeRate } = useCurrency();
   const { dateRange } = useDateRange();
   const { getTarget, getTargetAchievement } = useTargets();
-  const [activeAttributionTab, setActiveAttributionTab] = useState('Last Click');
+  const [attributionModel, setAttributionModel] = useState<string>('Triple Attribution');
   const [attributionWindow, setAttributionWindow] = useState('7-day');
   const [twData, setTwData] = useState<TWData | null>(null);
   const [twLoading, setTwLoading] = useState(true);
@@ -39,7 +49,8 @@ export default function DashboardPage() {
   const [ga4Loading, setGA4Loading] = useState(true);
   const [ga4DailyData, setGA4DailyData] = useState<Array<{ date: string; sessions: number; totalUsers: number }>>([]);
   const [attrData, setAttrData] = useState<any[] | null>(null);
-  const [attrLoading, setAttrLoading] = useState(false);
+  const [attrLoading, setAttrLoading] = useState(true);
+  const [attrError, setAttrError] = useState<string | null>(null);
 
   useEffect(() => {
     setTwLoading(true);
@@ -68,25 +79,48 @@ export default function DashboardPage() {
       .finally(() => setGA4Loading(false));
   }, [dateRange]);
 
-  // Fetch attribution data when tab, window, or date range changes
+  // Channel attribution: always from TW SQL (model + window); never mix in summary-channel fallback
   useEffect(() => {
+    let cancelled = false;
     setAttrLoading(true);
+    setAttrError(null);
     const startDate = toLocalDateString(dateRange.startDate);
     const endDate = toLocalDateString(dateRange.endDate);
-    fetch(`/api/triple-whale/attribution?startDate=${startDate}&endDate=${endDate}&model=${encodeURIComponent(activeAttributionTab)}&window=${encodeURIComponent(attributionWindow)}`)
-      .then(res => res.json())
-      .then(json => {
+    fetch(`/api/triple-whale/attribution?startDate=${startDate}&endDate=${endDate}&model=${encodeURIComponent(attributionModel)}&window=${encodeURIComponent(attributionWindow)}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (cancelled) return;
         if (json.success) {
-          setAttrData(json.data);
+          setAttrData(Array.isArray(json.data) ? json.data : []);
+          setAttrError(null);
+        } else {
+          setAttrData([]);
+          setAttrError(json.error || 'Could not load attribution data');
         }
       })
-      .catch(console.error)
-      .finally(() => setAttrLoading(false));
-  }, [dateRange, activeAttributionTab, attributionWindow]);
+      .catch((e) => {
+        if (!cancelled) {
+          setAttrData([]);
+          setAttrError(e?.message || 'Could not load attribution data');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAttrLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dateRange, attributionModel, attributionWindow]);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
     return formatCurrency(convertValue(value), currency);
+  };
+
+  /** Triple Whale SQL attribution amounts are in USD; convert for display when user chooses ₱. */
+  const formatAttributionCurrency = (usdValue: number) => {
+    if (currency === '$') return formatCurrency(usdValue, '$');
+    return formatCurrency(usdValue * exchangeRate, '₱');
   };
 
   // Generate chart data based on selected date range
@@ -291,105 +325,6 @@ export default function DashboardPage() {
       cacLtvRatio: 3.2,
     };
   }, [chartData, twData]);
-
-  // TW-powered channel data for the attribution table
-  // Columns: Spend, CPA, NC CPA, AOV, CV (Conversion Value), Purchases, ROAS, NC ROAS, NCP (New Customer Purchases), CR (Conversion Rate)
-  const twChannelData = useMemo(() => {
-    if (!twData) return null;
-
-    const buildRow = (channel: string, spend: number, cpa: number, cv: number, purchases: number, roas: number, extras?: { ncCpa?: number; aov?: number; cr?: number }) => {
-      // Compute AOV from CV / Purchases when not provided directly
-      const aov = extras?.aov || (purchases > 0 ? cv / purchases : 0);
-      // CR = Purchases / Sessions is not per-channel, show if provided
-      return {
-        channel, spend, cpa,
-        ncCpa: extras?.ncCpa || 0,
-        aov,
-        cv, purchases, roas,
-        ncRoas: 0, // Not available per-channel from TW Summary API
-        ncp: 0, // Not available per-channel from TW Summary API
-        cr: extras?.cr || 0,
-      };
-    };
-
-    return [
-      buildRow('Meta Ads',
-        getMetric(twData, 'metaAdSpend'),
-        getMetric(twData, 'metaCpa'),
-        getMetric(twData, 'metaConversionValue'),
-        getMetric(twData, 'metaPurchases') || getMetric(twData, 'metaTotalPurchases'),
-        getMetric(twData, 'metaRoas'),
-      ),
-      buildRow('Google Ads',
-        getMetric(twData, 'googleAdSpend'),
-        getMetric(twData, 'googleCpa'),
-        getMetric(twData, 'googleConversionValue'),
-        // Google doesn't report purchases in TW summary — compute from CV/AOV if possible
-        0,
-        getMetric(twData, 'googleRoas'),
-        { ncCpa: getMetric(twData, 'googleAllCpa') },
-      ),
-      buildRow('TikTok Ads',
-        getMetric(twData, 'tiktokAdSpend'),
-        getMetric(twData, 'tiktokCpa'),
-        getMetric(twData, 'tiktokConversionValue'),
-        getMetric(twData, 'tiktokPurchases'),
-        getMetric(twData, 'tiktokRoas'),
-      ),
-      buildRow('Reddit Ads',
-        getMetric(twData, 'redditAdSpend'),
-        getMetric(twData, 'redditCpa'),
-        getMetric(twData, 'redditConversionValue'),
-        getMetric(twData, 'redditConversions'),
-        getMetric(twData, 'redditRoas'),
-        { aov: getMetric(twData, 'redditAov'), cr: getMetric(twData, 'redditConversionRate') },
-      ),
-    ].filter(ch => ch.spend > 0 || ch.cv > 0);
-  }, [twData]);
-
-  // Different attribution data sets  
-  const channelAttributionData = {
-    'Last Click': [
-      { channel: 'Meta Ads', costs: 320000, revenue: 1180000, roas: 3.69, orders: 545, cpo: 587, newCustomers: 380, ncPct: 69.7 },
-      { channel: 'Google Ads', costs: 165000, revenue: 620000, roas: 3.76, orders: 315, cpo: 524, newCustomers: 200, ncPct: 63.5 },
-      { channel: 'TikTok Ads', costs: 88000, revenue: 295000, roas: 3.35, orders: 165, cpo: 533, newCustomers: 130, ncPct: 78.8 },
-      { channel: 'Organic Search', costs: 0, revenue: 95000, roas: 0, orders: 58, cpo: 0, newCustomers: 40, ncPct: 69.0 },
-      { channel: 'Direct', costs: 0, revenue: 48000, roas: 0, orders: 35, cpo: 0, newCustomers: 20, ncPct: 57.1 },
-      { channel: 'Referral', costs: 40000, revenue: 15000, roas: 0.38, orders: 8, cpo: 5000, newCustomers: 9, ncPct: 112.5 },
-    ],
-    'Linear': channelAttribution,
-    'First Click': [
-      { channel: 'Meta Ads', costs: 320000, revenue: 950000, roas: 2.97, orders: 465, cpo: 688, newCustomers: 420, ncPct: 90.3 },
-      { channel: 'Google Ads', costs: 165000, revenue: 720000, roas: 4.36, orders: 385, cpo: 429, newCustomers: 285, ncPct: 74.0 },
-      { channel: 'TikTok Ads', costs: 88000, revenue: 380000, roas: 4.32, orders: 185, cpo: 476, newCustomers: 165, ncPct: 89.2 },
-      { channel: 'Organic Search', costs: 0, revenue: 125000, roas: 0, orders: 72, cpo: 0, newCustomers: 58, ncPct: 80.6 },
-      { channel: 'Direct', costs: 0, revenue: 35000, roas: 0, orders: 22, cpo: 0, newCustomers: 15, ncPct: 68.2 },
-      { channel: 'Referral', costs: 40000, revenue: 28000, roas: 0.70, orders: 18, cpo: 2222, newCustomers: 16, ncPct: 88.9 },
-    ],
-    'Linear Paid': [
-      { channel: 'Meta Ads', costs: 320000, revenue: 1050000, roas: 3.28, orders: 485, cpo: 660, newCustomers: 340, ncPct: 70.1 },
-      { channel: 'Google Ads', costs: 165000, revenue: 580000, roas: 3.52, orders: 295, cpo: 559, newCustomers: 190, ncPct: 64.4 },
-      { channel: 'TikTok Ads', costs: 88000, revenue: 320000, roas: 3.64, orders: 175, cpo: 503, newCustomers: 145, ncPct: 82.9 },
-      { channel: 'Organic Search', costs: 0, revenue: 95000, roas: 0, orders: 58, cpo: 0, newCustomers: 40, ncPct: 69.0 },
-      { channel: 'Direct', costs: 0, revenue: 48000, roas: 0, orders: 35, cpo: 0, newCustomers: 20, ncPct: 57.1 },
-      { channel: 'Referral', costs: 40000, revenue: 15000, roas: 0.38, orders: 8, cpo: 5000, newCustomers: 9, ncPct: 112.5 },
-    ],
-    'Triple': [
-      { channel: 'Meta Ads', costs: 320000, revenue: 1120000, roas: 3.50, orders: 520, cpo: 615, newCustomers: 365, ncPct: 70.2 },
-      { channel: 'Google Ads', costs: 165000, revenue: 650000, roas: 3.94, orders: 325, cpo: 508, newCustomers: 210, ncPct: 64.6 },
-      { channel: 'TikTok Ads', costs: 88000, revenue: 310000, roas: 3.52, orders: 175, cpo: 503, newCustomers: 140, ncPct: 80.0 },
-      { channel: 'Organic Search', costs: 0, revenue: 95000, roas: 0, orders: 58, cpo: 0, newCustomers: 40, ncPct: 69.0 },
-      { channel: 'Direct', costs: 0, revenue: 48000, roas: 0, orders: 35, cpo: 0, newCustomers: 20, ncPct: 57.1 },
-      { channel: 'Referral', costs: 40000, revenue: 15000, roas: 0.38, orders: 8, cpo: 5000, newCustomers: 9, ncPct: 112.5 },
-    ],
-  };
-  
-  const getCurrentChannelData = () => {
-    // Use SQL-based attribution data (per-model) when available, fallback to summary data
-    if (attrData && attrData.length > 0) return attrData;
-    if (twChannelData) return twChannelData;
-    return null;
-  };
 
   // Comprehensive cross-page AI analysis
   const getCrossPageInsights = () => {
@@ -696,38 +631,47 @@ export default function DashboardPage() {
 
       {/* Channel Attribution Table */}
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="attribution-table">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
-              <DataSource source="Triple Whale" />
-              <LiveBadge />
-            </div>
-            <div className="flex gap-2 sm:gap-3 mt-2 flex-wrap">
-              {['Last Click', 'Linear', 'First Click', 'Linear Paid', 'Triple'].map((tab) => (
-                <button 
-                  key={tab} 
-                  onClick={() => setActiveAttributionTab(tab)}
-                  className={`text-xs px-3 py-1.5 rounded-md transition-colors ${activeAttributionTab === tab ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
+        <div className="flex flex-col gap-3 mb-4">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
+            <DataSource source="Triple Whale" />
+            <LiveBadge />
           </div>
-          <div>
-            <div className="text-xs text-text-secondary mb-2">Attribution Window</div>
-            <select
-              value={attributionWindow}
-              onChange={(e) => setAttributionWindow(e.target.value)}
-              className="text-xs px-2 py-1 rounded border border-border bg-bg-surface text-text-primary min-w-[120px]"
-            >
-              <option value="1-day">1 day</option>
-              <option value="7-day">7 days</option>
-              <option value="14-day">14 days</option>
-              <option value="28-day">28 days</option>
-              <option value="lifetime">Lifetime</option>
-            </select>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-secondary font-medium shrink-0">Model:</span>
+              <div className="relative">
+                <select
+                  value={attributionModel}
+                  onChange={(e) => setAttributionModel(e.target.value)}
+                  className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors min-w-[160px]"
+                  aria-label="Attribution model"
+                >
+                  {CHANNEL_ATTRIBUTION_MODELS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-text-secondary font-medium shrink-0">Attribution window:</span>
+              <div className="relative">
+                <select
+                  value={attributionWindow}
+                  onChange={(e) => setAttributionWindow(e.target.value)}
+                  className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors min-w-[120px]"
+                  aria-label="Attribution window"
+                >
+                  <option value="1-day">1 day</option>
+                  <option value="7-day">7 days</option>
+                  <option value="14-day">14 days</option>
+                  <option value="28-day">28 days</option>
+                  <option value="lifetime">Lifetime</option>
+                </select>
+                <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+              </div>
+            </div>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -748,26 +692,47 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {getCurrentChannelData()?.map((row) => (
-                  <tr key={row.channel} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
-                    <td className="py-3 px-2 sm:px-3 font-medium text-text-primary">{row.channel}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{formatCurrencyValue(row.spend)}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cpa > 0 ? formatCurrencyValue(row.cpa) : '—'}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncCpa > 0 ? formatCurrencyValue(row.ncCpa) : '—'}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.aov > 0 ? formatCurrencyValue(row.aov) : '—'}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{row.cv > 0 ? formatCurrencyValue(row.cv) : '—'}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.purchases > 0 ? row.purchases : '—'}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right">
-                      <span className={row.roas >= 3.5 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : row.roas > 0 ? 'text-danger' : 'text-text-tertiary'}>
-                        {row.roas > 0 ? `${row.roas.toFixed(2)}x` : '—'}
-                      </span>
+                {attrLoading ? (
+                  <tr>
+                    <td colSpan={11} className="py-6 text-center text-text-tertiary text-sm">
+                      Loading channel data…
                     </td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncRoas > 0 ? `${row.ncRoas.toFixed(2)}x` : '—'}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncp > 0 ? row.ncp : '—'}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cr > 0 ? `${row.cr.toFixed(2)}%` : '—'}</td>
                   </tr>
-                )) ?? (
-                  <tr><td colSpan={11} className="py-6 text-center text-text-tertiary text-sm">Loading channel data...</td></tr>
+                ) : attrError ? (
+                  <tr>
+                    <td colSpan={11} className="py-6 text-center text-danger text-sm">
+                      {attrError}
+                    </td>
+                  </tr>
+                ) : !attrData || attrData.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="py-6 text-center text-text-tertiary text-sm">
+                      No channels for this model and window in the selected period.
+                    </td>
+                  </tr>
+                ) : (
+                  attrData.map((row, idx) => (
+                    <tr
+                      key={row.channelId ? `${row.channelId}-${idx}` : `${row.channel}-${idx}`}
+                      className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors"
+                    >
+                      <td className="py-3 px-2 sm:px-3 font-medium text-text-primary">{row.channel}</td>
+                      <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{formatAttributionCurrency(row.spend)}</td>
+                      <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cpa > 0 ? formatAttributionCurrency(row.cpa) : '—'}</td>
+                      <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncCpa > 0 ? formatAttributionCurrency(row.ncCpa) : '—'}</td>
+                      <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.aov > 0 ? formatAttributionCurrency(row.aov) : '—'}</td>
+                      <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{row.cv > 0 ? formatAttributionCurrency(row.cv) : '—'}</td>
+                      <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.purchases > 0 ? row.purchases : '—'}</td>
+                      <td className="py-3 px-2 sm:px-3 text-right">
+                        <span className={row.roas >= 3.5 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : row.roas > 0 ? 'text-danger' : 'text-text-tertiary'}>
+                          {row.roas > 0 ? `${row.roas.toFixed(2)}x` : '—'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncRoas > 0 ? `${row.ncRoas.toFixed(2)}x` : '—'}</td>
+                      <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.ncp > 0 ? row.ncp : '—'}</td>
+                      <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.cr > 0 ? `${row.cr.toFixed(2)}%` : '—'}</td>
+                    </tr>
+                  ))
                 )}
               </tbody>
             </table>

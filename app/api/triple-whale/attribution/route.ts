@@ -12,13 +12,15 @@ function getConfig() {
   return { apiKey, shopId };
 }
 
-// Map our tab names to TW model names in the pixel_joined_tvf table
+// UI sends Triple Whale model names; map legacy/short keys for older clients
 const MODEL_MAP: Record<string, string> = {
-  'Last Click': 'Last Click',
-  'Linear': 'Linear All',
   'First Click': 'First Click',
+  'Last Click': 'Last Click',
+  'Linear All': 'Linear All',
   'Linear Paid': 'Linear Paid',
-  'Triple': 'Triple Attribution',
+  'Triple Attribution': 'Triple Attribution',
+  Linear: 'Linear All',
+  Triple: 'Triple Attribution',
 };
 
 // Map our window labels to TW attribution_window values
@@ -46,7 +48,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
-    const model = searchParams.get('model') || 'Triple';
+    const model = searchParams.get('model') || 'Triple Attribution';
     const window = searchParams.get('window') || 'lifetime';
 
     if (!startDate || !endDate) {
@@ -64,7 +66,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { apiKey, shopId } = getConfig();
-    const twModel = MODEL_MAP[model] || 'Triple Attribution';
+    const twModel = MODEL_MAP[model] || model || 'Triple Attribution';
     const twWindow = WINDOW_MAP[window] || 'lifetime';
 
     const query = `
