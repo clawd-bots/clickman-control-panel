@@ -267,8 +267,9 @@ export default function CreativePage() {
   const churnCpaTarget = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
   // Helper function to format currency with current context
-  const formatCurrencyValue = (value: number) => {
-    return formatCurrency(convertValue(value), currency);
+  const formatCurrencyValue = (value: number | null | undefined) => {
+    const v = value == null || !Number.isFinite(Number(value)) ? 0 : Number(value);
+    return formatCurrency(convertValue(v), currency);
   };
 
   // Memoized AI suggestions with currency conversion - tab specific
@@ -1432,21 +1433,28 @@ export default function CreativePage() {
                           </div>
                         </td>
                         <td className="py-2.5 px-2 text-right text-text-secondary whitespace-nowrap">
-                          {formatCurrencyValue(ad.spend)}
+                          {ad.spend == null || !Number.isFinite(Number(ad.spend)) ? '—' : formatCurrencyValue(ad.spend)}
                         </td>
                         <td className="py-2.5 px-2 text-right whitespace-nowrap">
                           {(() => {
                             const v = (ad as any).cpaAll ?? (ad as any).cpa;
+                            const num = v == null || !Number.isFinite(Number(v)) ? NaN : Number(v);
                             return (
-                          <span className={v === 0 ? 'text-text-tertiary' : v <= 700 ? 'text-success' : v <= 850 ? 'text-warm-gold' : 'text-danger'}>
-                            {v === 0 ? '—' : formatCurrencyValue(v)}
+                          <span className={!Number.isFinite(num) || num === 0 ? 'text-text-tertiary' : num <= 700 ? 'text-success' : num <= 850 ? 'text-warm-gold' : 'text-danger'}>
+                            {!Number.isFinite(num) || num === 0 ? '—' : formatCurrencyValue(num)}
                           </span>
                             );
                           })()}
                         </td>
                         <td className="py-2.5 px-2 text-right whitespace-nowrap">
-                          <span className={(ad as any).nccpa === 0 ? 'text-text-tertiary' : (ad as any).nccpa <= 525 ? 'text-success' : (ad as any).nccpa <= 638 ? 'text-warm-gold' : 'text-danger'}>
-                            {(ad as any).nccpa === 0 ? '—' : formatCurrencyValue((ad as any).nccpa)}
+                          <span className={
+                            (ad as any).nccpa == null || !Number.isFinite(Number((ad as any).nccpa)) || (ad as any).nccpa === 0
+                              ? 'text-text-tertiary'
+                              : (ad as any).nccpa <= 525 ? 'text-success' : (ad as any).nccpa <= 638 ? 'text-warm-gold' : 'text-danger'
+                          }>
+                            {(ad as any).nccpa == null || !Number.isFinite(Number((ad as any).nccpa)) || (ad as any).nccpa === 0
+                              ? '—'
+                              : formatCurrencyValue((ad as any).nccpa)}
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-right whitespace-nowrap">

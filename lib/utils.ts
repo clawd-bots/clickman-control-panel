@@ -1,11 +1,12 @@
-export function formatCurrency(value: number, currency: '₱' | '$' = '₱'): string {
-  if (Math.abs(value) >= 1_000_000) {
-    return `${currency}${(value / 1_000_000).toFixed(2)}M`;
+export function formatCurrency(value: number | null | undefined, currency: '₱' | '$' = '₱'): string {
+  const n = value == null || !Number.isFinite(Number(value)) ? 0 : Number(value);
+  if (Math.abs(n) >= 1_000_000) {
+    return `${currency}${(n / 1_000_000).toFixed(2)}M`;
   }
-  if (Math.abs(value) >= 1_000) {
-    return `${currency}${(value / 1_000).toFixed(1)}K`;
+  if (Math.abs(n) >= 1_000) {
+    return `${currency}${(n / 1_000).toFixed(1)}K`;
   }
-  return `${currency}${value.toFixed(2)}`;
+  return `${currency}${n.toFixed(2)}`;
 }
 
 export function formatNumber(value: number): string {
