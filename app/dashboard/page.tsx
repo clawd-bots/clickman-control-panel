@@ -5,15 +5,27 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import DataSource from '@/components/ui/DataSource';
 import { LiveBadge } from '@/components/ui/LiveBadge';
+import { ChartTooltipContent } from '@/components/ui/ChartTooltipContent';
 import { SkeletonKPICard, SkeletonChart, SkeletonTable } from '@/components/ui/Skeleton';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { filterByDateRange, formatDateLabel, aggregateToWeeks, toLocalDateString } from '@/lib/dateUtils';
-import { fetchTripleWhaleData, getMetric, getPrevMetric, getDelta, getDailyData, TWData } from '@/lib/triple-whale-client';
+import { formatYyyyMmDdInTimeZone } from '@/lib/ga4-reporting-dates';
+import {
+  fetchTripleWhaleData,
+  fetchTWProductKpis,
+  getMetric,
+  getPrevMetric,
+  getDelta,
+  getDailyData,
+  TWData,
+  type TWProductKpiRow,
+} from '@/lib/triple-whale-client';
 import { fetchGA4Data, getGA4Metric, GA4Data } from '@/lib/ga4-client';
 import { useTargets } from '@/lib/useTargets';
+import { filterAttributionChannelRows } from '@/lib/attribution-filters';
 
-import { kpiCards, dailyMetrics, productKPIs, revenueInsights } from '@/lib/sample-data';
+import { kpiCards, dailyMetrics, revenueInsights } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
 import {
@@ -51,6 +63,9 @@ export default function DashboardPage() {
   const [attrData, setAttrData] = useState<any[] | null>(null);
   const [attrLoading, setAttrLoading] = useState(true);
   const [attrError, setAttrError] = useState<string | null>(null);
+  const [productKpiRows, setProductKpiRows] = useState<TWProductKpiRow[]>([]);
+  const [productKpiLoading, setProductKpiLoading] = useState(true);
+  const [productKpiError, setProductKpiError] = useState<string | null>(null);
 
   useEffect(() => {
     setTwLoading(true);
@@ -61,17 +76,25 @@ export default function DashboardPage() {
       .then(setTwData)
       .catch(console.error)
       .finally(() => setTwLoading(false));
-    // Fetch GA4 summary + daily in parallel
+    // Fetch GA4 summary + daily in parallel (reporting timezone comes from GA4 Data API metadata)
     Promise.all([
       fetchGA4Data(startDate, endDate, 'summary'),
       fetch(`/api/ga4?startDate=${startDate}&endDate=${endDate}&mode=daily`)
-        .then(r => r.json())
-        .then(json => json.success ? json.data.daily : [])
-        .catch(() => []),
-    ]).then(([summary, daily]) => {
-      setGA4Data(summary);
-      setGA4DailyData(daily.map((d: any) => ({
-        date: d.date,
+        .then((r) => r.json())
+        .catch(() => ({ success: false })),
+    ]).then(([ga4, dailyRes]) => {
+      const daily =
+        dailyRes && typeof dailyRes === 'object' && dailyRes.success && Array.isArray(dailyRes.data?.daily)
+          ? dailyRes.data.daily
+          : [];
+      const tzFromDaily =
+        dailyRes && typeof dailyRes === 'object' && dailyRes.success && dailyRes.data?.reportingTimeZone
+          ? String(dailyRes.data.reportingTimeZone)
+          : null;
+      const reportingTimeZone = ga4.reportingTimeZone ?? tzFromDaily ?? null;
+      setGA4Data({ ...ga4, reportingTimeZone });
+      setGA4DailyData(daily.map((d: { date?: string; sessions?: number; totalUsers?: number }) => ({
+        date: d.date ?? '',
         sessions: d.sessions ?? 0,
         totalUsers: d.totalUsers ?? 0,
       })));
@@ -111,6 +134,30 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [dateRange, attributionModel, attributionWindow]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setProductKpiLoading(true);
+    setProductKpiError(null);
+    const startDate = toLocalDateString(dateRange.startDate);
+    const endDate = toLocalDateString(dateRange.endDate);
+    fetchTWProductKpis(startDate, endDate)
+      .then((rows) => {
+        if (!cancelled) setProductKpiRows(rows);
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setProductKpiRows([]);
+          setProductKpiError(e instanceof Error ? e.message : 'Could not load product KPIs');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setProductKpiLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dateRange]);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -326,12 +373,23 @@ export default function DashboardPage() {
     };
   }, [chartData, twData]);
 
+  const visibleAttrData = useMemo(
+    () => filterAttributionChannelRows(attrData ?? []),
+    [attrData],
+  );
+
   const dashboardAnalysisContext = useMemo(
     () => ({
       dateRangeIso: {
         start: toLocalDateString(dateRange.startDate),
         end: toLocalDateString(dateRange.endDate),
       },
+      /** Same IANA zone as GA4 admin "Reporting timezone" (from Data API metadata). */
+      ga4ReportingTimeZone: ga4Data?.reportingTimeZone ?? null,
+      /** Calendar "today" in that zone — use for AI, not UTC/server date. */
+      ga4TodayInReportingTimeZone: ga4Data?.reportingTimeZone
+        ? formatYyyyMmDdInTimeZone(new Date(), ga4Data.reportingTimeZone)
+        : toLocalDateString(new Date()),
       kpis: {
         totalRevenue: aggregatedData.totalRevenue,
         totalCosts: aggregatedData.totalCosts,
@@ -353,14 +411,24 @@ export default function DashboardPage() {
             sessions: getGA4Metric(ga4Data, 'sessions'),
             conversions: getGA4Metric(ga4Data, 'conversions'),
             engagementRate: getGA4Metric(ga4Data, 'engagementRate'),
+            /** conversions/sessions — aligns with session-scoped conversion rate when using aggregate metrics */
+            conversionRateSessions: (() => {
+              const s = getGA4Metric(ga4Data, 'sessions');
+              const c = getGA4Metric(ga4Data, 'conversions');
+              return s > 0 ? c / s : null;
+            })(),
           }
         : null,
-      channelAttributionRows: (attrData ?? []).slice(0, 30),
+      channelAttributionRows: visibleAttrData.slice(0, 30),
       attributionModel,
       attributionWindow,
-      productKpisSample: productKPIs.map((p) => ({ product: p.product, revenue: p.revenue, units: p.units })),
+      productKpisSample: productKpiRows.slice(0, 40).map((p) => ({
+        product: p.product,
+        revenue: p.revenue,
+        units: p.units,
+      })),
     }),
-    [dateRange, aggregatedData, twData, ga4Data, attrData, attributionModel, attributionWindow]
+    [dateRange, aggregatedData, twData, ga4Data, visibleAttrData, attributionModel, attributionWindow, productKpiRows]
   );
 
   // Comprehensive cross-page AI analysis
@@ -567,6 +635,8 @@ export default function DashboardPage() {
                   width={60}
                 />
                 <Tooltip 
+                  content={ChartTooltipContent}
+                  itemSorter={(item) => (item.dataKey === 'revenue' ? 0 : item.dataKey === 'costs' ? 1 : 2)}
                   contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11, color: 'var(--color-text-primary)' }}
                   formatter={(value: any, name: any) => [formatCurrencyValue(value), String(name || '')]}
                 />
@@ -598,7 +668,7 @@ export default function DashboardPage() {
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
                 />
-                <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
+                <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Line type="monotone" dataKey="newCustomers" name="New Customers" stroke="#EDBF63" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="orders" name="Net Orders" stroke="#4A6BD6" strokeWidth={2} dot={false} />
@@ -617,7 +687,18 @@ export default function DashboardPage() {
           </div>
           {[
             { label: 'Sessions', value: ga4Data ? getGA4Metric(ga4Data, 'sessions').toLocaleString() : (twData ? getMetric(twData, 'sessions').toLocaleString() : '33,850') },
-            { label: 'CVR', value: twData ? `${getMetric(twData, 'conversionRate').toFixed(2)}%` : '3.33%' },
+            {
+              label: 'CVR',
+              value: ga4Data
+                ? (() => {
+                    const s = getGA4Metric(ga4Data, 'sessions');
+                    const c = getGA4Metric(ga4Data, 'conversions');
+                    return s > 0 ? `${((c / s) * 100).toFixed(2)}%` : '—';
+                  })()
+                : twData
+                  ? `${getMetric(twData, 'conversionRate').toFixed(2)}%`
+                  : '3.33%',
+            },
             { label: 'Engagement Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'engagementRate') * 100).toFixed(1)}%` : '78.0%' },
             { label: 'Bounce Rate', value: ga4Data ? `${(getGA4Metric(ga4Data, 'bounceRate') * 100).toFixed(1)}%` : (twData ? `${getMetric(twData, 'bounceRate').toFixed(1)}%` : '42.7%') },
             { label: 'Pages/Session', value: ga4Data ? getGA4Metric(ga4Data, 'screenPageViewsPerSession').toFixed(2) : '3.97' },
@@ -658,7 +739,7 @@ export default function DashboardPage() {
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
                   tickFormatter={(v) => v.toLocaleString()}
                 />
-                <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
+                <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                 <Bar dataKey="sessions" name="Sessions" fill="#334FB4" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -747,8 +828,14 @@ export default function DashboardPage() {
                       No channels for this model and window in the selected period.
                     </td>
                   </tr>
+                ) : visibleAttrData.length === 0 ? (
+                  <tr>
+                    <td colSpan={11} className="py-6 text-center text-text-tertiary text-sm">
+                      No channels to display for this model and window.
+                    </td>
+                  </tr>
                 ) : (
-                  attrData.map((row, idx) => (
+                  visibleAttrData.map((row, idx) => (
                     <tr
                       key={row.channelId ? `${row.channelId}-${idx}` : `${row.channel}-${idx}`}
                       className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors"
@@ -800,7 +887,7 @@ export default function DashboardPage() {
                   tickFormatter={(v) => formatCurrencyValue(v)} 
                   label={{ value: `Revenue (${currency}M)`, angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
                 />
-                <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
+                <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="nc" name="New Customer Rev" stackId="a" fill="#4A6BD6" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="rc" name="Repeat Customer Rev" stackId="a" fill="#34D399" radius={[2, 2, 0, 0]} />
@@ -850,7 +937,7 @@ export default function DashboardPage() {
                         <Cell fill="#4A6BD6" />
                         <Cell fill="#34D399" />
                       </Pie>
-                      <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
+                      <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -874,35 +961,50 @@ export default function DashboardPage() {
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="product-kpis">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-primary">Product KPIs</h3>
-          <div className="flex items-center gap-2"><DataSource source="N/A" /><LiveBadge variant="sample" /></div>
+          <div className="flex items-center gap-2">
+            <DataSource source="Triple Whale" />
+            <LiveBadge variant={!productKpiLoading && !productKpiError ? 'live' : 'sample'} />
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm min-w-[500px]">
+        {productKpiLoading ? (
+          <SkeletonTable rows={5} cols={3} />
+        ) : productKpiError ? (
+          <p className="text-sm text-text-secondary">{productKpiError}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[400px]">
               <thead>
                 <tr className="border-b border-border text-xs text-text-secondary uppercase">
                   <th className="text-left py-3 px-2 sm:px-3 font-medium min-w-[120px]">Product</th>
                   <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[100px]">Net Revenue</th>
                   <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[80px]">Units Sold</th>
-                  <th className="text-right py-3 px-2 sm:px-3 font-medium min-w-[120px]">
-                    <div className="flex items-center justify-end gap-1">
-                      <span>Inventory Remaining</span>
-                      <InfoTooltip metric="Inventory" />
-                    </div>
-                  </th>
                 </tr>
               </thead>
               <tbody>
-                {productKPIs.map((row) => (
-                  <tr key={row.product} className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors">
-                    <td className="py-3 px-2 sm:px-3 font-medium text-text-primary">{row.product}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{formatCurrencyValue(row.revenue)}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.units}</td>
-                    <td className="py-3 px-2 sm:px-3 text-right text-text-secondary italic">Pending API</td>
+                {productKpiRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="py-6 px-3 text-center text-text-secondary text-sm">
+                      No product sales in this date range.
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  productKpiRows.map((row, i) => (
+                    <tr
+                      key={row.productId ? `${row.productId}-${i}` : `${row.product}-${i}`}
+                      className="border-b border-border/50 hover:bg-bg-elevated/50 transition-colors"
+                    >
+                      <td className="py-3 px-2 sm:px-3 font-medium text-text-primary">{row.product}</td>
+                      <td className="py-3 px-2 sm:px-3 text-right text-text-primary">
+                        {formatCurrencyValue(row.revenue)}
+                      </td>
+                      <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.units}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Summary AI Analysis with full controls */}

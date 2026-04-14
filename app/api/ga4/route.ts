@@ -51,7 +51,8 @@ export async function GET(request: NextRequest) {
     const forceRefresh = searchParams.get('refresh') === 'true';
 
     if (mode === 'events') {
-      const cacheParams = `${startDate}_${endDate}_events`;
+      /** Bump when row limit / shape changes (was 100 — too few vs Events-style breakdown). */
+      const cacheParams = `${startDate}_${endDate}_events_v2`;
       if (!forceRefresh) {
         const cached = await getCached('ga4', cacheParams);
         if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
@@ -63,7 +64,8 @@ export async function GET(request: NextRequest) {
         dimensions: [{ name: 'eventName' }],
         metrics: [{ name: 'eventCount' }],
         orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
-        limit: 100,
+        /** GA4 allows large limits; properties typically have far fewer distinct event names than this. */
+        limit: 250000,
       });
       const events = (eventsResponse.rows || []).map((row) => ({
         eventName: row.dimensionValues?.[0]?.value || '(not set)',
@@ -73,7 +75,7 @@ export async function GET(request: NextRequest) {
         success: true,
         source: 'ga4',
         dateRange: { startDate, endDate },
-        data: { events },
+        data: { events, reportingTimeZone: eventsResponse.metadata?.timeZone ?? null },
       };
       setCache('ga4', cacheParams, payload).catch(() => {});
       return NextResponse.json(payload);
@@ -87,8 +89,10 @@ export async function GET(request: NextRequest) {
 
     const { client, propertyId } = getClient();
 
-    // Helper to run a summary report with up to 10 metrics
-    async function runSummaryBatch(metrics: string[]): Promise<Record<string, number | null>> {
+    // Helper to run a summary report with up to 10 metrics (Data API returns property reporting timezone in metadata)
+    async function runSummaryBatch(
+      metrics: string[]
+    ): Promise<{ result: Record<string, number | null>; timeZone: string | null }> {
       const [response] = await client.runReport({
         property: `properties/${propertyId}`,
         dateRanges: [{ startDate, endDate }],
@@ -102,11 +106,13 @@ export async function GET(request: NextRequest) {
           result[header.name || ''] = val ? parseFloat(val) : null;
         });
       }
-      return result;
+      const timeZone = response.metadata?.timeZone ?? null;
+      return { result, timeZone };
     }
 
     // Fetch summary if needed
     let summary: Record<string, number | null> = {};
+    let reportingTimeZone: string | null = null;
     if (mode === 'summary' || mode === 'all') {
       const [batch1, batch2] = await Promise.all([
         runSummaryBatch([
@@ -120,14 +126,15 @@ export async function GET(request: NextRequest) {
           'checkouts', 'itemsViewed', 'cartToViewRate', 'purchaseToViewRate',
         ]),
       ]);
-      summary = { ...batch1, ...batch2 };
+      summary = { ...batch1.result, ...batch2.result };
+      reportingTimeZone = batch1.timeZone ?? batch2.timeZone;
 
       if (mode === 'summary') {
         return NextResponse.json({
           success: true,
           source: 'ga4',
           dateRange: { startDate, endDate },
-          data: { summary },
+          data: { summary, reportingTimeZone },
         });
       }
     }
@@ -154,6 +161,10 @@ export async function GET(request: NextRequest) {
         orderBys: [{ dimension: { dimensionName: 'date' } }],
       });
 
+      if (reportingTimeZone == null) {
+        reportingTimeZone = dailyResponse.metadata?.timeZone ?? null;
+      }
+
       daily = (dailyResponse.rows || []).map((row) => {
         const dateRaw = row.dimensionValues?.[0]?.value || '';
         // GA4 returns date as YYYYMMDD, convert to YYYY-MM-DD
@@ -174,7 +185,7 @@ export async function GET(request: NextRequest) {
           success: true,
           source: 'ga4',
           dateRange: { startDate, endDate },
-          data: { daily },
+          data: { daily, reportingTimeZone },
         });
       }
     }
@@ -202,6 +213,10 @@ export async function GET(request: NextRequest) {
         limit: 20,
       });
 
+      if (reportingTimeZone == null) {
+        reportingTimeZone = trafficResponse.metadata?.timeZone ?? null;
+      }
+
       trafficSources = (trafficResponse.rows || []).map((row) => {
         const entry: Record<string, unknown> = {
           channel: row.dimensionValues?.[0]?.value || 'Unknown',
@@ -220,7 +235,7 @@ export async function GET(request: NextRequest) {
           success: true,
           source: 'ga4',
           dateRange: { startDate, endDate },
-          data: { trafficSources },
+          data: { trafficSources, reportingTimeZone },
         });
       }
     }
@@ -230,7 +245,7 @@ export async function GET(request: NextRequest) {
       success: true,
       source: 'ga4',
       dateRange: { startDate, endDate },
-      data: { summary, daily, trafficSources },
+      data: { summary, daily, trafficSources, reportingTimeZone },
     };
     setCache('ga4', cacheParams, response).catch(() => {});
     return NextResponse.json(response);

@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toLocalDateString } from '@/lib/dateUtils';
+import { filterAttributionChannelRows } from '@/lib/attribution-filters';
 import { getMetric, type TWData } from '@/lib/triple-whale-client';
 
 class PDFBuilder {
@@ -216,7 +217,7 @@ export async function generateDataPDF(selectedSections?: string[]): Promise<void
       const attr = await fetchJSON(
         `/api/triple-whale/attribution?startDate=${startStr}&endDate=${endStr}&model=${encodeURIComponent('Triple Attribution')}&window=lifetime`
       );
-      const rows = Array.isArray(attr?.data) ? attr.data : [];
+      const rows = filterAttributionChannelRows(Array.isArray(attr?.data) ? attr.data : []);
       if (rows.length > 0) {
         pdf.subtitle('Dashboard — Channel Attribution');
         pdf.table(

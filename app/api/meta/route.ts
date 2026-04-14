@@ -7,12 +7,13 @@ const GRAPH_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 function getConfig() {
   const accessToken = process.env.META_ACCESS_TOKEN?.trim();
   const adAccountId = process.env.META_AD_ACCOUNT_ID?.trim();
+  const pixelId = process.env.META_PIXEL_ID?.trim();
   if (!accessToken || !adAccountId) {
     throw new Error('Missing META_ACCESS_TOKEN or META_AD_ACCOUNT_ID');
   }
   // Ensure act_ prefix
   const accountId = adAccountId.startsWith('act_') ? adAccountId : `act_${adAccountId}`;
-  return { accessToken, accountId };
+  return { accessToken, accountId, pixelId: pixelId || undefined };
 }
 
 async function metaFetch(path: string, params: Record<string, string> = {}): Promise<any> {
@@ -102,6 +103,163 @@ function isOffsitePixelActionType(actionType: string): boolean {
   );
 }
 
+/** YYYY-MM-DD list inclusive */
+function eachCalendarDayInclusive(startIso: string, endIso: string): string[] {
+  const out: string[] = [];
+  const [sY, sM, sD] = startIso.split('-').map(Number);
+  const [eY, eM, eD] = endIso.split('-').map(Number);
+  if (!sY || !sM || !sD || !eY || !eM || !eD) return out;
+  const cur = new Date(sY, sM - 1, sD);
+  const end = new Date(eY, eM - 1, eD);
+  while (cur <= end) {
+    out.push(
+      `${cur.getFullYear()}-${String(cur.getMonth() + 1).padStart(2, '0')}-${String(cur.getDate()).padStart(2, '0')}`
+    );
+    cur.setDate(cur.getDate() + 1);
+  }
+  return out;
+}
+
+function addActionsToTotals(
+  totals: Map<string, number>,
+  actions: { action_type?: string; value?: string }[] | undefined
+): void {
+  for (const a of actions || []) {
+    const at = String(a.action_type || '');
+    const v = parseInt(String(a.value ?? '0'), 10) || 0;
+    if (!at || v <= 0) continue;
+    totals.set(at, (totals.get(at) || 0) + v);
+  }
+}
+
+/** Add `action_type` keys that only appear on ad/campaign rows (account daily rows can omit types). Do not add counts for keys already present — ad sums can exceed account totals (multi-ad attribution). */
+function mergeMissingActionKeys(base: Map<string, number>, supplement: Map<string, number>): void {
+  for (const [k, v] of supplement) {
+    if (!base.has(k) && v > 0) base.set(k, v);
+  }
+}
+
+/** Drop Meta's undifferentiated custom bucket when per-name custom events are present (avoids one "Custom" row + double-count risk). */
+function dropAggregateFbPixelCustomIfGranularExists(
+  rows: { rawType: string; count: number }[]
+): { rawType: string; count: number }[] {
+  const hasGranularCustom = rows.some(
+    (r) =>
+      r.rawType.startsWith('offsite_conversion.fb_pixel_custom.') &&
+      r.rawType.length > 'offsite_conversion.fb_pixel_custom.'.length
+  );
+  if (!hasGranularCustom) return rows;
+  return rows.filter((r) => r.rawType !== 'offsite_conversion.fb_pixel_custom');
+}
+
+/** Pixel `/stats` API often caps a single request window (commonly 7 days). */
+function unixChunkRangesInclusive(startIso: string, endIso: string, maxDays = 7): { start: number; end: number }[] {
+  const chunks: { start: number; end: number }[] = [];
+  const startMs = new Date(`${startIso}T00:00:00.000Z`).getTime();
+  const endMs = new Date(`${endIso}T23:59:59.999Z`).getTime();
+  const maxMs = maxDays * 86400000;
+  let cur = startMs;
+  while (cur <= endMs) {
+    const chunkEnd = Math.min(cur + maxMs - 1, endMs);
+    chunks.push({ start: Math.floor(cur / 1000), end: Math.floor(chunkEnd / 1000) });
+    cur = chunkEnd + 1;
+  }
+  return chunks;
+}
+
+/**
+ * Parses `GET /{ads-pixel-id}/stats?aggregation=event` — each `AdsPixelStatsResult` has nested `data`
+ * with `{ value, count }` pairs (event name + fires).
+ */
+function accumulateAdsPixelStatsResponse(body: { data?: unknown[] }, totals: Map<string, number>): number {
+  let added = 0;
+  const top = body?.data;
+  if (!Array.isArray(top)) return 0;
+  for (const block of top) {
+    const b = block as {
+      data?: { value?: string; key?: string; count?: string | number }[];
+      value?: string;
+      key?: string;
+      count?: string | number;
+    };
+    const inner = b?.data;
+    if (Array.isArray(inner)) {
+      for (const cell of inner) {
+        const name = String(cell?.value ?? cell?.key ?? '').trim();
+        const n = parseInt(String(cell?.count ?? 0), 10) || 0;
+        if (!name || n <= 0) continue;
+        totals.set(name, (totals.get(name) || 0) + n);
+        added += n;
+      }
+    } else if (b && (b.value != null || b.key != null)) {
+      const name = String(b.value ?? b.key ?? '').trim();
+      const n = parseInt(String(b.count ?? 0), 10) || 0;
+      if (!name || n <= 0) continue;
+      totals.set(name, (totals.get(name) || 0) + n);
+      added += n;
+    }
+  }
+  return added;
+}
+
+async function resolveAdsPixelId(accountId: string, explicit?: string): Promise<string | null> {
+  const cleaned = explicit?.replace(/\s/g, '') ?? '';
+  if (/^\d{5,}$/.test(cleaned)) return cleaned;
+  try {
+    const res = await metaFetch(`/${accountId}/adspixels`, { fields: 'id,name', limit: '10' });
+    const first = res?.data?.[0];
+    if (first?.id) return String(first.id);
+  } catch {
+    /* no pixels on account */
+  }
+  return null;
+}
+
+/**
+ * Events Manager–style breakdown: `/{pixel-id}/stats` with `aggregation=event` (not Ads Insights).
+ * Sums WEB + SERVER buckets per chunk so browser + CAPI both appear.
+ */
+async function fetchPixelEventStatsAggregated(
+  pixelId: string,
+  startIso: string,
+  endIso: string
+): Promise<Map<string, number>> {
+  const totals = new Map<string, number>();
+  const chunks = unixChunkRangesInclusive(startIso, endIso, 7);
+
+  for (const { start, end } of chunks) {
+    const baseParams: Record<string, string> = {
+      aggregation: 'event',
+      start_time: String(start),
+      end_time: String(end),
+    };
+
+    let gotAny = false;
+    try {
+      const combined = await metaFetch(`/${pixelId}/stats`, baseParams);
+      if (accumulateAdsPixelStatsResponse(combined, totals) > 0) gotAny = true;
+    } catch {
+      /* fall through to split sources */
+    }
+
+    if (!gotAny) {
+      for (const eventSource of ['WEB_ONLY', 'SERVER_ONLY'] as const) {
+        try {
+          const res = await metaFetch(`/${pixelId}/stats`, {
+            ...baseParams,
+            event_source: eventSource,
+          });
+          accumulateAdsPixelStatsResponse(res, totals);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }
+
+  return totals;
+}
+
 /** Standard event names roughly aligned with Meta Events Manager UI labels */
 const FB_PIXEL_STANDARD_EVENT_LABELS: Record<string, string> = {
   page_view: 'PageView',
@@ -123,6 +281,17 @@ const FB_PIXEL_STANDARD_EVENT_LABELS: Record<string, string> = {
   submit_application: 'Submit application',
   subscribe: 'Subscribe',
 };
+
+/** Display label for pixel `/stats` event names (normalize snake_case standard events). */
+function labelPixelStatsEventName(name: string): string {
+  const n = name.trim();
+  if (!n) return n;
+  const lower = n.toLowerCase().replace(/-/g, '_');
+  if (FB_PIXEL_STANDARD_EVENT_LABELS[lower]) {
+    return FB_PIXEL_STANDARD_EVENT_LABELS[lower];
+  }
+  return n;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -163,12 +332,14 @@ export async function GET(request: NextRequest) {
     }
 
     if (mode === 'tracking-events') {
-      const cacheParams = `${startDate}_${endDate}_tracking-events-v2`;
+      /** Bump cache key when aggregation / filter logic changes. */
+      const cacheParams = `${startDate}_${endDate}_tracking-events-v6-pixel-stats`;
       if (!forceRefresh) {
         const cached = await getCached('meta', cacheParams);
         if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
       }
-      const { accountId } = getConfig();
+      const cfg = getConfig();
+      const { accountId } = cfg;
 
       const formatOffsitePixelLabel = (actionType: string): string => {
         const t = actionType;
@@ -180,6 +351,10 @@ export async function GET(request: NextRequest) {
           return id ? `Custom conversion (${id})` : 'Custom conversion';
         }
         if (t.startsWith('offsite_conversion.fb_pixel_')) {
+          /** Undifferentiated bucket — not `fb_pixel_custom.EVENT` (handled above). */
+          if (t === 'offsite_conversion.fb_pixel_custom') {
+            return 'Custom pixel (aggregate)';
+          }
           let rest = t.slice('offsite_conversion.fb_pixel_'.length);
           const norm = rest.replace(/([a-z])([A-Z])/g, '$1_$2').toLowerCase();
           if (FB_PIXEL_STANDARD_EVENT_LABELS[norm]) {
@@ -198,41 +373,140 @@ export async function GET(request: NextRequest) {
       };
 
       try {
-        const insights = await metaFetch(`/${accountId}/insights`, {
-          fields: 'actions',
-          level: 'account',
-          time_range: timeRange,
-        });
-        const row = insights.data?.[0];
-        const actions = row?.actions || [];
-        const allParsed = (actions as { action_type?: string; value?: string }[])
-          .map((a) => ({
-            rawType: String(a.action_type || ''),
-            count: parseInt(String(a.value ?? '0'), 10) || 0,
-          }))
-          .filter((a) => a.count > 0 && a.rawType);
+        /**
+         * Primary: `GET /{pixel-id}/stats?aggregation=event` — same family of data as Events Manager
+         * (per event name, including custom). Chunked to 7-day windows; WEB + SERVER when needed.
+         * Fallback: Ads Insights action_type merge (often truncated to a few rows).
+         */
+        let pixelOnly: { rawType: string; count: number }[] = [];
+        let dataSource: 'pixel-stats' | 'ads-insights' = 'ads-insights';
+        let allParsedCount = 0;
 
-        const pixelOnly = allParsed
-          .filter((a) => isOffsitePixelActionType(a.rawType))
-          .sort((a, b) => b.count - a.count);
+        const pixelIdResolved = await resolveAdsPixelId(accountId, cfg.pixelId);
+        if (pixelIdResolved) {
+          try {
+            const pt = await fetchPixelEventStatsAggregated(pixelIdResolved, startDate, endDate);
+            if (pt.size > 0) {
+              dataSource = 'pixel-stats';
+              pixelOnly = [...pt.entries()]
+                .map(([name, count]) => ({
+                  rawType: `pixel_stats:${name}`,
+                  count,
+                }))
+                .sort((a, b) => b.count - a.count);
+              allParsedCount = pixelOnly.length;
+            }
+          } catch (e) {
+            console.warn('Meta pixel /stats failed, will try Ads Insights:', e);
+          }
+        }
 
-        const events = pixelOnly.slice(0, 80).map((a) => ({
-          event: formatOffsitePixelLabel(a.rawType),
+        if (pixelOnly.length === 0) {
+          const totals = new Map<string, number>();
+          const dayList = eachCalendarDayInclusive(startDate, endDate);
+          const maxDailyAccountCalls = 62;
+
+          if (dayList.length > 0 && dayList.length <= maxDailyAccountCalls) {
+            const BATCH = 6;
+            for (let i = 0; i < dayList.length; i += BATCH) {
+              const chunk = dayList.slice(i, i + BATCH);
+              const results = await Promise.all(
+                chunk.map((d) =>
+                  metaFetch(`/${accountId}/insights`, {
+                    fields: 'actions',
+                    level: 'account',
+                    time_range: JSON.stringify({ since: d, until: d }),
+                  })
+                )
+              );
+              for (const insights of results) {
+                const row = insights.data?.[0];
+                addActionsToTotals(totals, row?.actions);
+              }
+            }
+          } else {
+            const insights = await metaFetch(`/${accountId}/insights`, {
+              fields: 'actions',
+              level: 'account',
+              time_range: timeRange,
+            });
+            addActionsToTotals(totals, insights.data?.[0]?.actions);
+          }
+
+          const adRows = await metaFetchAll(
+            `/${accountId}/insights`,
+            {
+              fields: 'actions',
+              level: 'ad',
+              time_range: timeRange,
+            },
+            100
+          );
+          const adTotals = new Map<string, number>();
+          for (const row of adRows) {
+            addActionsToTotals(adTotals, (row as { actions?: { action_type?: string; value?: string }[] }).actions);
+          }
+          mergeMissingActionKeys(totals, adTotals);
+
+          const campRows = await metaFetchAll(
+            `/${accountId}/insights`,
+            {
+              fields: 'actions',
+              level: 'campaign',
+              time_range: timeRange,
+            },
+            100
+          );
+          const campTotals = new Map<string, number>();
+          for (const row of campRows) {
+            addActionsToTotals(campTotals, (row as { actions?: { action_type?: string; value?: string }[] }).actions);
+          }
+          mergeMissingActionKeys(totals, campTotals);
+
+          const allParsed = [...totals.entries()].map(([rawType, count]) => ({ rawType, count }));
+          allParsedCount = allParsed.length;
+
+          let rows = allParsed
+            .filter((a) => isOffsitePixelActionType(a.rawType))
+            .sort((a, b) => b.count - a.count);
+
+          rows = dropAggregateFbPixelCustomIfGranularExists(rows);
+          pixelOnly = rows;
+        }
+
+        const events = pixelOnly.map((a) => ({
+          event: a.rawType.startsWith('pixel_stats:')
+            ? labelPixelStatsEventName(a.rawType.slice('pixel_stats:'.length))
+            : formatOffsitePixelLabel(a.rawType),
           rawType: a.rawType,
           count: a.count,
         }));
+
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        const days = Math.max(
+          1,
+          Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+        );
+        const totalPixelEvents = pixelOnly.reduce((s, a) => s + a.count, 0);
+        const totalEventsPerDay = Math.round(totalPixelEvents / days);
 
         const payload = {
           success: true,
           data: {
             events,
-            /** Offsite pixel / custom conversion rows only (excludes onsite_conversion.*) */
+            totalEventsPerDay,
+            /** Offsite pixel / CAPI web rows only (excludes onsite_conversion.* on-Facebook) */
             actionTypesIncluded: pixelOnly.length,
-            actionTypesExcluded: Math.max(0, allParsed.length - pixelOnly.length),
-            actionTypesTotal: allParsed.length,
+            actionTypesExcluded: Math.max(0, allParsedCount - pixelOnly.length),
+            actionTypesTotal: allParsedCount,
             dateRange: { startDate, endDate },
+            dataSource,
+            pixelIdResolved: Boolean(pixelIdResolved),
             note:
-              'Counts come from Ads Insights (account-level), attribution windows can differ slightly from Events Manager totals.',
+              dataSource === 'pixel-stats'
+                ? 'Counts from Ads Pixel `/stats` with aggregation=event (aligned with Events Manager names). Range split into ≤7-day chunks. If empty, falls back to Ads Insights.'
+                : 'Counts from Ads Insights (account daily + ad/campaign keys). Set META_PIXEL_ID or ensure the ad account has a linked pixel for `/stats` breakdown.',
           },
         };
         setCache('meta', cacheParams, payload).catch(() => {});

@@ -17,7 +17,7 @@ import {
 import { useTargets } from '@/lib/useTargets';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/components/CurrencyProvider';
-import { filterByDateRange, formatDateLabel, toLocalDateString } from '@/lib/dateUtils';
+import { filterByDateRange, formatDateLabel, toLocalDateString, getAccountControlReportRange } from '@/lib/dateUtils';
 import { ChevronDown } from 'lucide-react';
 import AdThumbnail from '@/components/ui/AdThumbnail';
 import {
@@ -170,19 +170,38 @@ export default function CreativePage() {
   }, [twData]);
   const [platform, setPlatform] = useState('Meta');
   const [attrModel, setAttrModel] = useState('Triple Attribution');
+  /** Lookback + SQL attribution_window (same label as Triple Whale). */
   const [attrWindow, setAttrWindow] = useState('7 days');
 
-  // Fetch TW ad-level data for Account Control — same calendar period as the top bar (TW report dates).
-  // The Window dropdown is only the conversion attribution window (e.g. 7-day), not the report range.
-  const twAdsStart = toLocalDateString(dateRange.startDate);
-  const twAdsEnd = toLocalDateString(dateRange.endDate);
+  /** Account Control only: report range from Window (not the global top-bar date picker). */
+  const accountControlReportRange = useMemo(
+    () => getAccountControlReportRange(attrWindow),
+    [attrWindow]
+  );
+  const twAdsStart = toLocalDateString(accountControlReportRange.startDate);
+  const twAdsEnd = toLocalDateString(accountControlReportRange.endDate);
+
   useEffect(() => {
+    if (activeTab !== 'Account Control') {
+      setTwAdsLoading(false);
+      setTwAds([]);
+      return;
+    }
+    let cancelled = false;
+    setTwAds([]);
     setTwAdsLoading(true);
     fetchTWAds(twAdsStart, twAdsEnd, attrModel, attrWindow)
-      .then(setTwAds)
+      .then((data) => {
+        if (!cancelled) setTwAds(data);
+      })
       .catch(console.error)
-      .finally(() => setTwAdsLoading(false));
-  }, [attrModel, attrWindow, twAdsStart, twAdsEnd]);
+      .finally(() => {
+        if (!cancelled) setTwAdsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, attrModel, attrWindow, twAdsStart, twAdsEnd]);
   const [accountControlFilter, setAccountControlFilter] = useState('all');
   const [accountControlCampaign, setAccountControlCampaign] = useState('all');
   const [acPageSize, setAcPageSize] = useState(10);
@@ -247,32 +266,6 @@ export default function CreativePage() {
   }, [getTarget, targets, dateRange.startDate, dateRange.endDate]);
   const churnCpaTarget = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
-  // Wasted spend: computed from TW ad-level data (or fallback to sample)
-  const wastedSpend = useMemo(() => {
-    if (twAds.length > 0) {
-      const platformAds = twAds.filter(a => a.platform === platform && a.spend > 0);
-      const target = churnCpaMode === 'nccpa' ? targetNCCPA : targetCPA;
-      return platformAds.reduce((total, a) => {
-        const cpa = churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa;
-        if (cpa > target || cpa === 0) return total + a.spend;
-        return total;
-      }, 0);
-    }
-    const target = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
-    return churnFilteredCampaigns.reduce((total, c) => {
-      const cpa = churnCpaMode === 'cpa' ? c.cpa : c.ncCpa;
-      if (cpa > target) return total + c.spend;
-      return total;
-    }, 0);
-  }, [twAds, platform, churnFilteredCampaigns, churnCpaMode, targetCPA, targetNCCPA]);
-
-  const totalChurnSpend = useMemo(() => {
-    if (twAds.length > 0) {
-      return twAds.filter(a => a.platform === platform && a.spend > 0).reduce((t, a) => t + a.spend, 0);
-    }
-    return churnFilteredCampaigns.reduce((t, c) => t + c.spend, 0);
-  }, [twAds, platform, churnFilteredCampaigns]);
-
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
     return formatCurrency(convertValue(value), currency);
@@ -300,7 +293,7 @@ export default function CreativePage() {
         `Top-right "zombie" quadrant burns budget at high CPA. Pause any ads consistently above ${formatCurrencyValue(850)}.`,
         'Bottom-left testing quadrant shows new ads with potential. Scale winners that maintain CPA under target.',
         'Account Control Chart requires ad identification. Bubble colors should map to specific creative names below.',
-        `Horizontal CPA/NCCPA targets follow Targets (NC = 2× CPA). Vertical spend threshold scales as 2× the active CPA target.`,
+        `Horizontal CPA/NCCPA targets follow Targets (NC = 2× CPA). Vertical spend threshold is 2× the active target (All CPA or NC CPA from the toggle).`,
       ],
       'Slugging Rate': [
         'Production rate tracking shows creative "at bats" vs "hits" - launches vs successful scaling.',
@@ -362,8 +355,6 @@ export default function CreativePage() {
 
   // Filter account control data — use Triple Whale ad-level data (all platforms)
   const filteredAccountControlData = useMemo(() => {
-    const cpaTarget = churnCpaMode === 'cpa' ? targetCPA : targetNCCPA;
-
     // Use TW ad-level data if available
     if (twAds.length > 0) {
       let ads = twAds.filter(a => a.platform === platform);
@@ -374,18 +365,29 @@ export default function CreativePage() {
       const adsWithSpend = ads.filter(a => a.spend > 0);
       const avgSpend = adsWithSpend.length > 0 ? adsWithSpend.reduce((s, a) => s + a.spend, 0) / adsWithSpend.length : 500;
       const adsWithCpa = ads.filter(a => (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa) > 0);
-      const avgCpa = adsWithCpa.length > 0 ? adsWithCpa.reduce((s, a) => s + (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa), 0) / adsWithCpa.length : cpaTarget;
+      const avgCpa = adsWithCpa.length > 0 ? adsWithCpa.reduce((s, a) => s + (churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa), 0) / adsWithCpa.length : churnCpaTarget;
 
-      return ads.filter(a => a.spend > 0).map(a => {
+      return ads
+        .filter((a) => a.spend > 0)
+        .filter(
+          (a) =>
+            a.orders > 0 ||
+            a.ncOrders > 0 ||
+            a.revenue > 0 ||
+            a.ncRevenue > 0
+        )
+        .map((a) => {
         const rawCpa = churnCpaMode === 'nccpa' ? a.ncCpa : a.cpa;
-        const cpaTarget = churnCpaMode === 'nccpa' ? targetNCCPA : targetCPA;
-        const spendThreshold = cpaTarget * 2;
+        /** Spend axis: 2× the active CPA target (All CPA or NC CPA from the toggle). */
+        const spendThreshold = churnCpaTarget * 2;
         const highSpend = a.spend >= spendThreshold;
-        // $0 CPA (no conversions) = low CPA for classification (Testing, not Untapped)
-        const highCpa = rawCpa > 0 && rawCpa > cpaTarget;
+        const highCpa = rawCpa > 0 && rawCpa > churnCpaTarget;
 
         let zone: string;
-        if (highSpend && !highCpa) {
+        if (rawCpa <= 0) {
+          /** Spend without attributable CPA (should be rare after conversion filter) — never "Scale". */
+          zone = highSpend ? 'zombie' : 'testing';
+        } else if (highSpend && !highCpa) {
           zone = 'scaling';       // bottom-right
         } else if (highSpend && highCpa) {
           zone = 'zombie';        // top-right
@@ -399,12 +401,17 @@ export default function CreativePage() {
           name: a.adName,
           adId: a.adId,
           spend: a.spend,
+          /** Y-axis / zone math — follows CPA vs NCCPA toggle */
           cpa: rawCpa,
           rawCpa,
-          roas: churnCpaMode === 'nccpa' ? a.ncRoas : a.roas,
+          /** Table always shows both attribution metrics (independent of toggle) */
+          cpaAll: a.cpa,
           nccpa: a.ncCpa,
+          roasAll: a.roas,
           ncroas: a.ncRoas,
+          roas: churnCpaMode === 'nccpa' ? a.ncRoas : a.roas,
           orders: a.orders,
+          ncOrders: a.ncOrders,
           platform: a.platform as any,
           zone,
           previewUrl: '',
@@ -421,7 +428,21 @@ export default function CreativePage() {
       data = data.filter(d => adsInCampaign.includes(d.name));
     }
     return data;
-  }, [platform, accountControlCampaign, twAds, churnCpaMode, targetCPA, targetNCCPA]);
+  }, [platform, accountControlCampaign, twAds, churnCpaMode, targetCPA, targetNCCPA, churnCpaTarget]);
+
+  /** Total spend in Account Control scope (platform + campaign filter) — denominator for wasted %. */
+  const totalChurnSpend = useMemo(() => {
+    if (filteredAccountControlData.length === 0) return 0;
+    return filteredAccountControlData.reduce((t, d) => t + d.spend, 0);
+  }, [filteredAccountControlData]);
+
+  /** Combined spend of all ads classified as zombies (high spend + CPA above target). */
+  const wastedSpend = useMemo(() => {
+    if (filteredAccountControlData.length === 0) return 0;
+    return filteredAccountControlData
+      .filter((d) => d.zone === 'zombie')
+      .reduce((t, d) => t + d.spend, 0);
+  }, [filteredAccountControlData]);
 
   // Reset selected campaigns when platform changes
   const handlePlatformChange = (p: string) => {
@@ -702,7 +723,18 @@ export default function CreativePage() {
       <div className="px-1 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
         <h2 className="text-lg sm:text-xl font-semibold">Creative & MTA Control Panel</h2>
         <span className="text-xs text-text-tertiary">
-          {dateRange.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {dateRange.endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          {activeTab === 'Account Control' ? (
+            <>
+              Account Control: <span className="text-text-secondary">{attrWindow}</span> lookback ·{' '}
+              {formatDateLabel(twAdsStart, 'day')} – {formatDateLabel(twAdsEnd, 'day')}
+              {attrWindow === 'Lifetime' ? ' · Lifetime uses a 365-day report range in Clickman' : ''}
+            </>
+          ) : (
+            <>
+              {dateRange.startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} –{' '}
+              {dateRange.endDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </>
+          )}
         </span>
       </div>
 
@@ -755,7 +787,7 @@ export default function CreativePage() {
               )}
             </div>
           )}
-          {!['Slugging Rate', 'Ad Churn'].includes(activeTab) && (
+          {activeTab === 'Account Control' && (
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:ml-auto">
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-secondary font-medium shrink-0">Model:</span>
@@ -1043,6 +1075,11 @@ export default function CreativePage() {
               </div>
             </div>
           )}
+          {!twAdsLoading && twAds.length > 0 && filteredAccountControlData.length === 0 && (
+            <div className="mb-4 rounded-lg border border-warm-gold/30 bg-warm-gold/5 px-3 py-2 text-xs text-text-secondary">
+              No rows left after filters: every ad in this window had spend but no attributed orders or revenue, or spend was $0. Try a longer Window or align Model with Triple Whale.
+            </div>
+          )}
           <div className="flex flex-col gap-3 mb-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
@@ -1053,7 +1090,10 @@ export default function CreativePage() {
               </div>
             </div>
             <p className="text-[10px] text-text-tertiary leading-snug">
-              Report period matches the top bar ({formatDateLabel(twAdsStart, 'day')} – {formatDateLabel(twAdsEnd, 'day')}). &quot;Window&quot; is the conversion attribution window only — align model + window with Triple Whale for comparable CPA/ROAS.
+              <strong className="text-text-secondary">Account Control ignores the global date range above.</strong> The Window control sets both the{' '}
+              <strong className="text-text-secondary">report date range</strong> (how many calendar days of spend to load, ending today) and the{' '}
+              <strong className="text-text-secondary">Triple Whale attribution_window</strong> in the SQL (same labels as Moby). Match Window + Model to Triple Whale when comparing rows.{' '}
+              <strong className="text-text-secondary">Lifetime</strong> uses a 365-day lookback here. Ads with spend but no attributed orders or revenue are excluded so quadrants stay meaningful.
             </p>
             {/* CPA Target Toggle + Wasted Spend */}
             <div className="flex flex-col sm:flex-row gap-3 sm:items-end sm:justify-end">
@@ -1084,7 +1124,7 @@ export default function CreativePage() {
                   )}
                 </div>
                 <span className="text-[10px] text-text-tertiary">
-                  Ads above target {churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'} of {formatCurrencyValue(churnCpaMode === 'cpa' ? targetCPA : targetNCCPA)}
+                  Sum of spend for ads in the zombie quadrant (spend ≥ {formatCurrencyValue(churnCpaTarget * 2)}, {churnCpaMode === 'cpa' ? 'CPA' : 'NCCPA'} above target)
                 </span>
               </div>
             </div>
@@ -1102,7 +1142,7 @@ export default function CreativePage() {
             if (filteredAccountControlData.length === 0) return null;
             // Use target-based reference lines
             const cpaTarget = churnCpaMode === 'nccpa' ? targetNCCPA : targetCPA;
-            const spendTarget = cpaTarget * 2;
+            const spendTarget = churnCpaTarget * 2;
             const adsWithData = filteredAccountControlData.filter(a => a.spend > 0);
             const maxSpend = adsWithData.length > 0 ? Math.max(...adsWithData.map(a => a.spend)) : 1000;
             const maxCpa = adsWithData.length > 0 ? Math.max(...adsWithData.map(a => a.cpa)) : 1000;
@@ -1224,19 +1264,19 @@ export default function CreativePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
             <div className="bg-success/5 border border-success/20 rounded-lg p-3">
               <div className="text-xs font-medium text-success mb-1">↘ Bottom-Right: Scale</div>
-              <div className="text-xs text-text-secondary">Spend ≥ 2× target CPA, CPA below target. Proven winners — scale harder.</div>
+              <div className="text-xs text-text-secondary">Spend ≥ {formatCurrencyValue(churnCpaTarget * 2)} (2× active {churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'}), {churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'} below target. Proven winners — scale harder.</div>
             </div>
             <div className="bg-danger/5 border border-danger/20 rounded-lg p-3">
               <div className="text-xs font-medium text-danger mb-1">↗ Top-Right: Zombies</div>
-              <div className="text-xs text-text-secondary">Spend ≥ 2× target CPA, CPA above target. Burning budget. Kill or restructure.</div>
+              <div className="text-xs text-text-secondary">Spend ≥ {formatCurrencyValue(churnCpaTarget * 2)} (2× active {churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'}), {churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'} above target. Burning budget. Kill or restructure.</div>
             </div>
             <div className="bg-brand-blue/5 border border-brand-blue/20 rounded-lg p-3">
               <div className="text-xs font-medium text-brand-blue-light mb-1">↙ Bottom-Left: Testing</div>
-              <div className="text-xs text-text-secondary">Spend below 2× target CPA, CPA below target. Promising — scale up to confirm.</div>
+              <div className="text-xs text-text-secondary">Spend below {formatCurrencyValue(churnCpaTarget * 2)} (2× active {churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'}), {churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'} below target. Promising — scale up to confirm.</div>
             </div>
             <div className="bg-warm-gold/5 border border-warm-gold/20 rounded-lg p-3">
               <div className="text-xs font-medium text-warm-gold mb-1">↖ Top-Left: Untapped / Learning</div>
-              <div className="text-xs text-text-secondary">Spend below 2× target CPA, CPA above target. Still learning or needs new approach.</div>
+              <div className="text-xs text-text-secondary">Spend below {formatCurrencyValue(churnCpaTarget * 2)} (2× active {churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'}), {churnCpaMode === 'nccpa' ? 'NCCPA' : 'CPA'} above target. Still learning or needs new approach.</div>
             </div>
 
           </div>
@@ -1305,11 +1345,12 @@ export default function CreativePage() {
               </div>
             </div>
             <div className="overflow-x-auto -mx-1 sm:mx-0">
-              <div className="min-w-[800px]">
+              <div className="min-w-[848px]">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border text-text-secondary uppercase">
                       <th className="text-left py-2 px-2 font-medium w-[70px]">Zone</th>
+                      <th className="text-center py-2 px-1 font-medium w-[44px]">Preview</th>
                       <th className="text-left py-2 px-2 font-medium w-[300px] min-w-[300px] max-w-[300px]">Ad Name</th>
                       {[
                         { key: 'spend', label: 'Spend', width: 'min-w-[80px]' },
@@ -1341,8 +1382,13 @@ export default function CreativePage() {
                     {filteredAccountControlData
                       .filter(ad => accountControlFilter === 'all' || ad.zone === accountControlFilter)
                       .sort((a, b) => {
-                        const valA = Number((a as any)[acSortKey]) || 0;
-                        const valB = Number((b as any)[acSortKey]) || 0;
+                        const sortVal = (row: Record<string, unknown>) => {
+                          if (acSortKey === 'cpa') return Number((row as any).cpaAll ?? row.cpa) || 0;
+                          if (acSortKey === 'roas') return Number((row as any).roasAll ?? row.roas) || 0;
+                          return Number((row as any)[acSortKey]) || 0;
+                        };
+                        const valA = sortVal(a as Record<string, unknown>);
+                        const valB = sortVal(b as Record<string, unknown>);
                         return acSortDir === 'desc' ? valB - valA : valA - valB;
                       })
                       .slice((acCurrentPage - 1) * acPageSize, acCurrentPage * acPageSize)
@@ -1375,6 +1421,11 @@ export default function CreativePage() {
                             </span>
                           </div>
                         </td>
+                        <td className="py-2.5 px-1 align-middle">
+                          <div className="flex justify-center">
+                            <AdThumbnail adId={adId ? String(adId) : undefined} platform={ad.platform} size={36} />
+                          </div>
+                        </td>
                         <td className="py-2.5 px-2 font-medium text-text-primary w-[300px] min-w-[300px] max-w-[300px]">
                           <div className="overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" title={ad.name}>
                             {ad.name}
@@ -1384,9 +1435,14 @@ export default function CreativePage() {
                           {formatCurrencyValue(ad.spend)}
                         </td>
                         <td className="py-2.5 px-2 text-right whitespace-nowrap">
-                          <span className={ad.cpa === 0 ? 'text-text-tertiary' : ad.cpa <= 700 ? 'text-success' : ad.cpa <= 850 ? 'text-warm-gold' : 'text-danger'}>
-                            {ad.cpa === 0 ? '—' : formatCurrencyValue(ad.cpa)}
+                          {(() => {
+                            const v = (ad as any).cpaAll ?? (ad as any).cpa;
+                            return (
+                          <span className={v === 0 ? 'text-text-tertiary' : v <= 700 ? 'text-success' : v <= 850 ? 'text-warm-gold' : 'text-danger'}>
+                            {v === 0 ? '—' : formatCurrencyValue(v)}
                           </span>
+                            );
+                          })()}
                         </td>
                         <td className="py-2.5 px-2 text-right whitespace-nowrap">
                           <span className={(ad as any).nccpa === 0 ? 'text-text-tertiary' : (ad as any).nccpa <= 525 ? 'text-success' : (ad as any).nccpa <= 638 ? 'text-warm-gold' : 'text-danger'}>
@@ -1394,9 +1450,14 @@ export default function CreativePage() {
                           </span>
                         </td>
                         <td className="py-2.5 px-2 text-right whitespace-nowrap">
-                          <span className={!(ad as any).roas ? 'text-text-tertiary' : (ad as any).roas >= 3.0 ? 'text-success' : (ad as any).roas >= 2.0 ? 'text-warm-gold' : 'text-danger'}>
-                            {!(ad as any).roas ? '—' : `${((ad as any).roas).toFixed(2)}x`}
+                          {(() => {
+                            const v = (ad as any).roasAll ?? (ad as any).roas;
+                            return (
+                          <span className={!v ? 'text-text-tertiary' : v >= 3.0 ? 'text-success' : v >= 2.0 ? 'text-warm-gold' : 'text-danger'}>
+                            {!v ? '—' : `${Number(v).toFixed(2)}x`}
                           </span>
+                            );
+                          })()}
                         </td>
                         <td className="py-2.5 px-2 text-right whitespace-nowrap">
                           <span className={!(ad as any).ncroas ? 'text-text-tertiary' : (ad as any).ncroas >= 2.4 ? 'text-success' : (ad as any).ncroas >= 1.5 ? 'text-warm-gold' : 'text-danger'}>
@@ -1754,7 +1815,7 @@ export default function CreativePage() {
             </div>
             <div className="flex items-center justify-between mb-4 pb-2 border-b border-border/30">
               <div className="text-xs text-text-tertiary">
-                Attribution: <strong className="text-text-secondary">{attrModel}</strong> • Window: <strong className="text-text-secondary">{attrWindow}</strong>
+                Sample data (Pareto not wired to live TW attribution)
               </div>
               <div className="text-xs text-text-tertiary">
                 Platform: <strong className="text-text-secondary">{platform === 'Google' ? 'All (excl. Google)' : platform}</strong>

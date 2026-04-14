@@ -9,8 +9,17 @@ import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
 import { toLocalDateString } from '@/lib/dateUtils';
-import { fetchTripleWhaleData, getMetric, getPrevMetric, TWData } from '@/lib/triple-whale-client';
-import { fetchGA4Data, getGA4Metric, GA4Data } from '@/lib/ga4-client';
+import {
+  fetchTripleWhaleData,
+  getMetric,
+  getPrevMetric,
+  TWData,
+  fetchTWCohorts,
+  fetchTWAttributionByChannel,
+  type TWCohortApiRow,
+  type TWAttributionChannelRow,
+} from '@/lib/triple-whale-client';
+import { fetchGA4Data, fetchGA4EventBreakdown, getGA4Metric, GA4Data, type GA4EventRow } from '@/lib/ga4-client';
 import { attributionSurvey, trackingHealth as sampleTrackingHealth, adScatterData, attributionAISuggestions } from '@/lib/sample-data';
 import { Star, GitBranch, Activity, Database, Layers, Sparkles, ChevronDown } from 'lucide-react';
 import {
@@ -39,8 +48,34 @@ function getTwBlendedRoas(data: TWData, pick: 'current' | 'previous'): number {
 
 const COLORS = ['#334FB4', '#4A6BD6', '#EDBF63', '#34D399', '#EF4444', '#94A3B8'];
 
-const cohortAttributionModels = ['First Click', 'Last Click', 'Linear All', 'Linear Paid'];
-const cohortAttributionWindows = ['1-day click', '7-day click / 1-day view', '28-day click / 1-day view', '28-day click / 28-day view'];
+/** Labels must match `/api/triple-whale/cohorts` MODEL_MAP and TW pixel_joined_tvf `model`. */
+const cohortAttributionModels = ['First Click', 'Last Click', 'Linear Paid', 'Triple Attribution'] as const;
+/** Labels must match cohorts + attribution routes WINDOW_MAP (→ 1_day, 7_days, …, lifetime). */
+const cohortAttributionWindows = ['1 day', '7 days', '14 days', '28 days', 'Lifetime'] as const;
+
+const COHORT_LTV_CHANNEL_ORDER: { channelId: string; shortLabel: string }[] = [
+  { channelId: 'facebook-ads', shortLabel: 'Meta' },
+  { channelId: 'google-ads', shortLabel: 'Google' },
+  { channelId: 'tiktok-ads', shortLabel: 'TikTok' },
+  { channelId: 'reddit', shortLabel: 'Reddit' },
+];
+
+/** Weighted shop LTV (cumulative) at the best available horizon — same basis for every channel card. */
+function weightedBlendedLtv(rows: TWCohortApiRow[]): number {
+  if (!rows.length) return 0;
+  for (let horizon = 12; horizon >= 0; horizon--) {
+    let num = 0;
+    let den = 0;
+    for (const r of rows) {
+      const v = r.ltvByMonth?.[horizon];
+      if (v == null || !Number.isFinite(v) || r.customers <= 0) continue;
+      num += v * r.customers;
+      den += r.customers;
+    }
+    if (den > 0) return num / den;
+  }
+  return 0;
+}
 
 const treeLayers = [
   { id: 'star', label: 'MER / nCAC', icon: Star, description: 'Top-level efficiency metrics, your north star for marketing health', color: '#EDBF63' },
@@ -74,6 +109,7 @@ export default function AttributionPage() {
   const [twLoading, setTwLoading] = useState(true);
   const [ga4Data, setGA4Data] = useState<GA4Data | null>(null);
   const [ga4Loading, setGA4Loading] = useState(true);
+  const [ga4EventRows, setGa4EventRows] = useState<GA4EventRow[]>([]);
 
   useEffect(() => {
     setTwLoading(true);
@@ -88,9 +124,46 @@ export default function AttributionPage() {
       .then(setGA4Data)
       .catch(console.error)
       .finally(() => setGA4Loading(false));
+    fetchGA4EventBreakdown(startDate, endDate)
+      .then(setGa4EventRows)
+      .catch(() => setGa4EventRows([]));
   }, [dateRange]);
-  const [cohortAttrModel, setCohortAttrModel] = useState('First Click');
-  const [cohortAttrWindow, setCohortAttrWindow] = useState('7-day click / 1-day view');
+  const [cohortAttrModel, setCohortAttrModel] = useState<string>('Triple Attribution');
+  const [cohortAttrWindow, setCohortAttrWindow] = useState<string>('Lifetime');
+  const [cohortLtvRows, setCohortLtvRows] = useState<TWCohortApiRow[]>([]);
+  const [cohortLtvChannels, setCohortLtvChannels] = useState<TWAttributionChannelRow[]>([]);
+  const [cohortLtvLoading, setCohortLtvLoading] = useState(true);
+  const [cohortLtvError, setCohortLtvError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setCohortLtvLoading(true);
+    setCohortLtvError(null);
+    const startDate = toLocalDateString(dateRange.startDate);
+    const endDate = toLocalDateString(dateRange.endDate);
+    Promise.all([
+      fetchTWCohorts(startDate, endDate, cohortAttrModel, cohortAttrWindow),
+      fetchTWAttributionByChannel(startDate, endDate, cohortAttrModel, cohortAttrWindow),
+    ])
+      .then(([rows, channels]) => {
+        if (cancelled) return;
+        setCohortLtvRows(rows);
+        setCohortLtvChannels(channels);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setCohortLtvError(e instanceof Error ? e.message : 'Failed to load cohort LTV data');
+        setCohortLtvRows([]);
+        setCohortLtvChannels([]);
+      })
+      .finally(() => {
+        if (!cancelled) setCohortLtvLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dateRange.startDate, dateRange.endDate, cohortAttrModel, cohortAttrWindow]);
+
   const [aiInsightOverrides, setAiInsightOverrides] = useState<Partial<Record<LayerKey, LayerInsights>>>({});
   const [expandedSystems, setExpandedSystems] = useState<Set<string>>(new Set());
 
@@ -143,10 +216,14 @@ export default function AttributionPage() {
   const [eventPages, setEventPages] = useState<Record<string, number>>({});
   const [liveTrackingData, setLiveTrackingData] = useState<{
     totalEventsPerDay: number;
-    status: 'healthy' | 'warning' | 'error';
     events: { event: string; count: string; type: string }[];
   } | null>(null);
   const [trackingIsLive, setTrackingIsLive] = useState(false);
+  const [metaTrackingData, setMetaTrackingData] = useState<{
+    totalEventsPerDay: number;
+    events: { event: string; rawType: string; count: number }[];
+  } | null>(null);
+  const [metaTrackingIsLive, setMetaTrackingIsLive] = useState(false);
 
   // Fetch live Google Ads tracking data
   const fetchTrackingData = useCallback(async () => {
@@ -172,12 +249,67 @@ export default function AttributionPage() {
     fetchTrackingData();
   }, [fetchTrackingData]);
 
-  // Merge live Google Ads + GA4 data into tracking health array
+  const fetchMetaTrackingData = useCallback(async () => {
+    try {
+      const startDateStr = toLocalDateString(dateRange.startDate);
+      const endDateStr = toLocalDateString(dateRange.endDate);
+      const res = await fetch(
+        `/api/meta?mode=tracking-events&startDate=${startDateStr}&endDate=${endDateStr}`
+      );
+      const json = await res.json();
+      if (json.success && json.data?.events && Array.isArray(json.data.events)) {
+        setMetaTrackingData({
+          totalEventsPerDay: Number(json.data.totalEventsPerDay) || 0,
+          events: json.data.events as { event: string; rawType: string; count: number }[],
+        });
+        setMetaTrackingIsLive(true);
+      } else {
+        setMetaTrackingData(null);
+        setMetaTrackingIsLive(false);
+      }
+    } catch {
+      setMetaTrackingData(null);
+      setMetaTrackingIsLive(false);
+    }
+  }, [dateRange.startDate, dateRange.endDate]);
+
+  useEffect(() => {
+    fetchMetaTrackingData();
+  }, [fetchMetaTrackingData]);
+
+  // Merge live Meta + Google Ads + GA4 data into tracking health array
   const trackingHealth = sampleTrackingHealth.map((item) => {
+    if (item.system === 'Meta Pixel' && metaTrackingData && metaTrackingIsLive) {
+      const dayCount = Math.max(
+        1,
+        Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      );
+      if (metaTrackingData.events.length === 0) {
+        return {
+          ...item,
+          events: '0/day',
+          matchRate: 'N/A' as const,
+          source: undefined as unknown as typeof item.source,
+          eventBreakdown: [],
+        };
+      }
+      return {
+        ...item,
+        events: `${metaTrackingData.totalEventsPerDay.toLocaleString()}/day`,
+        matchRate: 'N/A' as const,
+        source: undefined as unknown as typeof item.source,
+        eventBreakdown: metaTrackingData.events.map((ev) => ({
+          event: ev.event,
+          rawType: ev.rawType,
+          count: Math.round(ev.count / dayCount).toLocaleString(),
+          matchRate: 'N/A' as const,
+          type: 'Multiple' as const,
+        })),
+      };
+    }
     if (item.system === 'Google Ads Tag' && liveTrackingData) {
       return {
         ...item,
-        status: liveTrackingData.status,
         events: `${liveTrackingData.totalEventsPerDay.toLocaleString()}/day`,
         matchRate: 'N/A' as const,
         source: undefined as unknown as typeof item.source,
@@ -191,28 +323,40 @@ export default function AttributionPage() {
     }
     if (item.system === 'GA4' && ga4Data?.summary) {
       const dayCount = Math.max(1, Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24)));
+      const eventCount = getGA4Metric(ga4Data, 'eventCount');
       const pageViews = getGA4Metric(ga4Data, 'screenPageViews');
       const addToCarts = getGA4Metric(ga4Data, 'addToCarts');
       const checkouts = getGA4Metric(ga4Data, 'checkouts');
       const purchases = getGA4Metric(ga4Data, 'ecommercePurchases');
-      const eventCount = getGA4Metric(ga4Data, 'eventCount');
       const conversions = getGA4Metric(ga4Data, 'conversions');
       const totalEvents = eventCount || (pageViews + addToCarts + checkouts + purchases);
       const eventsPerDay = Math.round(totalEvents / dayCount);
-      // Build event breakdown with known events + "Other Events" for the remainder
-      const knownTotal = pageViews + addToCarts + checkouts + purchases;
-      const otherEvents = Math.max(0, eventCount - knownTotal);
+
+      if (ga4EventRows.length > 0) {
+        return {
+          ...item,
+          events: `${eventsPerDay.toLocaleString()}/day`,
+          matchRate: 'N/A' as const,
+          source: undefined as unknown as typeof item.source,
+          eventBreakdown: ga4EventRows.map((ev) => ({
+            event: ev.eventName,
+            rawType: `ga4:${ev.eventName}`,
+            count: Math.round(ev.eventCount / dayCount).toLocaleString(),
+            matchRate: 'N/A' as const,
+            type: 'Browser' as const,
+          })),
+        };
+      }
+
       const breakdown = [
         { event: 'page_view', count: Math.round(pageViews / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const },
         { event: 'add_to_cart', count: Math.round(addToCarts / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const },
         { event: 'begin_checkout', count: Math.round(checkouts / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const },
         { event: 'purchase', count: Math.round(purchases / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const },
         ...(conversions > 0 ? [{ event: 'conversions (all)', count: Math.round(conversions / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const }] : []),
-        ...(otherEvents > 0 ? [{ event: 'Other Events', count: Math.round(otherEvents / dayCount).toLocaleString(), matchRate: 'N/A' as const, type: 'Browser' as const }] : []),
       ];
       return {
         ...item,
-        status: 'healthy' as const,
         events: `${eventsPerDay.toLocaleString()}/day`,
         matchRate: 'N/A' as const,
         source: undefined as unknown as typeof item.source,
@@ -226,6 +370,27 @@ export default function AttributionPage() {
   const formatCurrencyValue = (value: number) => {
     return formatCurrency(convertValue(value), currency);
   };
+
+  const cohortBlendedLtv = useMemo(() => weightedBlendedLtv(cohortLtvRows), [cohortLtvRows]);
+
+  const cohortLtvChannelCards = useMemo(() => {
+    const blended = cohortBlendedLtv;
+    return COHORT_LTV_CHANNEL_ORDER.map(({ channelId, shortLabel }) => {
+      const row = cohortLtvChannels.find((c) => c.channelId === channelId);
+      const cac = row?.ncCpa ?? 0;
+      const ltvCac = cac > 0 && blended > 0 ? blended / cac : 0;
+      const paybackMonths = blended > 0 && cac > 0 ? (12 * cac) / blended : 0;
+      return {
+        shortLabel,
+        channelId,
+        ltv: blended,
+        cac,
+        ltvCac,
+        paybackMonths: Number.isFinite(paybackMonths) ? paybackMonths : 0,
+        hasRow: Boolean(row && (row.spend > 0 || row.ncOrders > 0)),
+      };
+    });
+  }, [cohortLtvChannels, cohortBlendedLtv]);
 
   // Helper function to toggle system expansion
   const toggleSystemExpansion = (system: string) => {
@@ -294,6 +459,18 @@ export default function AttributionPage() {
       adScatterSample: adScatterData.slice(0, 50),
       cohortAttrModel,
       cohortAttrWindow,
+      cohortLtvSelection: {
+        model: cohortAttrModel,
+        window: cohortAttrWindow,
+        cohortRowCount: cohortLtvRows.length,
+        blendedShopLtv: cohortBlendedLtv,
+        channels: cohortLtvChannels.map((c) => ({
+          channel: c.channel,
+          channelId: c.channelId,
+          ncCpa: c.ncCpa,
+          spend: c.spend,
+        })),
+      },
       tripleWhale: twData
         ? {
             orderRevenue: getMetric(twData, 'orderRevenue'),
@@ -322,11 +499,20 @@ export default function AttributionPage() {
         : null,
       trackingHealthSummary: trackingHealth.map((t) => ({
         system: t.system,
-        status: t.status,
         events: t.events,
       })),
     };
-  }, [activeLayer, twData, ga4Data, trackingHealth, cohortAttrModel, cohortAttrWindow]);
+  }, [
+    activeLayer,
+    twData,
+    ga4Data,
+    trackingHealth,
+    cohortAttrModel,
+    cohortAttrWindow,
+    cohortLtvRows.length,
+    cohortBlendedLtv,
+    cohortLtvChannels,
+  ]);
 
   const insights = aiInsightOverrides[activeLayer as LayerKey] ?? getLayerInsights()[activeLayer as LayerKey];
 
@@ -776,15 +962,18 @@ export default function AttributionPage() {
               <Database size={16} className="text-success shrink-0" />
               <span className="truncate">Tracking Infrastructure Health</span>
             </h3>
-            <span className="text-xs text-text-tertiary shrink-0">System Status</span>
           </div>
           <div className="space-y-3">
             {trackingHealth.map((item) => (
               <div key={item.system}>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-bg-elevated rounded-md p-3 gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${item.status === 'healthy' ? 'bg-success' : item.status === 'warning' ? 'bg-warm-gold' : 'bg-danger'}`} />
                     <span className="text-sm font-medium text-text-primary truncate">{item.system}</span>
+                    {item.system === 'Meta Pixel' && metaTrackingIsLive && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-success/20 text-success animate-pulse">
+                        LIVE
+                      </span>
+                    )}
                     {item.system === 'Google Ads Tag' && trackingIsLive && (
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-success/20 text-success animate-pulse">
                         LIVE
@@ -803,15 +992,11 @@ export default function AttributionPage() {
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs text-text-secondary">
                     <span>Events: {item.events}</span>
-                    {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && <span>Match Quality: {item.matchRate}</span>}
-                    {/* Source badge removed — redundant with event-level detail */}
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium self-start sm:self-auto ${
-                      item.status === 'healthy' ? 'bg-success/15 text-success' :
-                      item.status === 'warning' ? 'bg-warm-gold/15 text-warm-gold' :
-                      'bg-danger/15 text-danger'
-                    }`}>
-                      {item.status === 'healthy' ? 'Healthy' : item.status === 'warning' ? 'Warning' : 'Error'}
-                    </span>
+                    {!(item.system === 'Meta Pixel' && metaTrackingIsLive) &&
+                      !(item.system === 'Google Ads Tag' && trackingIsLive) &&
+                      !(item.system === 'GA4' && ga4Data?.summary) && (
+                      <span>Match Quality: {item.matchRate}</span>
+                    )}
                   </div>
                 </div>
                 
@@ -848,8 +1033,11 @@ export default function AttributionPage() {
                         </div>
                       )}
                     </div>
-                    {visibleEvents.map((event) => (
-                      <div key={event.event} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    {visibleEvents.map((event, evIdx) => (
+                      <div
+                        key={'rawType' in event && event.rawType ? String(event.rawType) : `${event.event}-${evIdx}`}
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                      >
                         <div className="flex items-center gap-3">
                           <span className={`w-2 h-2 rounded-full shrink-0 ${
                             event.matchRate === 'N/A' ? 'bg-text-tertiary' :
@@ -861,7 +1049,11 @@ export default function AttributionPage() {
                         </div>
                         <div className="flex items-center gap-4 text-xs text-text-secondary">
                           <span>Count: {event.count}/day</span>
-                          {!(item.system === 'Google Ads Tag' && trackingIsLive) && !(item.system === 'GA4' && ga4Data?.summary) && event.matchRate && event.matchRate !== 'N/A' && <span>Match Quality: {event.matchRate}</span>}
+                          {!(item.system === 'Meta Pixel' && metaTrackingIsLive) &&
+                            !(item.system === 'Google Ads Tag' && trackingIsLive) &&
+                            !(item.system === 'GA4' && ga4Data?.summary) &&
+                            event.matchRate &&
+                            event.matchRate !== 'N/A' && <span>Match Quality: {event.matchRate}</span>}
                         </div>
                       </div>
                     ))}
@@ -943,8 +1135,8 @@ export default function AttributionPage() {
 
       {activeLayer === 'roots' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 flex-wrap">
               <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
                 <Layers size={16} className="text-purple-400 shrink-0" />
                 <span className="truncate">Cohort-based LTV by Channel</span>
@@ -952,12 +1144,16 @@ export default function AttributionPage() {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-secondary font-medium">Model:</span>
                 <div className="relative">
-                  <select 
-                    value={cohortAttrModel} 
-                    onChange={(e) => setCohortAttrModel(e.target.value)} 
-                    className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors"
+                  <select
+                    value={cohortAttrModel}
+                    onChange={(e) => setCohortAttrModel(e.target.value)}
+                    className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors min-w-[140px]"
                   >
-                    {cohortAttributionModels.map(m => <option key={m} value={m}>{m}</option>)}
+                    {cohortAttributionModels.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
                 </div>
@@ -965,63 +1161,76 @@ export default function AttributionPage() {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-text-secondary font-medium">Window:</span>
                 <div className="relative">
-                  <select 
-                    value={cohortAttrWindow} 
-                    onChange={(e) => setCohortAttrWindow(e.target.value)} 
-                    className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors"
+                  <select
+                    value={cohortAttrWindow}
+                    onChange={(e) => setCohortAttrWindow(e.target.value)}
+                    className="appearance-none bg-bg-elevated border border-border rounded-md pl-3 pr-7 py-1.5 text-xs text-text-primary outline-none cursor-pointer hover:border-text-tertiary transition-colors min-w-[100px]"
                   >
-                    {cohortAttributionWindows.map(w => <option key={w} value={w}>{w}</option>)}
+                    {cohortAttributionWindows.map((w) => (
+                      <option key={w} value={w}>
+                        {w}
+                      </option>
+                    ))}
                   </select>
                   <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
                 </div>
               </div>
             </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <DataSource source="TripleWhale" />
+              {!cohortLtvLoading && !cohortLtvError && cohortLtvRows.length > 0 && <LiveBadge />}
+            </div>
           </div>
+          <p className="text-[11px] text-text-tertiary mb-4 max-w-3xl leading-relaxed">
+            Cohort LTV and NCPA come from Triple Whale Orcabase using the same <span className="text-text-secondary">model</span> and{' '}
+            <span className="text-text-secondary">attribution window</span> you select. Shop LTV is a cohort-size–weighted cumulative LTV
+            (best available horizon). Channel NC CPA is from attributed pixel spend for that channel; LTV:CAC divides the same shop LTV by each
+            channel’s NC CPA (directional — TW does not split cohort LTV by acquisition channel in this query).
+          </p>
+          {cohortLtvError && <div className="text-xs text-danger mb-4">{cohortLtvError}</div>}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {(() => {
-              // Model adjustments: different attribution models shift credit between channels
-              const modelMult: Record<string, Record<string, { ltvMult: number; cacMult: number }>> = {
-                'First Click': { Meta: { ltvMult: 1.0, cacMult: 1.0 }, Google: { ltvMult: 1.0, cacMult: 1.0 }, TikTok: { ltvMult: 1.0, cacMult: 1.0 }, Reddit: { ltvMult: 1.0, cacMult: 1.0 } },
-                'Last Click': { Meta: { ltvMult: 1.05, cacMult: 0.92 }, Google: { ltvMult: 1.12, cacMult: 0.85 }, TikTok: { ltvMult: 0.88, cacMult: 1.15 }, Reddit: { ltvMult: 0.85, cacMult: 1.2 } },
-                'Linear All': { Meta: { ltvMult: 1.02, cacMult: 0.96 }, Google: { ltvMult: 1.06, cacMult: 0.93 }, TikTok: { ltvMult: 0.95, cacMult: 1.05 }, Reddit: { ltvMult: 0.92, cacMult: 1.1 } },
-                'Linear Paid': { Meta: { ltvMult: 1.08, cacMult: 0.94 }, Google: { ltvMult: 0.95, cacMult: 1.08 }, TikTok: { ltvMult: 1.1, cacMult: 0.98 }, Reddit: { ltvMult: 0.9, cacMult: 1.12 } },
-              };
-              // Window adjustments: longer windows generally give more credit to upper-funnel channels
-              const windowMult: Record<string, number> = {
-                '1-day click': 0.85,
-                '7-day click / 1-day view': 1.0,
-                '28-day click / 1-day view': 1.08,
-                '28-day click / 28-day view': 1.15,
-              };
-              const base = [
-                { channel: 'Meta', ltv: 6580, cac: 3133, payback: 4.2 },
-                { channel: 'Google', ltv: 7220, cac: 1900, payback: 2.1 },
-                { channel: 'TikTok', ltv: 4200, cac: 3000, payback: 6.8 },
-                { channel: 'Reddit', ltv: 3500, cac: 3182, payback: 8.2 },
-              ];
-              const mm = modelMult[cohortAttrModel] || modelMult['First Click'];
-              const wm = windowMult[cohortAttrWindow] || 1.0;
-              return base.map(ch => {
-                const m = mm[ch.channel] || { ltvMult: 1, cacMult: 1 };
-                const ltv = Math.round(ch.ltv * m.ltvMult * wm);
-                const cac = Math.round(ch.cac * m.cacMult / wm);
-                const ltvCac = parseFloat((ltv / cac).toFixed(1));
-                const payback = parseFloat((ch.payback * m.cacMult / (m.ltvMult * wm)).toFixed(1));
-                return { channel: ch.channel, ltvCac, ltv, cac, payback: `${payback} months` };
-              });
-            })().map((ch) => (
-              <div key={ch.channel} className="bg-bg-elevated rounded-md p-4 space-y-3">
-                <div className="text-sm font-medium text-text-primary">{ch.channel}</div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-text-secondary">LTV:CAC</span>
-                  <span className={`text-xl font-bold ${ch.ltvCac >= 3 ? 'text-success' : ch.ltvCac >= 2 ? 'text-warm-gold' : 'text-danger'}`}>
-                    {ch.ltvCac}x
-                  </span>
-                </div>
-                <div className="text-xs text-text-secondary">LTV: {formatCurrencyValue(ch.ltv)} • CAC: {formatCurrencyValue(ch.cac)}</div>
-                <div className="text-xs text-text-secondary">Payback: {ch.payback}</div>
-              </div>
-            ))}
+            {cohortLtvLoading ? (
+              <>
+                <SkeletonMetricCard />
+                <SkeletonMetricCard />
+                <SkeletonMetricCard />
+                <SkeletonMetricCard />
+              </>
+            ) : (
+              cohortLtvChannelCards.map((ch) => {
+                const showMetrics = ch.hasRow && ch.cac > 0 && ch.ltv > 0;
+                const ltvCacDisplay = showMetrics ? `${ch.ltvCac.toFixed(1)}x` : '—';
+                const paybackDisplay =
+                  showMetrics && ch.paybackMonths > 0 ? `${ch.paybackMonths.toFixed(1)} months` : '—';
+                const ltvCacNum = showMetrics ? ch.ltvCac : 0;
+                return (
+                  <div key={ch.channelId} className="bg-bg-elevated rounded-md p-4 space-y-3">
+                    <div className="text-sm font-medium text-text-primary">{ch.shortLabel}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-text-secondary">LTV:CAC</span>
+                      <span
+                        className={`text-xl font-bold ${
+                          !showMetrics
+                            ? 'text-text-tertiary'
+                            : ltvCacNum >= 3
+                              ? 'text-success'
+                              : ltvCacNum >= 2
+                                ? 'text-warm-gold'
+                                : 'text-danger'
+                        }`}
+                      >
+                        {ltvCacDisplay}
+                      </span>
+                    </div>
+                    <div className="text-xs text-text-secondary">
+                      LTV: {ch.ltv > 0 ? formatCurrencyValue(ch.ltv) : '—'} • CAC:{' '}
+                      {ch.cac > 0 ? formatCurrencyValue(ch.cac) : '—'}
+                    </div>
+                    <div className="text-xs text-text-secondary">Payback: {paybackDisplay}</div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}

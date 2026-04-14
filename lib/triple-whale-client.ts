@@ -178,6 +178,87 @@ export async function fetchTWCohorts(
   return json.cohorts ?? [];
 }
 
+/** Channel-level attributed metrics from pixel_joined_tvf (same model + window as cohorts). */
+export interface TWAttributionChannelRow {
+  channel: string;
+  channelId: string;
+  spend: number;
+  cpa: number;
+  ncCpa: number;
+  roas: number;
+  ncRoas: number;
+  orders: number;
+  ncOrders: number;
+  ncRevenue: number;
+  sessions: number;
+  clicks: number;
+  impressions: number;
+}
+
+export interface TWAttributionResponse {
+  success: boolean;
+  model: string;
+  twModel?: string;
+  window: string;
+  twWindow?: string;
+  dateRange: { startDate: string; endDate: string };
+  data: TWAttributionChannelRow[];
+  error?: string;
+}
+
+/**
+ * Per-channel spend, CPA, and ROAS for the selected attribution model and window.
+ */
+export async function fetchTWAttributionByChannel(
+  startDate: string,
+  endDate: string,
+  model: string = 'Triple Attribution',
+  window: string = 'Lifetime'
+): Promise<TWAttributionChannelRow[]> {
+  const params = new URLSearchParams({ startDate, endDate, model, window });
+  const res = await fetch(`/api/triple-whale/attribution?${params.toString()}`);
+  const json: TWAttributionResponse = await res.json();
+  if (!json.success) {
+    throw new Error(json.error || 'Failed to fetch TW attribution by channel');
+  }
+  return json.data ?? [];
+}
+
+/** Product-level revenue and units from Triple Whale SQL (Orcabase). */
+export interface TWProductKpiRow {
+  productId: string;
+  product: string;
+  revenue: number;
+  units: number;
+}
+
+export interface TWProductsResponse {
+  success: boolean;
+  source?: string;
+  sqlSource?: string;
+  dateRange: { startDate: string; endDate: string };
+  data: TWProductKpiRow[];
+  error?: string;
+}
+
+/**
+ * Product KPIs for the selected date range (revenue + units per product).
+ */
+export async function fetchTWProductKpis(
+  startDate: string,
+  endDate: string,
+  refresh: boolean = false
+): Promise<TWProductKpiRow[]> {
+  const params = new URLSearchParams({ startDate, endDate });
+  if (refresh) params.set('refresh', 'true');
+  const res = await fetch(`/api/triple-whale/products?${params.toString()}`);
+  const json: TWProductsResponse = await res.json();
+  if (!json.success) {
+    throw new Error(json.error || 'Failed to fetch TW product KPIs');
+  }
+  return json.data ?? [];
+}
+
 /**
  * Format a number as currency (PHP ₱ or USD $).
  */

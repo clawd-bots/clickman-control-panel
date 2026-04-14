@@ -13,6 +13,7 @@ import {
 import { useDateRange } from '@/components/DateProvider';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { fillPromptTemplate, buildRuntimeContextBlock, PromptRuntimeVars } from '@/lib/prompt-interpolate';
+import { toLocalDateString } from '@/lib/dateUtils';
 import { parseQuadrantJson, type QuadrantInsights } from '@/lib/parse-ai-response';
 
 export type LayerInsights = QuadrantInsights;
@@ -57,14 +58,23 @@ export default function AIIntelligenceControls({
   const [history, setHistory] = useState<PromptHistoryEntry[]>([]);
   const [refreshError, setRefreshError] = useState<string | null>(null);
 
-  const runtimeVars: PromptRuntimeVars = useMemo(
-    () => ({
+  const runtimeVars: PromptRuntimeVars = useMemo(() => {
+    const ga4Tz =
+      typeof analysisContext['ga4ReportingTimeZone'] === 'string'
+        ? analysisContext['ga4ReportingTimeZone']
+        : '';
+    const ga4Today =
+      typeof analysisContext['ga4TodayInReportingTimeZone'] === 'string'
+        ? analysisContext['ga4TodayInReportingTimeZone']
+        : toLocalDateString(new Date());
+    return {
       DATE_RANGE: buildDateRangeLabel(dateRange.startDate, dateRange.endDate),
       CURRENCY: currency === '$' ? 'USD ($)' : 'PHP (₱)',
       EXCHANGE_RATE: Number.isFinite(exchangeRate) ? exchangeRate.toFixed(4) : '—',
-    }),
-    [dateRange.startDate, dateRange.endDate, currency, exchangeRate]
-  );
+      GA4_REPORTING_TIMEZONE: ga4Tz || '(not loaded)',
+      GA4_TODAY_IN_REPORTING_TZ: ga4Today,
+    };
+  }, [dateRange.startDate, dateRange.endDate, currency, exchangeRate, analysisContext]);
 
   const reload = useCallback(() => {
     const tpl = getPromptById(intelligenceId);

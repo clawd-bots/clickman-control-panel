@@ -85,14 +85,29 @@ export default function AISuggestionsPanel({
     [promptId, dateRange.startDate, dateRange.endDate, currency]
   );
 
-  const runtimeVars: PromptRuntimeVars = useMemo(
-    () => ({
+  const runtimeVars: PromptRuntimeVars = useMemo(() => {
+    const ga4Tz =
+      typeof analysisContext['ga4ReportingTimeZone'] === 'string'
+        ? analysisContext['ga4ReportingTimeZone']
+        : '';
+    const ga4Today =
+      typeof analysisContext['ga4TodayInReportingTimeZone'] === 'string'
+        ? analysisContext['ga4TodayInReportingTimeZone']
+        : toLocalDateString(new Date());
+    return {
       DATE_RANGE: buildDateRangeLabel(dateRange.startDate, dateRange.endDate),
       CURRENCY: currency === '$' ? 'USD ($)' : 'PHP (₱)',
       EXCHANGE_RATE: Number.isFinite(exchangeRate) ? exchangeRate.toFixed(4) : '—',
-    }),
-    [dateRange.startDate, dateRange.endDate, currency, exchangeRate]
-  );
+      GA4_REPORTING_TIMEZONE: ga4Tz || '(not loaded)',
+      GA4_TODAY_IN_REPORTING_TZ: ga4Today,
+    };
+  }, [
+    dateRange.startDate,
+    dateRange.endDate,
+    currency,
+    exchangeRate,
+    analysisContext,
+  ]);
 
   useEffect(() => {
     const cached = loadPersistedInsights(insightsCacheKey);
@@ -277,7 +292,9 @@ export default function AISuggestionsPanel({
               Optional tokens (filled on each Refresh):{' '}
               <code className="text-text-primary">{'{{DATE_RANGE}}'}</code>,{' '}
               <code className="text-text-primary">{'{{CURRENCY}}'}</code>,{' '}
-              <code className="text-text-primary">{'{{EXCHANGE_RATE}}'}</code>
+              <code className="text-text-primary">{'{{EXCHANGE_RATE}}'}</code>,{' '}
+              <code className="text-text-primary">{'{{GA4_REPORTING_TIMEZONE}}'}</code>,{' '}
+              <code className="text-text-primary">{'{{GA4_TODAY_IN_REPORTING_TZ}}'}</code>
             </p>
             <div className="text-xs bg-bg-elevated border border-border rounded-md p-2 mb-3 text-text-secondary">
               <span className="font-medium text-text-primary">Live preview after tokens:</span>{' '}

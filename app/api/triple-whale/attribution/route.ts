@@ -23,13 +23,18 @@ const MODEL_MAP: Record<string, string> = {
   Triple: 'Triple Attribution',
 };
 
-// Map our window labels to TW attribution_window values
+// Map UI window labels to TW attribution_window values (aligned with cohorts route + legacy keys)
 const WINDOW_MAP: Record<string, string> = {
+  '1 day': '1_day',
   '1-day': '1_day',
+  '7 days': '7_days',
   '7-day': '7_days',
+  '14 days': '14_days',
   '14-day': '14_days',
+  '28 days': '28_days',
   '28-day': '28_days',
-  'lifetime': 'lifetime',
+  'Lifetime': 'lifetime',
+  lifetime: 'lifetime',
 };
 
 // Friendly channel names

@@ -32,7 +32,7 @@ const DEFAULTS: Record<string, PromptTemplate> = {
     id: 'dashboard-intelligence',
     name: 'Dashboard Intelligence Analysis',
     description: 'Comprehensive dashboard performance analysis',
-    prompt: 'Analyze current dashboard KPIs focusing on: 1) Revenue trends and growth patterns, 2) Marketing efficiency metrics (MER, aMER), 3) Customer acquisition costs and trends, 4) Order volume and new customer patterns, 5) Key performance indicators requiring immediate attention.\n\n(Context for this run: report period {{DATE_RANGE}}, app display currency {{CURRENCY}}, FX ref {{EXCHANGE_RATE}}.)',
+    prompt: 'Analyze current dashboard KPIs focusing on: 1) Revenue trends and growth patterns, 2) Marketing efficiency metrics (MER, aMER), 3) Customer acquisition costs and trends, 4) Order volume and new customer patterns, 5) Key performance indicators requiring immediate attention.\n\nWhen DATA includes ga4Summary, treat those numbers as the exact GA4 Data API values for dateRangeIso. GA4 calendar dates use the property reporting timezone ({{GA4_REPORTING_TIMEZONE}}; today there: {{GA4_TODAY_IN_REPORTING_TZ}}). Do not exclude the selected end date or call it "in the future" based on UTC or server time.\n\n(Context for this run: report period {{DATE_RANGE}}, app display currency {{CURRENCY}}, FX ref {{EXCHANGE_RATE}}.)',
     category: 'Dashboard',
     lastModified: '2026-03-01',
   },

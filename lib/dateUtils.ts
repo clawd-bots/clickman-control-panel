@@ -155,3 +155,36 @@ function toISODateString(date: Date): string {
 export function toLocalDateString(date: Date): string {
   return toISODateString(date);
 }
+
+/**
+ * Calendar lookback for Creative → Account Control (matches Window dropdown).
+ * End = today (local). Start = first day of the lookback window (inclusive).
+ * "Lifetime" uses a 365-day lookback (TW SQL still uses attribution_window=lifetime for conversions).
+ */
+export function getAccountControlReportRange(windowLabel: string): { startDate: Date; endDate: Date } {
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+  const startDate = new Date();
+  startDate.setHours(0, 0, 0, 0);
+
+  switch (windowLabel) {
+    case '1 day':
+      break;
+    case '7 days':
+      startDate.setDate(startDate.getDate() - 6);
+      break;
+    case '14 days':
+      startDate.setDate(startDate.getDate() - 13);
+      break;
+    case '28 days':
+      startDate.setDate(startDate.getDate() - 27);
+      break;
+    case 'Lifetime':
+      startDate.setDate(startDate.getDate() - 364);
+      break;
+    default:
+      startDate.setDate(startDate.getDate() - 364);
+  }
+
+  return { startDate, endDate };
+}

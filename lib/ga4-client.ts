@@ -56,6 +56,8 @@ export interface GA4Data {
   summary?: GA4Summary;
   daily?: GA4DailyRow[];
   trafficSources?: GA4TrafficSource[];
+  /** IANA timezone from GA4 Data API metadata — same calendar as the GA4 property reporting timezone. */
+  reportingTimeZone?: string | null;
 }
 
 export interface GA4Response {
@@ -83,6 +85,32 @@ export async function fetchGA4Data(
   }
 
   return json.data;
+}
+
+export interface GA4EventRow {
+  eventName: string;
+  /** Total event count in the date range (not per day). */
+  eventCount: number;
+}
+
+/**
+ * All distinct event names with counts for the range (same basis as GA4 Explorations event report).
+ */
+export async function fetchGA4EventBreakdown(
+  startDate: string,
+  endDate: string
+): Promise<GA4EventRow[]> {
+  const params = new URLSearchParams({ startDate, endDate, mode: 'events' });
+  const res = await fetch(`/api/ga4?${params.toString()}`);
+  const json = (await res.json()) as {
+    success: boolean;
+    data?: { events?: GA4EventRow[] };
+    error?: string;
+  };
+  if (!json.success || !json.data?.events) {
+    throw new Error(json.error || 'Failed to fetch GA4 events');
+  }
+  return json.data.events;
 }
 
 /**

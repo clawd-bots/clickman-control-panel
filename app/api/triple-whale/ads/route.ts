@@ -58,8 +58,9 @@ export async function GET(request: NextRequest) {
     }
 
     const forceRefresh = searchParams.get('refresh') === 'true';
-    // v3: attributed orders (orders_quantity) preferred for CPA/ROAS to match TW Triple Attribution UI
-    const cacheKey = `v3_ads_${startDate}_${endDate}_${model}_${window}_${platform || 'all'}`;
+    // v4: group by (channel, ad_id) only — grouping by ad_name/campaign_name split the same ad across rows
+    //      and zeroed attributed orders on some shards. argMax picks the label tied to the largest spend row.
+    const cacheKey = `v4_ads_${startDate}_${endDate}_${model}_${window}_${platform || 'all'}`;
     if (!forceRefresh) {
       const cached = await getCached('tw-ads', cacheKey);
       if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
@@ -69,14 +70,14 @@ export async function GET(request: NextRequest) {
     const twModel = MODEL_MAP[model] || 'Triple Attribution';
     const twWindow = WINDOW_MAP[window] || 'lifetime';
 
-    // Query ad-level data from Triple Whale's pixel_joined_tvf
-    // Group by ad_id only (not ad_name/campaign_name) to avoid duplicates
-    // Use ANY_VALUE for name fields since they're consistent per ad_id
+    // Query ad-level data from Triple Whale's pixel_joined_tvf.
+    // Must GROUP BY channel + ad_id only: same ad_id can appear with different ad_name/campaign_name
+    // strings over time; grouping by name split spend vs orders across rows and produced CPA "—" in UI.
     const query = `
       SELECT
         pj.channel,
-        pj.campaign_name,
-        pj.ad_name,
+        argMax(pj.campaign_name, pj.spend) AS campaign_name,
+        argMax(pj.ad_name, pj.spend) AS ad_name,
         pj.ad_id,
         SUM(pj.spend) AS spend,
         SUM(pj.order_revenue) AS order_revenue,
@@ -90,7 +91,8 @@ export async function GET(request: NextRequest) {
       WHERE pj.event_date BETWEEN @startDate AND @endDate
         AND pj.model = '${twModel}'
         AND pj.attribution_window = '${twWindow}'
-      GROUP BY pj.channel, pj.campaign_name, pj.ad_name, pj.ad_id
+        AND coalesce(pj.ad_id, '') != ''
+      GROUP BY pj.channel, pj.ad_id
       ORDER BY SUM(pj.spend) DESC
       LIMIT 5000
     `;

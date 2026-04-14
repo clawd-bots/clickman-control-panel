@@ -135,7 +135,7 @@ export const finalItems: FinalItem[] = [
     status: 'done',
     category: 'integration',
     pages: ['Attribution Tree'],
-    actions: [{ label: 'Completed', steps: ['Meta Pixel (15 events), Google Ads Tag (12 events, live), TikTok Pixel (12 events), GA4 (live from API), Server-side GTM. Pagination for 10+ events. Match quality ratings.'] }],
+    actions: [{ label: 'Completed', steps: ['Meta Pixel event list from live Ads Insights (ad-level aggregate, includes custom pixel events). Google Ads Tag live, GA4 live from API, TikTok + Server-side GTM sample. Pagination for long lists.'] }],
   },
 
   // ═══ PENDING ═══
