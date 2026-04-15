@@ -12,33 +12,20 @@ import {
 } from '@/lib/prompt-registry';
 import { useDateRange } from '@/components/DateProvider';
 import { useCurrency } from '@/components/CurrencyProvider';
-import { fillPromptTemplate, buildRuntimeContextBlock, PromptRuntimeVars } from '@/lib/prompt-interpolate';
+import {
+  fillPromptTemplate,
+  buildRuntimeContextBlock,
+  buildFullPromptRuntimeVars,
+  PromptRuntimeVars,
+} from '@/lib/prompt-interpolate';
 import { parseNumberedList } from '@/lib/parse-ai-response';
 import { toLocalDateString } from '@/lib/dateUtils';
-
-const INSIGHTS_LS_PREFIX = 'clickman-ai-insights:';
-
-function loadPersistedInsights(key: string): string[] | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const p = JSON.parse(raw) as { items?: unknown };
-    if (!Array.isArray(p.items) || p.items.length === 0) return null;
-    if (!p.items.every((x) => typeof x === 'string')) return null;
-    return p.items as string[];
-  } catch {
-    return null;
-  }
-}
-
-function savePersistedInsights(key: string, items: string[]): void {
-  try {
-    localStorage.setItem(key, JSON.stringify({ items, savedAt: Date.now() }));
-  } catch {
-    /* quota or private mode */
-  }
-}
+import {
+  loadStoredAiInsights,
+  saveStoredAiInsights,
+  type InsightMoneyCurrency,
+} from '@/lib/ai-insights-storage';
+import { mapInsightLinesForDisplayCurrency } from '@/lib/insight-currency';
 
 export interface AISuggestionsPanelProps {
   suggestions: string[];
@@ -72,51 +59,63 @@ export default function AISuggestionsPanel({
   const [editPrompt, setEditPrompt] = useState('');
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [history, setHistory] = useState<PromptHistoryEntry[]>([]);
-  const [displayItems, setDisplayItems] = useState<string[]>(suggestions);
+  /** Raw lines from Refresh (immutable until next refresh); static placeholders when never refreshed. */
+  const [rawInsightLines, setRawInsightLines] = useState<string[]>(suggestions);
+  /** `ai` = from Refresh or restored cache (money substrings can be rewritten for display); `static` = page placeholders. */
+  const [insightLineSource, setInsightLineSource] = useState<'static' | 'ai'>('static');
+  /** Currency symbol mode used when Refresh ran — drives ₱ ↔ $ rewriting only. */
+  const [refreshMoneyCurrency, setRefreshMoneyCurrency] = useState<InsightMoneyCurrency>('php');
   const [refreshError, setRefreshError] = useState<string | null>(null);
 
   /** Parent often passes a new `suggestions` array every render; only read it when hydrating, never overwrite AI output on every render. */
   const suggestionsRef = useRef(suggestions);
   suggestionsRef.current = suggestions;
 
-  const insightsCacheKey = useMemo(
-    () =>
-      `${INSIGHTS_LS_PREFIX}${promptId}:${toLocalDateString(dateRange.startDate)}:${toLocalDateString(dateRange.endDate)}:${currency === '$' ? 'usd' : 'php'}`,
-    [promptId, dateRange.startDate, dateRange.endDate, currency]
+  const insightsStorageKeyScope = useMemo(
+    () => ({
+      promptId,
+      start: toLocalDateString(dateRange.startDate),
+      end: toLocalDateString(dateRange.endDate),
+    }),
+    [promptId, dateRange.startDate, dateRange.endDate],
   );
 
-  const runtimeVars: PromptRuntimeVars = useMemo(() => {
-    const ga4Tz =
-      typeof analysisContext['ga4ReportingTimeZone'] === 'string'
-        ? analysisContext['ga4ReportingTimeZone']
-        : '';
-    const ga4Today =
-      typeof analysisContext['ga4TodayInReportingTimeZone'] === 'string'
-        ? analysisContext['ga4TodayInReportingTimeZone']
-        : toLocalDateString(new Date());
-    return {
-      DATE_RANGE: buildDateRangeLabel(dateRange.startDate, dateRange.endDate),
-      CURRENCY: currency === '$' ? 'USD ($)' : 'PHP (₱)',
-      EXCHANGE_RATE: Number.isFinite(exchangeRate) ? exchangeRate.toFixed(4) : '—',
-      GA4_REPORTING_TIMEZONE: ga4Tz || '(not loaded)',
-      GA4_TODAY_IN_REPORTING_TZ: ga4Today,
-    };
-  }, [
-    dateRange.startDate,
-    dateRange.endDate,
-    currency,
-    exchangeRate,
-    analysisContext,
-  ]);
+  const displayLines = useMemo(() => {
+    if (insightLineSource === 'static') {
+      return rawInsightLines;
+    }
+    return mapInsightLinesForDisplayCurrency(
+      rawInsightLines,
+      refreshMoneyCurrency,
+      currency === '$',
+      exchangeRate,
+    );
+  }, [rawInsightLines, insightLineSource, refreshMoneyCurrency, currency, exchangeRate]);
+
+  const runtimeVars: PromptRuntimeVars = useMemo(
+    () =>
+      buildFullPromptRuntimeVars({
+        dateRange,
+        currencyLabel: currency === '$' ? 'USD ($)' : 'PHP (₱)',
+        exchangeRate,
+        analysisContext,
+        dateRangeLabel: buildDateRangeLabel(dateRange.startDate, dateRange.endDate),
+      }),
+    [dateRange, currency, exchangeRate, analysisContext],
+  );
 
   useEffect(() => {
-    const cached = loadPersistedInsights(insightsCacheKey);
-    if (cached) {
-      setDisplayItems(cached);
+    const { promptId: pid, start, end } = insightsStorageKeyScope;
+    const stored = loadStoredAiInsights(pid, start, end);
+    if (stored && stored.items.length > 0) {
+      setRawInsightLines(stored.items);
+      setRefreshMoneyCurrency(stored.refreshCurrency);
+      setInsightLineSource('ai');
       return;
     }
-    setDisplayItems(suggestionsRef.current);
-  }, [insightsCacheKey]);
+    setRawInsightLines(suggestionsRef.current);
+    setInsightLineSource('static');
+  }, [insightsStorageKeyScope]);
 
   const reload = useCallback(() => {
     const tpl = getPromptById(promptId);
@@ -163,6 +162,7 @@ export default function AISuggestionsPanel({
   };
 
   const handleRefresh = async () => {
+    const { promptId: pid, start, end } = insightsStorageKeyScope;
     setRefreshing(true);
     setRefreshError(null);
     const tpl = getPromptById(promptId);
@@ -199,8 +199,15 @@ export default function AISuggestionsPanel({
           setRefreshError('Model returned no numbered items — try Refresh again.');
           addToHistory(promptId, tpl.prompt, String(json.text ?? '').slice(0, 200));
         } else {
-          setDisplayItems(items);
-          savePersistedInsights(insightsCacheKey, items);
+          const rc: InsightMoneyCurrency = currency === '$' ? 'usd' : 'php';
+          setRawInsightLines(items);
+          setInsightLineSource('ai');
+          setRefreshMoneyCurrency(rc);
+          saveStoredAiInsights(pid, start, end, {
+            items,
+            savedAt: Date.now(),
+            refreshCurrency: rc,
+          });
           addToHistory(promptId, tpl.prompt, items.map((s, i) => `${i + 1}. ${s}`).join(' ').slice(0, 280));
         }
       }
@@ -273,7 +280,7 @@ export default function AISuggestionsPanel({
 
       {visible && (
         <div className="space-y-3">
-          {displayItems.map((s, i) => (
+          {displayLines.map((s, i) => (
             <div key={i} className="flex gap-3 text-sm text-text-secondary leading-relaxed">
               <span className="shrink-0 w-5 h-5 rounded-full bg-brand-blue/20 text-brand-blue-light text-xs flex items-center justify-center font-medium mt-0.5">{i + 1}</span>
               <span>{parseMarkdownBold(s)}</span>

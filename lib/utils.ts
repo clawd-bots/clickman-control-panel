@@ -9,6 +9,24 @@ export function formatCurrency(value: number | null | undefined, currency: '₱'
   return `${currency}${n.toFixed(2)}`;
 }
 
+/**
+ * Full currency amount with locale grouping, no fractional digits — for chart tooltips and dense labels.
+ */
+export function formatCurrencyWhole(
+  value: number | null | undefined,
+  currency: '₱' | '$' = '₱',
+  locale: string = currency === '₱' ? 'en-PH' : 'en-US',
+): string {
+  const n = value == null || !Number.isFinite(Number(value)) ? 0 : Number(value);
+  const rounded = Math.round(n);
+  const sign = rounded < 0 ? '-' : '';
+  const abs = Math.abs(rounded);
+  return `${sign}${currency}${abs.toLocaleString(locale, {
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  })}`;
+}
+
 export function formatNumber(value: number): string {
   if (Math.abs(value) >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M`;
   if (Math.abs(value) >= 1_000) return `${(value / 1_000).toFixed(1)}K`;

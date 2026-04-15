@@ -8,7 +8,9 @@ import { filterByDateRange, formatDateLabel, toLocalDateString } from '@/lib/dat
 import { Pencil, Check, X, Users as UsersIcon } from 'lucide-react';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
-import { getPromptById, syncPromptChanges } from '@/lib/prompt-registry';
+import { useTargets } from '@/lib/useTargets';
+import { fetchTripleWhaleData, getMetric, type TWData } from '@/lib/triple-whale-client';
+import { getPromptById } from '@/lib/prompt-registry';
 import { MonthlyTargetData, loadTargets, loadTargetsFromServer, saveTargets } from '@/lib/targets';
 
 // Monthly target data structure
@@ -122,6 +124,8 @@ const monthLabels = ['Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26', 'Sep 26',
 export default function TargetsPage() {
   const { currency, convertValue, exchangeRate } = useCurrency();
   const { dateRange } = useDateRange();
+  const { getTarget } = useTargets();
+  const [twSummary, setTwSummary] = useState<TWData | null>(null);
   const [monthlyTargets, setMonthlyTargets] = useState<MonthlyTarget[]>(initialMonthlyTargets);
   const [editingCell, setEditingCell] = useState<{row: number, col: string} | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -162,6 +166,22 @@ export default function TargetsPage() {
       }
     });
   }, [applyTargetData]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const start = toLocalDateString(dateRange.startDate);
+    const end = toLocalDateString(dateRange.endDate);
+    fetchTripleWhaleData(start, end, 'summary')
+      .then((d) => {
+        if (!cancelled) setTwSummary(d);
+      })
+      .catch(() => {
+        if (!cancelled) setTwSummary(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [dateRange.startDate, dateRange.endDate]);
 
   // Persist targets to localStorage and dispatch event whenever they change
   const persistTargets = useCallback((targets: MonthlyTarget[]) => {
@@ -365,6 +385,11 @@ export default function TargetsPage() {
       displayCurrencyToggle: currency === '$' ? 'USD' : 'PHP',
       exchangeRate,
       monthLabels: currentMonthLabels,
+      targetHints: {
+        mer: getTarget('MER'),
+        aMER: getTarget('aMER'),
+        ncCAC: getTarget('ncCAC'),
+      },
       targetsTable: monthlyTargets.map((row) => {
         const cells: Record<string, string> = {};
         for (const col of currentMonthColumns) {
@@ -372,8 +397,31 @@ export default function TargetsPage() {
         }
         return { metric: row.metric, unit: row.unit, cells };
       }),
+      tripleWhaleActuals: twSummary
+        ? {
+            orderRevenue: getMetric(twSummary, 'orderRevenue'),
+            orders: getMetric(twSummary, 'orders'),
+            newCustomerOrders: getMetric(twSummary, 'newCustomerOrders'),
+            mer: getMetric(twSummary, 'mer'),
+            marketingSpend:
+              getMetric(twSummary, 'metaAdSpend') +
+              getMetric(twSummary, 'googleAdSpend') +
+              getMetric(twSummary, 'tiktokAdSpend') +
+              getMetric(twSummary, 'redditAdSpend'),
+            ncpa: getMetric(twSummary, 'ncpa'),
+          }
+        : null,
     }),
-    [dateRange, currency, exchangeRate, currentMonthColumns, currentMonthLabels, monthlyTargets]
+    [
+      dateRange,
+      currency,
+      exchangeRate,
+      currentMonthColumns,
+      currentMonthLabels,
+      monthlyTargets,
+      getTarget,
+      twSummary,
+    ]
   );
 
   // Dynamic AI suggestions with historical data analysis linked to prompt templates
@@ -388,6 +436,22 @@ export default function TargetsPage() {
       `90-day moving average shows nCAC improving 8% MoM. Set progressive reduction targets: Apr ${formatCurrencyValue(780)} → Dec ${formatCurrencyValue(650)}.`,
       `365-day cohort data indicates March-May launches perform 25% better. Increase Q2 new customer targets by corresponding amount.`,
       `Year-over-year comparison: 2025 Q4 was 18% higher than Q3. Apply similar seasonal multipliers to 2026 targets for realistic goal setting.`,
+    ];
+  };
+
+  const getDynamicTargetVsActualIntelligence = () => {
+    const tpl = getPromptById('target-vs-actual-intelligence');
+    const lead = tpl?.prompt?.split('\n')?.[0] || 'Target vs actual';
+    const revT = getTarget('Net Revenue');
+    const revA = twSummary ? getMetric(twSummary, 'orderRevenue') : null;
+    return [
+      `${lead} Compare the targets grid to tripleWhaleActuals in DATA for the same window.`,
+      revT != null && revA != null
+        ? `Example: Net Revenue actual ${formatCurrencyValue(revA)} vs prorated target from grid ${formatCurrencyValue(revT)} (verify proration in app logic).`
+        : `When TW loads, use tripleWhaleActuals.orderRevenue against Net Revenue cells for overlapping months.`,
+      `Classify each row: on track (90%+), at risk (70 to 89%), behind (below 70%) using achievement = actual divided by target.`,
+      `For gaps, explain acquisition vs spend mix using ncCAC and marketing spend from DATA.`,
+      `End with 2 to 3 concrete actions (budget, creative, or target revision), not generic advice.`,
     ];
   };
 
@@ -672,11 +736,18 @@ export default function TargetsPage() {
       </div>
 
       {/* Target Intelligence */}
-      <div className="px-1">
+      <div className="px-1 space-y-6">
         <AISuggestionsPanel 
           suggestions={getDynamicTargetIntelligence()} 
           title="Target Intelligence"
           promptId="target-intelligence"
+          pageLabel="Targets & Goals"
+          analysisContext={targetsAnalysisContext}
+        />
+        <AISuggestionsPanel 
+          suggestions={getDynamicTargetVsActualIntelligence()} 
+          title="Target vs Actual Performance"
+          promptId="target-vs-actual-intelligence"
           pageLabel="Targets & Goals"
           analysisContext={targetsAnalysisContext}
         />

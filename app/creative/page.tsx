@@ -61,23 +61,26 @@ const cohortLabels: Record<string, string> = { oct: 'Oct Creatives', nov: 'Nov C
 // Function to get tab-specific AI analysis title
 function getAITitle(tab: string): string {
   const aiTitles: Record<string, string> = {
-    'Ad Churn': 'Ad Churn Intelligence',
-    'Account Control': 'Account Control Intelligence', 
-    'Slugging Rate': 'Slugging Rate Intelligence',
+    'Performance': 'Creative Performance Intelligence',
+    'Ad Churn': 'Ad Churn & Lifecycle Analysis',
+    'Account Control': 'Account Control & Zone Analysis',
+    'Slugging Rate': 'Creative Production & Hit Rate Analysis',
     'Pareto': 'Pareto Analysis Intelligence',
-    'Demographics': 'Demographics Intelligence',
+    'Demographics': 'Demographics vs Creative Alignment',
   };
   return aiTitles[tab] || 'Creative Intelligence';
 }
 
 function getAIPromptId(tab: string): string {
   const promptIds: Record<string, string> = {
+    'Performance': 'creative-performance',
     'Ad Churn': 'creative-ad-churn',
     'Account Control': 'creative-account-control',
     'Slugging Rate': 'creative-slugging-rate',
+    'Pareto': 'creative-pareto',
     'Demographics': 'creative-demographics',
   };
-  return promptIds[tab] || 'creative-ad-churn';
+  return promptIds[tab] || 'creative-performance';
 }
 
 export default function CreativePage() {
@@ -493,6 +496,11 @@ export default function CreativePage() {
       platform,
       attrModel,
       attrWindow,
+      attributionModel: attrModel,
+      attributionWindow: attrWindow,
+      strategyFilter: 'All',
+      zoneFilter: accountControlFilter,
+      cpaTarget: `${formatCurrencyValue(targetCPA)} all CPA / ${formatCurrencyValue(targetNCCPA)} NC CPA`,
       campaignFilter,
       selectedCampaignsCount: selectedCampaigns.length,
       churnCpaMode,
@@ -525,6 +533,10 @@ export default function CreativePage() {
       platform,
       attrModel,
       attrWindow,
+      accountControlFilter,
+      targetCPA,
+      targetNCCPA,
+      formatCurrencyValue,
       campaignFilter,
       selectedCampaigns.length,
       churnCpaMode,

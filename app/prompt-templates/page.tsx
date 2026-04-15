@@ -77,8 +77,19 @@ export default function PromptTemplatesPage() {
   const pageMap: Record<string, string> = {
     'dashboard-intelligence': 'Dashboard → Daily Summary & Intelligence',
     'target-intelligence': 'Targets & Goals → Target Intelligence',
-    'creative-intelligence': 'Creative & MTA → Intelligence Panel',
+    'target-vs-actual-intelligence': 'Targets & Goals → Target vs Actual Performance',
+    'creative-performance': 'Creative & MTA → Performance tab',
+    'creative-ad-churn': 'Creative & MTA → Ad Churn tab',
+    'creative-account-control': 'Creative & MTA → Account Control tab',
+    'creative-slugging-rate': 'Creative & MTA → Slugging Rate tab',
+    'creative-pareto': 'Creative & MTA → Pareto tab',
+    'creative-demographics': 'Creative & MTA → Demographics tab',
     'cohorts-intelligence': 'Cohorts → Retention Intelligence',
+    'mer-ncac-intelligence': 'Attribution Tree → MER / nCAC layer',
+    'surveys-mmm-intelligence': 'Attribution Tree → Surveys & MMM layer',
+    'mta-platform-intelligence': 'Attribution Tree → MTA & Platform layer',
+    'tracking-infra-intelligence': 'Attribution Tree → Tracking Infra layer',
+    'cohort-ltv-intelligence': 'Attribution Tree → Cohort LTV layer',
     'pnl-intelligence': 'Profit & Loss → (future)',
   };
 

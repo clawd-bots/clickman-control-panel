@@ -9,7 +9,7 @@ import { ChartTooltipContent } from '@/components/ui/ChartTooltipContent';
 import { SkeletonKPICard, SkeletonChart, SkeletonTable } from '@/components/ui/Skeleton';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
-import { filterByDateRange, formatDateLabel, aggregateToWeeks, toLocalDateString } from '@/lib/dateUtils';
+import { filterByDateRange, formatDateLabel, aggregateToWeeks, toLocalDateString, isWithinRange } from '@/lib/dateUtils';
 import { formatYyyyMmDdInTimeZone } from '@/lib/ga4-reporting-dates';
 import {
   fetchTripleWhaleData,
@@ -26,7 +26,7 @@ import { useTargets } from '@/lib/useTargets';
 import { filterAttributionChannelRows } from '@/lib/attribution-filters';
 
 import { kpiCards, dailyMetrics, revenueInsights } from '@/lib/sample-data';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatCurrencyWhole, formatNumber } from '@/lib/utils';
 import { ChevronDown } from 'lucide-react';
 import {
   LineChart, Line, BarChart, Bar, AreaChart, Area,
@@ -164,6 +164,11 @@ export default function DashboardPage() {
     return formatCurrency(convertValue(value), currency);
   };
 
+  /** Same basis as KPIs/charts (TW raw → convertValue), integers + locale grouping — tooltips & dense axes */
+  const formatCurrencyValueWhole = (value: number) => {
+    return formatCurrencyWhole(convertValue(value), currency);
+  };
+
   /** Triple Whale SQL attribution amounts are in USD; convert for display when user chooses ₱. */
   const formatAttributionCurrency = (usdValue: number) => {
     if (currency === '$') return formatCurrency(usdValue, '$');
@@ -288,16 +293,72 @@ export default function DashboardPage() {
     return data;
   }, [dateRange, twData]);
 
-  // Revenue composition data filtered by date range
+  /** Stacked NC vs RC bars: TW daily series when available, else sample months intersecting the global range (no full Oct–Mar fallback). */
   const filteredRevenueMonthly = useMemo(() => {
+    const ncDaily = getDailyData(twData, 'newCustomerRevenue');
+    const rcDaily = getDailyData(twData, 'returningCustomerRevenue');
+
+    if (ncDaily.length > 0 || rcDaily.length > 0) {
+      const byDate = new Map<string, { nc: number; rc: number }>();
+      for (const d of ncDaily) {
+        const cur = byDate.get(d.date) ?? { nc: 0, rc: 0 };
+        cur.nc = d.value;
+        byDate.set(d.date, cur);
+      }
+      for (const d of rcDaily) {
+        const cur = byDate.get(d.date) ?? { nc: 0, rc: 0 };
+        cur.rc = d.value;
+        byDate.set(d.date, cur);
+      }
+
+      const dailyRows = Array.from(byDate.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, vals]) => ({ date, nc: vals.nc, rc: vals.rc }))
+        .filter((row) => isWithinRange(row.date, dateRange.startDate, dateRange.endDate));
+
+      if (dailyRows.length === 0 && twData) {
+        const nc = getMetric(twData, 'newCustomerRevenue');
+        const rc = getMetric(twData, 'returningCustomerRevenue');
+        const start = toLocalDateString(dateRange.startDate);
+        const end = toLocalDateString(dateRange.endDate);
+        return [
+          {
+            month: start,
+            displayMonth: `${formatDateLabel(start, 'day')} – ${formatDateLabel(end, 'day')}`,
+            nc,
+            rc,
+          },
+        ];
+      }
+
+      if (dailyRows.length === 0) return [];
+
+      if (dailyRows.length > 30) {
+        const forWeeks = dailyRows.map((r) => ({ ...r, displayDate: '' as string }));
+        const weekly = aggregateToWeeks(forWeeks, 'date');
+        return weekly.map((w) => ({
+          month: String(w.date),
+          displayMonth: w.displayDate,
+          nc: Number(w.nc ?? 0),
+          rc: Number(w.rc ?? 0),
+        }));
+      }
+
+      return dailyRows.map((d) => ({
+        month: d.date,
+        displayMonth: formatDateLabel(d.date, 'day'),
+        nc: d.nc,
+        rc: d.rc,
+      }));
+    }
+
     const filtered = filterByDateRange(revenueInsights.monthly, 'month', dateRange.startDate, dateRange.endDate);
-    // If no data in range, show all (fallback)
-    const data = filtered.length > 0 ? filtered : revenueInsights.monthly;
-    return data.map(d => ({
+    if (filtered.length === 0) return [];
+    return filtered.map((d) => ({
       ...d,
       displayMonth: formatDateLabel(d.month, 'month'),
     }));
-  }, [dateRange]);
+  }, [dateRange, twData]);
 
   // Calculate aggregated values — use TW summary metrics when available, fallback to chart data
   const aggregatedData = useMemo(() => {
@@ -427,8 +488,13 @@ export default function DashboardPage() {
         revenue: p.revenue,
         units: p.units,
       })),
+      targetHints: {
+        mer: getTarget('MER'),
+        aMER: getTarget('aMER'),
+        ncCAC: getTarget('ncCAC'),
+      },
     }),
-    [dateRange, aggregatedData, twData, ga4Data, visibleAttrData, attributionModel, attributionWindow, productKpiRows]
+    [dateRange, aggregatedData, twData, ga4Data, visibleAttrData, attributionModel, attributionWindow, productKpiRows, getTarget]
   );
 
   // Comprehensive cross-page AI analysis
@@ -631,14 +697,17 @@ export default function DashboardPage() {
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
-                  tickFormatter={(v) => formatCurrencyValue(v)}
+                  tickFormatter={(v) => formatCurrencyValueWhole(Number(v))}
                   width={60}
                 />
                 <Tooltip 
                   content={ChartTooltipContent}
                   itemSorter={(item) => (item.dataKey === 'revenue' ? 0 : item.dataKey === 'costs' ? 1 : 2)}
                   contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11, color: 'var(--color-text-primary)' }}
-                  formatter={(value: any, name: any) => [formatCurrencyValue(value), String(name || '')]}
+                  formatter={(value: unknown, name: unknown) => [
+                    formatCurrencyValueWhole(Number(value)),
+                    String(name ?? ''),
+                  ]}
                 />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
                 <Line type="monotone" dataKey="revenue" name="Order Revenue" stroke="#34D399" strokeWidth={2.5} dot={false} />
@@ -871,8 +940,13 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 shrink-0"><DataSource source="Triple Whale" /><LiveBadge /></div>
           </div>
           <div className="min-h-[240px]">
+            {filteredRevenueMonthly.length === 0 ? (
+              <div className="h-[240px] flex items-center justify-center text-sm text-text-tertiary">
+                No NC/RC breakdown for this period.
+              </div>
+            ) : (
             <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={filteredRevenueMonthly} margin={{ top: 10, right: 20, bottom: 60, left: 20 }}>
+              <BarChart data={filteredRevenueMonthly} margin={{ top: 10, right: 20, bottom: 60, left: 28 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                 <XAxis 
                   dataKey="displayMonth" 
@@ -884,15 +958,52 @@ export default function DashboardPage() {
                 />
                 <YAxis 
                   tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
-                  tickFormatter={(v) => formatCurrencyValue(v)} 
-                  label={{ value: `Revenue (${currency}M)`, angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
+                  tickFormatter={(v) => formatCurrencyValueWhole(Number(v))} 
+                  label={{
+                    content: (props) => {
+                      const vb = props.viewBox;
+                      if (
+                        !vb ||
+                        !('x' in vb) ||
+                        typeof (vb as { x: number }).x !== 'number' ||
+                        typeof (vb as { height: number }).height !== 'number'
+                      ) {
+                        return null;
+                      }
+                      const x = (vb as { x: number; y?: number; height: number }).x;
+                      const y = (vb as { y?: number }).y ?? 0;
+                      const height = (vb as { height: number }).height;
+                      const cy = y + height / 2;
+                      return (
+                        <text
+                          x={x}
+                          y={cy}
+                          fill="var(--color-text-tertiary)"
+                          fontSize={11}
+                          textAnchor="middle"
+                          dominantBaseline="middle"
+                          transform={`rotate(-90, ${x}, ${cy})`}
+                        >
+                          <tspan x={25} dy={-10}>{`Revenue (${currency})`}</tspan>
+                        </text>
+                      );
+                    },
+                  }}
                 />
-                <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
+                <Tooltip
+                  content={ChartTooltipContent}
+                  contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }}
+                  formatter={(value: unknown, name: unknown) => [
+                    formatCurrencyValueWhole(Number(value)),
+                    String(name ?? ''),
+                  ]}
+                />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="nc" name="New Customer Rev" stackId="a" fill="#4A6BD6" radius={[0, 0, 0, 0]} />
                 <Bar dataKey="rc" name="Repeat Customer Rev" stackId="a" fill="#34D399" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            )}
           </div>
         </div>
 

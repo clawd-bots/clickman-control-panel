@@ -102,6 +102,9 @@ export default function CohortsPage() {
         end: toLocalDateString(dateRange.endDate),
       },
       metric,
+      metricMode: metric,
+      displayMode: cumulative ? 'Accumulative' : 'Incremental',
+      formatMode: heatmap ? '% (heatmap)' : '# (numeric)',
       cumulative,
       heatmap,
       twSummary: twData
