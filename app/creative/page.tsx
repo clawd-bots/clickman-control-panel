@@ -1679,28 +1679,11 @@ export default function CreativePage() {
       {activeTab === 'Slugging Rate' && (
         <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
           <div className="flex flex-col gap-3 mb-4">
-            {/* Title row with CPA targets */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
-                  <span className="truncate">Production & Slugging Rate</span>
-                  <InfoTooltip metric="Production Rate" />
-                </h3>
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => setSluggingCpaMode('nccpa')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${sluggingCpaMode === 'nccpa' ? 'bg-brand-blue/15 text-brand-blue-light ring-1 ring-brand-blue/30' : 'bg-bg-elevated text-text-secondary border border-border hover:bg-bg-primary'}`}
-                  >
-                    <span className="text-text-tertiary">NC CPA Target:</span> <span className="font-semibold">{formatCurrencyValue(targetNCCPA)}</span>
-                  </button>
-                  <button 
-                    onClick={() => setSluggingCpaMode('cpa')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer transition-colors ${sluggingCpaMode === 'cpa' ? 'bg-brand-blue/15 text-brand-blue-light ring-1 ring-brand-blue/30' : 'bg-bg-elevated text-text-secondary border border-border hover:bg-bg-primary'}`}
-                  >
-                    <span className="text-text-tertiary">All CPA Target:</span> <span className="font-semibold">{formatCurrencyValue(targetCPA)}</span>
-                  </button>
-                </div>
-              </div>
+              <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
+                <span className="truncate">Production & Slugging Rate</span>
+                <InfoTooltip metric="Production Rate" />
+              </h3>
             </div>
             {/* Controls row: Platform + CPA toggle + Date range */}
             <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap">
@@ -1720,10 +1703,10 @@ export default function CreativePage() {
                 <span className="text-xs text-text-secondary font-medium shrink-0">Target:</span>
                 <div className="flex bg-bg-elevated border border-border rounded-lg overflow-hidden">
                   <button onClick={() => setSluggingCpaMode('cpa')} className={`px-3 py-1.5 text-xs font-medium transition-colors ${sluggingCpaMode === 'cpa' ? 'bg-brand-blue text-white' : 'text-text-secondary hover:text-text-primary'}`}>
-                    All Customers
+                    All Customers ({formatCurrencyValue(targetCPA)})
                   </button>
                   <button onClick={() => setSluggingCpaMode('nccpa')} className={`px-3 py-1.5 text-xs font-medium transition-colors ${sluggingCpaMode === 'nccpa' ? 'bg-brand-blue text-white' : 'text-text-secondary hover:text-text-primary'}`}>
-                    New Customers
+                    New Customers ({formatCurrencyValue(targetNCCPA)})
                   </button>
                 </div>
               </div>

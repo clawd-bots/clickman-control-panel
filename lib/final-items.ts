@@ -137,90 +137,25 @@ export const finalItems: FinalItem[] = [
     pages: ['Attribution Tree'],
     actions: [{ label: 'Completed', steps: ['Meta Pixel event list from live Ads Insights (ad-level aggregate, includes custom pixel events). Google Ads Tag live, GA4 live from API, TikTok + Server-side GTM sample. Pagination for long lists.'] }],
   },
-
-  // ═══ PENDING ═══
   {
     id: 'fi-7',
     title: 'Reddit Ads API Access',
-    why: 'Reddit ad data for Creative & MTA. Currently using sample data for Reddit platform.',
+    why: 'Reddit ad spend and performance for Creative & MTA alongside other platforms.',
     owner: 'jordan',
-    status: 'pending',
+    status: 'done',
     category: 'integration',
     pages: ['Creative & MTA'],
     actions: [
       {
-        label: 'Create a Reddit "script" app',
+        label: 'Completed',
         steps: [
-          'Go to reddit.com/prefs/apps',
-          'Click "create another app" at the bottom',
-          'Select "script" as the app type',
-          'Name: alfred_clickman_control',
-          'Redirect URI: http://localhost:8080',
-          'Copy the client ID and client secret',
-          'Send both + Reddit Ads account ID to Alfred',
+          'Reddit Ads API connected. Reddit platform metrics and charts in Creative & MTA use live data (no longer sample-only for Reddit).',
         ],
       },
     ],
   },
-  {
-    id: 'fi-9',
-    title: 'Customer.io API Integration',
-    why: 'Email & SMS attribution data for the full attribution picture. Credentials provided, integration pending.',
-    owner: 'alfred',
-    status: 'in-progress',
-    category: 'integration',
-    pages: ['Attribution Tree'],
-    actions: [
-      {
-        label: 'Implement API integration (credentials already provided)',
-        steps: [
-          'Site ID: deb7a9d23d995e204213',
-          'API Key: f5f552bd60a11b6cc75a',
-          'Build Customer.io data pipeline into Attribution Tree',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'fi-12',
-    title: 'Medusa API Key',
-    why: 'Medusa is the commerce backend for AndYou. Needed for live COGS, unit sales, revenue, and product data on Dashboard and P&L.',
-    owner: 'jordan',
-    status: 'pending',
-    category: 'integration',
-    pages: ['Dashboard', 'P&L'],
-    actions: [
-      {
-        label: 'Generate a Medusa API key',
-        steps: [
-          'Log in to Medusa admin panel',
-          'Go to Settings → API Key Management',
-          'Create read-only API key with access to: Products, Orders, Inventory, Pricing',
-          'Send the API key and Medusa backend URL to Alfred',
-        ],
-      },
-    ],
-  },
-  {
-    id: 'fi-10',
-    title: 'Inventory API Access',
-    why: 'Product KPIs table shows "Pending API" for inventory data. Need real-time stock levels.',
-    owner: 'jordan',
-    status: 'pending',
-    category: 'integration',
-    pages: ['Dashboard'],
-    actions: [
-      {
-        label: 'Provide inventory system API access',
-        steps: [
-          'Identify inventory system (Shopify, Medusa, etc.)',
-          'Generate read-only API key',
-          'Provide endpoint URLs and product SKU mapping',
-          'Send credentials to Alfred',
-        ],
-      },
-    ],
-  },
+
+  // ═══ PENDING ═══
   // {
   //   id: 'fi-11',
   //   title: 'Anthropic API Key',
