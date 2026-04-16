@@ -89,6 +89,12 @@ export interface TWAd {
   adId: string;
   adName: string;
   campaignName: string;
+  /** Distinct campaign names in TW for this ad in the date window (same ad can appear in multiple campaigns). */
+  campaignNames?: string[];
+  /** Distinct ad_ids sharing this ad_name on the channel (includes inactive / paused ads in TW data). */
+  sameNameAdCountAll?: number;
+  /** Distinct ad_ids with this ad_name under this campaign (same campaign, multiple ad sets). */
+  sameNameAdCountInCampaign?: number;
   platform: string;
   channelId: string;
   spend: number;

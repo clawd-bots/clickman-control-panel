@@ -10,13 +10,12 @@ import { SkeletonKPICard, SkeletonChart, SkeletonTable } from '@/components/ui/S
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { filterByDateRange, formatDateLabel, aggregateToWeeks, toLocalDateString, isWithinRange } from '@/lib/dateUtils';
+import { getComparisonDateRange } from '@/lib/comparison-range';
 import { formatYyyyMmDdInTimeZone } from '@/lib/ga4-reporting-dates';
 import {
   fetchTripleWhaleData,
   fetchTWProductKpis,
   getMetric,
-  getPrevMetric,
-  getDelta,
   getDailyData,
   TWData,
   type TWProductKpiRow,
@@ -46,6 +45,7 @@ const CHANNEL_ATTRIBUTION_MODELS = [
 ] as const;
 
 function pctChange(curr: number, prev: number) {
+  if (!Number.isFinite(curr) || !Number.isFinite(prev) || prev === 0) return 0;
   return ((curr - prev) / prev) * 100;
 }
 
@@ -56,6 +56,8 @@ export default function DashboardPage() {
   const [attributionModel, setAttributionModel] = useState<string>('Triple Attribution');
   const [attributionWindow, setAttributionWindow] = useState('7-day');
   const [twData, setTwData] = useState<TWData | null>(null);
+  /** Summary for the selected comparison window (TopBar vs). */
+  const [twComparisonSummary, setTwComparisonSummary] = useState<TWData | null>(null);
   const [twLoading, setTwLoading] = useState(true);
   const [ga4Data, setGA4Data] = useState<GA4Data | null>(null);
   const [ga4Loading, setGA4Loading] = useState(true);
@@ -72,8 +74,33 @@ export default function DashboardPage() {
     setGA4Loading(true);
     const startDate = toLocalDateString(dateRange.startDate);
     const endDate = toLocalDateString(dateRange.endDate);
-    fetchTripleWhaleData(startDate, endDate, 'all')
-      .then(setTwData)
+    const compRange = getComparisonDateRange({
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+      comparison: dateRange.comparison,
+      comparisonEnabled: dateRange.comparisonEnabled,
+      comparisonCustomStart: dateRange.comparisonCustomStart,
+      comparisonCustomEnd: dateRange.comparisonCustomEnd,
+    });
+    const needComp =
+      dateRange.comparisonEnabled &&
+      dateRange.comparison !== 'none' &&
+      compRange !== null;
+
+    const mainP = fetchTripleWhaleData(startDate, endDate, 'all');
+    const compP = needComp
+      ? fetchTripleWhaleData(
+          toLocalDateString(compRange!.start),
+          toLocalDateString(compRange!.end),
+          'summary'
+        )
+      : Promise.resolve(null);
+
+    Promise.all([mainP, compP])
+      .then(([main, comp]) => {
+        setTwData(main);
+        setTwComparisonSummary(comp);
+      })
       .catch(console.error)
       .finally(() => setTwLoading(false));
     // Fetch GA4 summary + daily in parallel (reporting timezone comes from GA4 Data API metadata)
@@ -363,6 +390,14 @@ export default function DashboardPage() {
   // Calculate aggregated values — use TW summary metrics when available, fallback to chart data
   const aggregatedData = useMemo(() => {
     if (twData) {
+      const useComp =
+        twComparisonSummary &&
+        dateRange.comparisonEnabled &&
+        dateRange.comparison !== 'none';
+
+      const comp = useComp ? twComparisonSummary : null;
+      const cPrev = (key: string) => (comp ? getMetric(comp, key) : 0);
+
       const totalRevenue = getMetric(twData, 'orderRevenue');
       const totalCosts = getMetric(twData, 'metaAdSpend') + getMetric(twData, 'googleAdSpend') + getMetric(twData, 'tiktokAdSpend') + getMetric(twData, 'redditAdSpend');
       const totalOrders = getMetric(twData, 'orders');
@@ -374,17 +409,20 @@ export default function DashboardPage() {
       const ncac = getMetric(twData, 'ncpa');
       // aMER = New Customer Revenue / Total Ad Spend (always lower than MER)
       const amer = totalCosts > 0 ? getMetric(twData, 'newCustomerRevenue') / totalCosts : 0;
-      
-      // Previous period values from TW for accurate % change
-      const prevRevenue = getPrevMetric(twData, 'orderRevenue');
-      const prevCosts = getPrevMetric(twData, 'metaAdSpend') + getPrevMetric(twData, 'googleAdSpend') + getPrevMetric(twData, 'tiktokAdSpend') + getPrevMetric(twData, 'redditAdSpend');
-      const prevOrders = getPrevMetric(twData, 'orders');
-      const prevNewCustomers = getPrevMetric(twData, 'newCustomerOrders');
-      const prevSessions = getPrevMetric(twData, 'sessions');
-      const prevMer = getPrevMetric(twData, 'twRoas') || getPrevMetric(twData, 'topRoas');
-      const prevCac = getPrevMetric(twData, 'blendedCpa');
-      const prevNcac = getPrevMetric(twData, 'ncpa');
-      const prevAmer = prevCosts > 0 ? getPrevMetric(twData, 'newCustomerRevenue') / prevCosts : 0;
+
+      const prevRevenue = cPrev('orderRevenue');
+      const prevCosts =
+        cPrev('metaAdSpend') +
+        cPrev('googleAdSpend') +
+        cPrev('tiktokAdSpend') +
+        cPrev('redditAdSpend');
+      const prevOrders = cPrev('orders');
+      const prevNewCustomers = cPrev('newCustomerOrders');
+      const prevSessions = cPrev('sessions');
+      const prevMer = cPrev('twRoas') || cPrev('topRoas');
+      const prevCac = cPrev('blendedCpa');
+      const prevNcac = cPrev('ncpa');
+      const prevAmer = prevCosts > 0 ? cPrev('newCustomerRevenue') / prevCosts : 0;
       
       // Computed AOVs
       const ncAov = totalNewCustomers > 0 ? getMetric(twData, 'newCustomerRevenue') / totalNewCustomers : 0;
@@ -393,7 +431,7 @@ export default function DashboardPage() {
       
       // LTV & CAC/LTV ratio (lifetime data, not tied to date picker)
       const ltv = getMetric(twData, 'ltv');
-      const prevLtv = getPrevMetric(twData, 'ltv');
+      const prevLtv = cPrev('ltv');
       const cacLtvRatio = cac > 0 ? ltv / cac : 0;
 
       return {
@@ -432,7 +470,7 @@ export default function DashboardPage() {
       prevLtv: 0,
       cacLtvRatio: 3.2,
     };
-  }, [chartData, twData]);
+  }, [chartData, twData, twComparisonSummary, dateRange.comparison, dateRange.comparisonEnabled]);
 
   const visibleAttrData = useMemo(
     () => filterAttributionChannelRows(attrData ?? []),

@@ -5,13 +5,26 @@ import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
 import { targets as initialTargets, targetTrend, targetAISuggestions } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { filterByDateRange, formatDateLabel, toLocalDateString } from '@/lib/dateUtils';
-import { Pencil, Check, X, Users as UsersIcon } from 'lucide-react';
+import {
+  Pencil,
+  Check,
+  X,
+  Users as UsersIcon,
+  History,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { useTargets } from '@/lib/useTargets';
 import { fetchTripleWhaleData, getMetric, type TWData } from '@/lib/triple-whale-client';
 import { getPromptById } from '@/lib/prompt-registry';
 import { MonthlyTargetData, loadTargets, loadTargetsFromServer, saveTargets } from '@/lib/targets';
+import {
+  appendTargetHistory,
+  loadTargetHistory,
+  type TargetHistoryEntry,
+} from '@/lib/targets-history';
 
 // Monthly target data structure
 interface MonthlyTarget {
@@ -121,6 +134,8 @@ let initialMonthLabels = ['Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26', 'Sep
 const monthColumns = ['Apr26', 'May26', 'Jun26', 'Jul26', 'Aug26', 'Sep26', 'Oct26', 'Nov26', 'Dec26', 'Jan27', 'Feb27', 'Mar27'] as const;
 const monthLabels = ['Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26', 'Sep 26', 'Oct 26', 'Nov 26', 'Dec 26', 'Jan 27', 'Feb 27', 'Mar 27'];
 
+const HISTORY_PAGE_SIZE = 10;
+
 export default function TargetsPage() {
   const { currency, convertValue, exchangeRate } = useCurrency();
   const { dateRange } = useDateRange();
@@ -132,6 +147,9 @@ export default function TargetsPage() {
   const [currentMonthColumns, setCurrentMonthColumns] = useState<string[]>([...monthColumns]);
   const [currentMonthLabels, setCurrentMonthLabels] = useState<string[]>([...monthLabels]);
   const [showAddMonthDialog, setShowAddMonthDialog] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyEntries, setHistoryEntries] = useState<TargetHistoryEntry[]>([]);
+  const [historyPage, setHistoryPage] = useState(0);
 
   // Helper to apply saved data to the target rows
   const applyTargetData = useCallback((saved: MonthlyTargetData) => {
@@ -182,6 +200,31 @@ export default function TargetsPage() {
       cancelled = true;
     };
   }, [dateRange.startDate, dateRange.endDate]);
+
+  useEffect(() => {
+    if (!showHistoryModal) return;
+    setHistoryEntries(loadTargetHistory());
+  }, [showHistoryModal, monthlyTargets]);
+
+  useEffect(() => {
+    if (showHistoryModal) setHistoryPage(0);
+  }, [showHistoryModal]);
+
+  const historyTotalPages = Math.max(
+    1,
+    Math.ceil(historyEntries.length / HISTORY_PAGE_SIZE)
+  );
+  const historySafePage = Math.min(historyPage, historyTotalPages - 1);
+  const historyPageStart = historySafePage * HISTORY_PAGE_SIZE;
+  const historyPageEnd = Math.min(
+    historyPageStart + HISTORY_PAGE_SIZE,
+    historyEntries.length
+  );
+  const historyPageRows = historyEntries.slice(historyPageStart, historyPageEnd);
+
+  useEffect(() => {
+    setHistoryPage((p) => Math.min(p, historyTotalPages - 1));
+  }, [historyTotalPages]);
 
   // Persist targets to localStorage and dispatch event whenever they change
   const persistTargets = useCallback((targets: MonthlyTarget[]) => {
@@ -251,6 +294,19 @@ export default function TargetsPage() {
     return unit;
   };
 
+  /** Match table cell display for history modal (stored PHP for money rows). */
+  const formatRowCellForHistory = (row: MonthlyTarget, stored: string) => {
+    const raw = String(stored ?? '').trim();
+    if (!raw) return '—';
+    const unitDisplay = getUnitDisplay(row.unit);
+    const prefix = row.unit === 'currency' ? unitDisplay : '';
+    const suffix = row.unit === 'x' ? 'x' : row.unit === '%' ? '%' : '';
+    if (row.unit === 'currency') {
+      return formatStoredCurrencyCell(raw);
+    }
+    return `${prefix}${raw}${suffix}`;
+  };
+
   // Start editing a cell
   const startEdit = (rowIndex: number, colKey: string, currentValue: string) => {
     // Don't allow editing auto-calculated metrics
@@ -278,53 +334,57 @@ export default function TargetsPage() {
       editingRow.unit === 'currency' && editingCell.col !== 'lastUpdated'
         ? storedPhpFromDisplayInput(editValue)
         : editValue.trim();
-    
-    setMonthlyTargets(prev => {
-      const updatedTargets = prev.map((target, i) => 
-        i === editingCell.row 
-          ? { 
-              ...target, 
+
+    const colKey = editingCell.col;
+    const monthIdx = currentMonthColumns.indexOf(colKey);
+    const monthLabel = monthIdx >= 0 ? currentMonthLabels[monthIdx] : colKey;
+
+    // React 18 Strict Mode (dev) runs this updater twice — only append history once.
+    let historyAppended = false;
+
+    setMonthlyTargets((prev) => {
+      const updatedTargets = prev.map((target, i) =>
+        i === editingCell.row
+          ? {
+              ...target,
               [editingCell.col]: cellStored,
-              lastUpdated: 'Just now' 
+              lastUpdated: 'Just now',
             }
           : target
       );
-      
+
       // Auto-calculations for various metrics
       if (editingCell.col !== 'lastUpdated') {
-        const colKey = editingCell.col;
-        
-        // Get all relevant metrics
-        const revenue = updatedTargets.find(t => t.metric === 'Net Revenue');
-        const marketingCosts = updatedTargets.find(t => t.metric === 'Marketing Costs');
-        const ncOrders = updatedTargets.find(t => t.metric === 'NC Orders');
-        const ncac = updatedTargets.find(t => t.metric === 'nCAC');
-        const totalOrders = updatedTargets.find(t => t.metric === 'Total Orders');
-        const aovRow = updatedTargets.find(t => t.metric === 'AOV');
-        const merRow = updatedTargets.find(t => t.metric === 'MER');
-        const amerRow = updatedTargets.find(t => t.metric === 'aMER');
-        
+        const revenue = updatedTargets.find((t) => t.metric === 'Net Revenue');
+        const marketingCosts = updatedTargets.find((t) => t.metric === 'Marketing Costs');
+        const ncOrders = updatedTargets.find((t) => t.metric === 'NC Orders');
+        const ncac = updatedTargets.find((t) => t.metric === 'nCAC');
+        const totalOrders = updatedTargets.find((t) => t.metric === 'Total Orders');
+        const aovRow = updatedTargets.find((t) => t.metric === 'AOV');
+        const merRow = updatedTargets.find((t) => t.metric === 'MER');
+        const amerRow = updatedTargets.find((t) => t.metric === 'aMER');
+
         const revenueValue = parseFloat((revenue as any)?.[colKey] as string) || 0;
         const marketingCostsValue = parseFloat((marketingCosts as any)?.[colKey] as string) || 0;
         const ordersValue = parseFloat((ncOrders as any)?.[colKey] as string) || 0;
         const totalOrdersValue = parseFloat((totalOrders as any)?.[colKey] as string) || 0;
         const ncacValue = parseFloat((ncac as any)?.[colKey] as string) || 0;
-        
+
         // Auto-calculate AOV when revenue and Total Orders are available
         if (revenue && totalOrders && aovRow && revenueValue > 0 && totalOrdersValue > 0) {
           const calculatedAOV = Math.round(revenueValue / totalOrdersValue);
           (aovRow as any)[colKey] = calculatedAOV.toString();
           aovRow.lastUpdated = 'Auto-calculated';
         }
-        
+
         // Auto-calculate MER: Net Revenue / Marketing Costs
         if (revenue && marketingCosts && merRow && revenueValue > 0 && marketingCostsValue > 0) {
           const calculatedMER = (revenueValue / marketingCostsValue).toFixed(2);
           (merRow as any)[colKey] = calculatedMER;
           merRow.lastUpdated = 'Auto-calculated';
         }
-        
-        // Auto-calculate aMER when Net Revenue, nCAC, and NC Orders are available  
+
+        // Auto-calculate aMER when Net Revenue, nCAC, and NC Orders are available
         if (revenue && ncOrders && ncac && amerRow && revenueValue > 0 && ordersValue > 0 && ncacValue > 0) {
           const newCustomerSpend = ncacValue * ordersValue;
           const calculatedAMER = (revenueValue / newCustomerSpend).toFixed(2);
@@ -332,10 +392,64 @@ export default function TargetsPage() {
           amerRow.lastUpdated = 'Auto-calculated';
         }
       }
-      
+
+      const historyPayload: Omit<TargetHistoryEntry, 'id' | 'changedAt'>[] = [];
+
+      if (editingCell.col !== 'lastUpdated') {
+        const editedRowPrev = prev[editingCell.row];
+        const oldDirect = String((editedRowPrev as any)[colKey] ?? '').trim();
+        const newDirect = String(cellStored).trim();
+        if (oldDirect !== newDirect) {
+          const previousValue = formatRowCellForHistory(
+            editedRowPrev,
+            String((editedRowPrev as any)[colKey] ?? '')
+          );
+          const newValue = formatRowCellForHistory(editedRowPrev, cellStored);
+          if (previousValue !== newValue) {
+            historyPayload.push({
+              metric: editedRowPrev.metric,
+              monthKey: colKey,
+              monthLabel,
+              previousValue,
+              newValue,
+            });
+          }
+        }
+
+        for (const autoMetric of ['MER', 'aMER', 'AOV'] as const) {
+          const prevRow = prev.find((r) => r.metric === autoMetric);
+          const newRow = updatedTargets.find((r) => r.metric === autoMetric);
+          if (!prevRow || !newRow) continue;
+          const ov = String((prevRow as any)[colKey] ?? '').trim();
+          const nv = String((newRow as any)[colKey] ?? '').trim();
+          if (ov === nv) continue;
+          const previousValue = formatRowCellForHistory(
+            prevRow,
+            String((prevRow as any)[colKey] ?? '')
+          );
+          const newValue = formatRowCellForHistory(
+            newRow,
+            String((newRow as any)[colKey] ?? '')
+          );
+          if (previousValue === newValue) continue;
+          historyPayload.push({
+            metric: autoMetric,
+            monthKey: colKey,
+            monthLabel,
+            previousValue,
+            newValue,
+          });
+        }
+      }
+
+      if (historyPayload.length > 0 && !historyAppended) {
+        historyAppended = true;
+        appendTargetHistory(historyPayload);
+      }
+
       return updatedTargets;
     });
-    
+
     setEditingCell(null);
     setEditValue('');
   };
@@ -467,14 +581,23 @@ export default function TargetsPage() {
 
       {/* Monthly Targets Table */}
       <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 mx-1">
-        <div className="mb-4">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-2 flex-wrap min-w-0">
             <h3 className="text-sm font-medium text-text-primary flex items-center gap-2">
               <span>Monthly Target Entry Table</span>
               <InfoTooltip metric="Monthly Targets" />
             </h3>
             <span className="text-xs text-text-tertiary">• Changes are saved automatically</span>
           </div>
+          <button
+            type="button"
+            onClick={() => setShowHistoryModal(true)}
+            className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-border text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-colors text-xs font-medium"
+            title="View history of target changes"
+          >
+            <History className="w-4 h-4" aria-hidden />
+            History
+          </button>
         </div>
         
         {/* Mobile Horizontal Scroll Table - Like Desktop */}
@@ -752,6 +875,110 @@ export default function TargetsPage() {
           analysisContext={targetsAnalysisContext}
         />
       </div>
+
+      {/* Target change history */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div
+            className="bg-bg-surface border border-border rounded-lg w-full max-w-3xl max-h-[85vh] flex flex-col shadow-xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="targets-history-title"
+          >
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border shrink-0">
+              <h3 id="targets-history-title" className="text-lg font-semibold text-text-primary">
+                Target change history
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(false)}
+                className="p-1.5 rounded-md text-text-tertiary hover:text-text-primary hover:bg-bg-elevated"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-auto flex-1 px-4 py-3">
+              {historyEntries.length === 0 ? (
+                <p className="text-sm text-text-secondary py-6 text-center">
+                  No changes recorded yet. Edits you save in the grid will appear here.
+                </p>
+              ) : (
+                <table className="w-full text-xs border-collapse min-w-[640px]">
+                  <thead>
+                    <tr className="border-b border-border text-left">
+                      <th className="py-2 pr-3 font-semibold text-text-primary whitespace-nowrap">When</th>
+                      <th className="py-2 pr-3 font-semibold text-text-primary">Metric</th>
+                      <th className="py-2 pr-3 font-semibold text-text-primary">Month</th>
+                      <th className="py-2 pr-3 font-semibold text-text-primary">Previous</th>
+                      <th className="py-2 font-semibold text-text-primary">New</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historyPageRows.map((entry) => (
+                      <tr key={entry.id} className="border-b border-border/40">
+                        <td className="py-2 pr-3 text-text-secondary whitespace-nowrap align-top">
+                          {new Date(entry.changedAt).toLocaleString(undefined, {
+                            dateStyle: 'medium',
+                            timeStyle: 'short',
+                          })}
+                        </td>
+                        <td className="py-2 pr-3 text-text-primary align-top">{entry.metric}</td>
+                        <td className="py-2 pr-3 text-text-secondary align-top">{entry.monthLabel}</td>
+                        <td className="py-2 pr-3 text-text-primary align-top tabular-nums">{entry.previousValue}</td>
+                        <td className="py-2 text-text-primary align-top tabular-nums">{entry.newValue}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="px-4 py-3 border-t border-border flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 shrink-0">
+              {historyEntries.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+                  <button
+                    type="button"
+                    onClick={() => setHistoryPage((p) => Math.max(0, p - 1))}
+                    disabled={historySafePage <= 0}
+                    className="inline-flex items-center gap-0.5 px-2 py-1 rounded border border-border text-text-primary hover:bg-bg-elevated disabled:opacity-40 disabled:pointer-events-none"
+                    aria-label="Previous page"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Previous
+                  </button>
+                  <span className="tabular-nums px-1">
+                    Page {historySafePage + 1} of {historyTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setHistoryPage((p) => Math.min(historyTotalPages - 1, p + 1))
+                    }
+                    disabled={historySafePage >= historyTotalPages - 1}
+                    className="inline-flex items-center gap-0.5 px-2 py-1 rounded border border-border text-text-primary hover:bg-bg-elevated disabled:opacity-40 disabled:pointer-events-none"
+                    aria-label="Next page"
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                  <span className="text-text-tertiary sm:ml-1">
+                    Showing {historyPageStart + 1}–{historyPageEnd} of {historyEntries.length}
+                  </span>
+                </div>
+              ) : (
+                <div />
+              )}
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(false)}
+                className="px-4 py-2 bg-brand-blue text-white rounded-md hover:bg-brand-blue-light transition-colors text-sm self-end sm:self-auto"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Add Month Confirmation Dialog */}
       {showAddMonthDialog && (

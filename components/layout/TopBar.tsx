@@ -68,12 +68,21 @@ export default function TopBar() {
   const { theme, toggleTheme } = useTheme();
   const { toggleMobile } = useSidebar();
   const { currency, setCurrency } = useCurrency();
-  const { dateRange, setDateRange, updatePreset, updateComparison, setComparisonEnabled } = useDateRange();
+  const {
+    dateRange,
+    setDateRange,
+    updatePreset,
+    updateComparison,
+    setComparisonCustomRange,
+    setComparisonEnabled,
+  } = useDateRange();
   const [showDateDropdown, setShowDateDropdown] = useState(false);
   const [showCompDropdown, setShowCompDropdown] = useState(false);
   const [customMode, setCustomMode] = useState(false);
   const [customStart, setCustomStart] = useState('');
   const [customEnd, setCustomEnd] = useState('');
+  const [compCustomStart, setCompCustomStart] = useState('');
+  const [compCustomEnd, setCompCustomEnd] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   const dateRef = useRef<HTMLDivElement>(null);
@@ -84,6 +93,17 @@ export default function TopBar() {
   useEffect(() => {
     if (!showDateDropdown) setCustomMode(false);
   }, [showDateDropdown]);
+
+  useEffect(() => {
+    if (
+      dateRange.comparison === 'custom' &&
+      dateRange.comparisonCustomStart &&
+      dateRange.comparisonCustomEnd
+    ) {
+      setCompCustomStart(toLocalDateString(dateRange.comparisonCustomStart));
+      setCompCustomEnd(toLocalDateString(dateRange.comparisonCustomEnd));
+    }
+  }, [dateRange.comparison, dateRange.comparisonCustomStart, dateRange.comparisonCustomEnd]);
 
   // Global refresh function
   const handleRefresh = async () => {
@@ -254,12 +274,17 @@ export default function TopBar() {
                   <ChevronDown size={12} />
                 </button>
                 {showCompDropdown && (
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-bg-elevated border border-border rounded-lg shadow-xl z-50 py-1">
+                  <div className="absolute right-0 top-full mt-1 w-[min(100vw-1.5rem,16rem)] sm:w-60 bg-bg-elevated border border-border rounded-lg shadow-xl z-50 py-1">
                     {comparisonOptions.map((o) => (
                       <button
                         key={o.value}
                         type="button"
                         onClick={() => {
+                          if (o.value === 'custom') {
+                            updateComparison('custom');
+                            setComparisonEnabled(true);
+                            return;
+                          }
                           updateComparison(o.value);
                           const newEnabled = o.value !== 'none';
                           setComparisonEnabled(newEnabled);
@@ -274,6 +299,64 @@ export default function TopBar() {
                         {o.label}
                       </button>
                     ))}
+                    {dateRange.comparison === 'custom' && (
+                      <div className="border-t border-border px-3 py-2 space-y-2">
+                        <p className="text-[10px] uppercase tracking-wide text-text-tertiary font-medium">
+                          Baseline range
+                        </p>
+                        <div className="space-y-1">
+                          <label className="text-[10px] uppercase tracking-wide text-text-tertiary font-medium">
+                            Start
+                          </label>
+                          <input
+                            type="date"
+                            value={compCustomStart}
+                            onChange={(e) => setCompCustomStart(e.target.value)}
+                            className="w-full rounded-md border border-border bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-brand-blue"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] uppercase tracking-wide text-text-tertiary font-medium">
+                            End
+                          </label>
+                          <input
+                            type="date"
+                            value={compCustomEnd}
+                            min={compCustomStart}
+                            onChange={(e) => setCompCustomEnd(e.target.value)}
+                            className="w-full rounded-md border border-border bg-bg-primary px-2 py-1.5 text-xs text-text-primary outline-none focus:border-brand-blue"
+                          />
+                        </div>
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!compCustomStart || !compCustomEnd) return;
+                              let start = new Date(`${compCustomStart}T00:00:00`);
+                              let end = new Date(`${compCustomEnd}T23:59:59.999`);
+                              if (start > end) {
+                                [start, end] = [
+                                  new Date(`${compCustomEnd}T00:00:00`),
+                                  new Date(`${compCustomStart}T23:59:59.999`),
+                                ];
+                              }
+                              setComparisonCustomRange(start, end);
+                              setShowCompDropdown(false);
+                            }}
+                            className="flex-1 rounded-md bg-brand-blue text-white py-1.5 text-xs font-medium hover:opacity-90"
+                          >
+                            Apply
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowCompDropdown(false)}
+                            className="rounded-md border border-border px-2 py-1.5 text-xs text-text-secondary hover:bg-bg-surface"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

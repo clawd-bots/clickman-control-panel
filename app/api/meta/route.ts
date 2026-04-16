@@ -333,7 +333,7 @@ export async function GET(request: NextRequest) {
 
     if (mode === 'tracking-events') {
       /** Bump cache key when aggregation / filter logic changes. */
-      const cacheParams = `${startDate}_${endDate}_tracking-events-v6-pixel-stats`;
+      const cacheParams = `${startDate}_${endDate}_tracking-events-v7-pixel-id`;
       if (!forceRefresh) {
         const cached = await getCached('meta', cacheParams);
         if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
@@ -382,10 +382,10 @@ export async function GET(request: NextRequest) {
         let dataSource: 'pixel-stats' | 'ads-insights' = 'ads-insights';
         let allParsedCount = 0;
 
-        const pixelIdResolved = await resolveAdsPixelId(accountId, cfg.pixelId);
-        if (pixelIdResolved) {
+        const resolvedPixelId = await resolveAdsPixelId(accountId, cfg.pixelId);
+        if (resolvedPixelId) {
           try {
-            const pt = await fetchPixelEventStatsAggregated(pixelIdResolved, startDate, endDate);
+            const pt = await fetchPixelEventStatsAggregated(resolvedPixelId, startDate, endDate);
             if (pt.size > 0) {
               dataSource = 'pixel-stats';
               pixelOnly = [...pt.entries()]
@@ -496,13 +496,15 @@ export async function GET(request: NextRequest) {
           data: {
             events,
             totalEventsPerDay,
+            /** Resolved Meta Pixel ID (META_PIXEL_ID or first pixel on the ad account). */
+            pixelId: resolvedPixelId,
             /** Offsite pixel / CAPI web rows only (excludes onsite_conversion.* on-Facebook) */
             actionTypesIncluded: pixelOnly.length,
             actionTypesExcluded: Math.max(0, allParsedCount - pixelOnly.length),
             actionTypesTotal: allParsedCount,
             dateRange: { startDate, endDate },
             dataSource,
-            pixelIdResolved: Boolean(pixelIdResolved),
+            pixelIdResolved: Boolean(resolvedPixelId),
             note:
               dataSource === 'pixel-stats'
                 ? 'Counts from Ads Pixel `/stats` with aggregation=event (aligned with Events Manager names). Range split into ≤7-day chunks. If empty, falls back to Ads Insights.'

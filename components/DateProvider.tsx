@@ -1,5 +1,6 @@
 'use client';
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { getPreviousPeriodRange } from '@/lib/comparison-range';
 
 interface DateRange {
   startDate: Date;
@@ -7,6 +8,9 @@ interface DateRange {
   preset: string;
   comparison: string;
   comparisonEnabled: boolean;
+  /** When comparison mode is `custom`, the baseline window (set via TopBar). */
+  comparisonCustomStart: Date | null;
+  comparisonCustomEnd: Date | null;
 }
 
 interface DateContextType {
@@ -14,6 +18,7 @@ interface DateContextType {
   setDateRange: (range: DateRange) => void;
   updatePreset: (preset: string) => void;
   updateComparison: (comparison: string) => void;
+  setComparisonCustomRange: (start: Date | null, end: Date | null) => void;
   setComparisonEnabled: (enabled: boolean) => void;
 }
 
@@ -87,6 +92,8 @@ export function DateProvider({ children }: { children: ReactNode }) {
       preset: '7d',
       comparison: 'prev-period',
       comparisonEnabled,
+      comparisonCustomStart: null,
+      comparisonCustomEnd: null,
     };
   });
 
@@ -114,9 +121,23 @@ export function DateProvider({ children }: { children: ReactNode }) {
   };
 
   const updateComparison = (comparison: string) => {
-    setDateRangeState(prev => ({
+    setDateRangeState((prev) => {
+      const next: DateRange = { ...prev, comparison };
+      if (comparison === 'custom' && (!prev.comparisonCustomStart || !prev.comparisonCustomEnd)) {
+        const { start, end } = getPreviousPeriodRange(prev.startDate, prev.endDate);
+        next.comparisonCustomStart = start;
+        next.comparisonCustomEnd = end;
+      }
+      return next;
+    });
+  };
+
+  const setComparisonCustomRange = (start: Date | null, end: Date | null) => {
+    setDateRangeState((prev) => ({
       ...prev,
-      comparison,
+      comparison: 'custom',
+      comparisonCustomStart: start,
+      comparisonCustomEnd: end,
     }));
   };
 
@@ -142,6 +163,7 @@ export function DateProvider({ children }: { children: ReactNode }) {
       setDateRange,
       updatePreset,
       updateComparison,
+      setComparisonCustomRange,
       setComparisonEnabled,
     }}>
       {children}

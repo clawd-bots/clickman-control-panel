@@ -1,4 +1,5 @@
 import { toLocalDateString } from '@/lib/dateUtils';
+import { getComparisonDateRange } from '@/lib/comparison-range';
 
 /**
  * Optional tokens in stored prompt templates, filled at analysis time from date + currency context.
@@ -34,8 +35,17 @@ export function buildComparisonPeriodLabel(params: {
   endDate: Date;
   comparison: string;
   comparisonEnabled: boolean;
+  comparisonCustomStart?: Date | null;
+  comparisonCustomEnd?: Date | null;
 }): string {
-  const { startDate, endDate, comparison, comparisonEnabled } = params;
+  const {
+    startDate,
+    endDate,
+    comparison,
+    comparisonEnabled,
+    comparisonCustomStart,
+    comparisonCustomEnd,
+  } = params;
   const fmt = (d: Date) =>
     d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -43,32 +53,31 @@ export function buildComparisonPeriodLabel(params: {
     return 'Comparison disabled in the TopBar.';
   }
   if (comparison === 'none') {
-    return 'No comparison selected (comparison mode is none). prior period deltas may still appear in DATA from Triple Whale.';
+    return 'No comparison selected (comparison mode is none). KPI deltas use the selected baseline when comparison is enabled.';
   }
 
-  const msPerDay = 86400000;
-  const inclusiveDays = Math.max(
-    1,
-    Math.round((endDate.getTime() - startDate.getTime()) / msPerDay) + 1,
-  );
+  const range = getComparisonDateRange({
+    startDate,
+    endDate,
+    comparison,
+    comparisonEnabled,
+    comparisonCustomStart: comparisonCustomStart ?? null,
+    comparisonCustomEnd: comparisonCustomEnd ?? null,
+  });
+
+  if (!range) {
+    return 'Custom comparison: set start and end dates in the TopBar vs dropdown.';
+  }
 
   if (comparison === 'prev-period') {
-    const prevEnd = new Date(startDate);
-    prevEnd.setDate(prevEnd.getDate() - 1);
-    const prevStart = new Date(prevEnd);
-    prevStart.setDate(prevStart.getDate() - (inclusiveDays - 1));
-    return `Previous period (${fmt(prevStart)} to ${fmt(prevEnd)})`;
+    return `Previous period (${fmt(range.start)} to ${fmt(range.end)}) — same length as the report range, ending the day before it starts.`;
   }
 
   if (comparison === 'prev-year') {
-    const pStart = new Date(startDate);
-    pStart.setFullYear(pStart.getFullYear() - 1);
-    const pEnd = new Date(endDate);
-    pEnd.setFullYear(pEnd.getFullYear() - 1);
-    return `Same period prior year (${fmt(pStart)} to ${fmt(pEnd)})`;
+    return `Same period last year (${fmt(range.start)} to ${fmt(range.end)}).`;
   }
 
-  return `Comparison setting: ${comparison}`;
+  return `Custom baseline (${fmt(range.start)} to ${fmt(range.end)})`;
 }
 
 export function fillPromptTemplate(template: string, vars: Partial<PromptRuntimeVars>): string {
@@ -88,6 +97,8 @@ export function buildFullPromptRuntimeVars(params: {
     endDate: Date;
     comparison: string;
     comparisonEnabled: boolean;
+    comparisonCustomStart?: Date | null;
+    comparisonCustomEnd?: Date | null;
   };
   currencyLabel: string;
   exchangeRate: number;
@@ -136,6 +147,8 @@ export function buildFullPromptRuntimeVars(params: {
       endDate: dateRange.endDate,
       comparison: dateRange.comparison,
       comparisonEnabled: dateRange.comparisonEnabled,
+      comparisonCustomStart: dateRange.comparisonCustomStart,
+      comparisonCustomEnd: dateRange.comparisonCustomEnd,
     }),
     ATTRIBUTION_MODEL: pick('attributionModel', 'attrModel', 'cohortAttrModel'),
     ATTRIBUTION_WINDOW: pick('attributionWindow', 'attrWindow', 'cohortAttrWindow'),

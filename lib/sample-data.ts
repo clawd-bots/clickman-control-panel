@@ -309,6 +309,22 @@ export const trackingHealth = [
     ]
   },
   { 
+    system: 'Reddit Pixel', 
+    status: 'healthy' as const, 
+    events: '412/day', 
+    matchRate: '8.8/10',
+    source: 'Browser' as const,
+    eventBreakdown: [
+      { event: 'PageVisit', count: '2,180', matchRate: '9.0/10', type: 'Browser' },
+      { event: 'ViewContent', count: '1,420', matchRate: '8.9/10', type: 'Browser' },
+      { event: 'AddToCart', count: '890', matchRate: '8.7/10', type: 'Browser' },
+      { event: 'Lead', count: '320', matchRate: '8.6/10', type: 'Browser' },
+      { event: 'Purchase', count: '210', matchRate: '9.1/10', type: 'Browser' },
+      { event: 'SignUp', count: '95', matchRate: '8.5/10', type: 'Browser' },
+      { event: 'Custom — Consultation', count: '48', matchRate: '8.4/10', type: 'Browser' },
+    ]
+  },
+  { 
     system: 'GA4', 
     status: 'healthy' as const, 
     events: '22,400/day', 
@@ -332,23 +348,6 @@ export const trackingHealth = [
       { event: 'file_download', count: '62', matchRate: 'N/A', type: 'Multiple' },
       { event: 'video_start', count: '310', matchRate: 'N/A', type: 'Multiple' },
       { event: 'video_complete', count: '95', matchRate: 'N/A', type: 'Multiple' }
-    ]
-  },
-  { 
-    system: 'Server-side GTM', 
-    status: 'error' as const, 
-    events: '0/day', 
-    matchRate: '0/10',
-    source: 'Server' as const,
-    eventBreakdown: [
-      { event: 'page_view', count: '0', matchRate: '0/10', type: 'Server' },
-      { event: 'view_item', count: '0', matchRate: '0/10', type: 'Server' },
-      { event: 'add_to_cart', count: '0', matchRate: '0/10', type: 'Server' },
-      { event: 'begin_checkout', count: '0', matchRate: '0/10', type: 'Server' },
-      { event: 'add_payment_info', count: '0', matchRate: '0/10', type: 'Server' },
-      { event: 'purchase', count: '0', matchRate: '0/10', type: 'Server' },
-      { event: 'sign_up', count: '0', matchRate: '0/10', type: 'Server' },
-      { event: 'generate_lead', count: '0', matchRate: '0/10', type: 'Server' }
     ]
   },
 ];

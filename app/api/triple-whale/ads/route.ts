@@ -58,9 +58,11 @@ export async function GET(request: NextRequest) {
     }
 
     const forceRefresh = searchParams.get('refresh') === 'true';
+    // v6: + same-name ad_id counts (active + inactive) for Account Control Count column.
+    // v5: + campaign_names per (channel, ad_id).
     // v4: group by (channel, ad_id) only — grouping by ad_name/campaign_name split the same ad across rows
     //      and zeroed attributed orders on some shards. argMax picks the label tied to the largest spend row.
-    const cacheKey = `v4_ads_${startDate}_${endDate}_${model}_${window}_${platform || 'all'}`;
+    const cacheKey = `v6_ads_${startDate}_${endDate}_${model}_${window}_${platform || 'all'}`;
     if (!forceRefresh) {
       const cached = await getCached('tw-ads', cacheKey);
       if (cached !== null) return NextResponse.json({ ...cached, _fromCache: true });
@@ -118,6 +120,129 @@ export async function GET(request: NextRequest) {
     const rawData = await res.json();
     const rows = Array.isArray(rawData) ? rawData : (rawData.data || []);
 
+    /** Distinct campaign names per (channel, ad_id) — same ad can appear in multiple campaigns. */
+    const campaignNamesQuery = `
+      SELECT
+        pj.channel,
+        pj.ad_id,
+        groupUniqArray(pj.campaign_name) AS campaign_names
+      FROM pixel_joined_tvf pj
+      WHERE pj.event_date BETWEEN @startDate AND @endDate
+        AND pj.model = '${twModel}'
+        AND pj.attribution_window = '${twWindow}'
+        AND coalesce(pj.ad_id, '') != ''
+      GROUP BY pj.channel, pj.ad_id
+    `;
+
+    let campaignNamesByKey = new Map<string, string[]>();
+    try {
+      const cnRes = await fetch(TW_SQL_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          shopId,
+          query: campaignNamesQuery,
+          period: { startDate, endDate },
+        }),
+      });
+      if (cnRes.ok) {
+        const cnRaw = await cnRes.json();
+        const cnRows = Array.isArray(cnRaw) ? cnRaw : (cnRaw.data || []);
+        for (const r of cnRows) {
+          const ch = r.channel as string;
+          const aid = String(r.ad_id || '');
+          const arr = r.campaign_names;
+          const names = Array.isArray(arr)
+            ? arr.map((x: unknown) => String(x || '').trim()).filter(Boolean)
+            : [];
+          if (ch && aid) campaignNamesByKey.set(`${ch}|${aid}`, names);
+        }
+      }
+    } catch {
+      /* keep empty map — UI falls back to no multi-campaign info */
+    }
+
+    /** Per (channel, ad_name): how many distinct ad_ids use that name — catches duplicates across ad sets (incl. inactive). */
+    let sameNameAllByKey = new Map<string, number>();
+    /** Per (channel, campaign_name, ad_name): distinct ad_ids in that campaign with that name. */
+    let sameNameInCampaignByKey = new Map<string, number>();
+    try {
+      const sameNameQuery = `
+        SELECT
+          pj.channel,
+          pj.ad_name,
+          uniqExact(pj.ad_id) AS instance_count
+        FROM pixel_joined_tvf pj
+        WHERE pj.event_date BETWEEN @startDate AND @endDate
+          AND pj.model = '${twModel}'
+          AND pj.attribution_window = '${twWindow}'
+          AND coalesce(pj.ad_id, '') != ''
+          AND coalesce(pj.ad_name, '') != ''
+        GROUP BY pj.channel, pj.ad_name
+      `;
+      const sameCampQuery = `
+        SELECT
+          pj.channel,
+          pj.campaign_name,
+          pj.ad_name,
+          uniqExact(pj.ad_id) AS instance_count
+        FROM pixel_joined_tvf pj
+        WHERE pj.event_date BETWEEN @startDate AND @endDate
+          AND pj.model = '${twModel}'
+          AND pj.attribution_window = '${twWindow}'
+          AND coalesce(pj.ad_id, '') != ''
+          AND coalesce(pj.ad_name, '') != ''
+        GROUP BY pj.channel, pj.campaign_name, pj.ad_name
+      `;
+      const [snRes, scRes] = await Promise.all([
+        fetch(TW_SQL_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+          body: JSON.stringify({
+            shopId,
+            query: sameNameQuery,
+            period: { startDate, endDate },
+          }),
+        }),
+        fetch(TW_SQL_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+          body: JSON.stringify({
+            shopId,
+            query: sameCampQuery,
+            period: { startDate, endDate },
+          }),
+        }),
+      ]);
+      if (snRes.ok) {
+        const snRaw = await snRes.json();
+        const snRows = Array.isArray(snRaw) ? snRaw : (snRaw.data || []);
+        for (const r of snRows) {
+          const ch = r.channel as string;
+          const an = String(r.ad_name || '').trim();
+          const n = parseInt(String(r.instance_count ?? 0), 10) || 0;
+          if (ch && an) sameNameAllByKey.set(`${ch}|${an}`, n);
+        }
+      }
+      if (scRes.ok) {
+        const scRaw = await scRes.json();
+        const scRows = Array.isArray(scRaw) ? scRaw : (scRaw.data || []);
+        for (const r of scRows) {
+          const ch = r.channel as string;
+          const cn = String(r.campaign_name || '').trim();
+          const an = String(r.ad_name || '').trim();
+          const n = parseInt(String(r.instance_count ?? 0), 10) || 0;
+          if (ch && cn && an) sameNameInCampaignByKey.set(`${ch}|${cn}|${an}`, n);
+        }
+      }
+    } catch {
+      sameNameAllByKey = new Map();
+      sameNameInCampaignByKey = new Map();
+    }
+
     // TW SQL API returns values in USD — convert to PHP (shop currency)
     // Use env var or fetch rate; fallback to 57
     let usdToPhp = parseFloat(process.env.USD_TO_PHP_RATE || '') || 57;
@@ -160,10 +285,30 @@ export async function GET(request: NextRequest) {
         const ncOrders = Math.min(rawNcOrders, orders);
         const ncRevenue = (r.nc_revenue || 0) * usdToPhp;
 
+        const cnKey = `${r.channel}|${String(r.ad_id || '')}`;
+        const fromAgg = campaignNamesByKey.get(cnKey);
+        const campaignNames =
+          fromAgg && fromAgg.length > 0
+            ? fromAgg
+            : r.campaign_name
+              ? [String(r.campaign_name)]
+              : [];
+
+        const adNameTrim = String(r.ad_name || '').trim();
+        const campTrim = String(r.campaign_name || '').trim();
+        const nameKey = `${r.channel}|${adNameTrim}`;
+        const campNameKey = `${r.channel}|${campTrim}|${adNameTrim}`;
+        const sameNameAdCountAll = sameNameAllByKey.get(nameKey);
+        const sameNameAdCountInCampaign = sameNameInCampaignByKey.get(campNameKey);
+
         return {
           adId: r.ad_id || '',
           adName: r.ad_name || 'Unknown',
           campaignName: r.campaign_name || 'Unknown',
+          campaignNames,
+          sameNameAdCountAll: sameNameAdCountAll !== undefined ? sameNameAdCountAll : undefined,
+          sameNameAdCountInCampaign:
+            sameNameAdCountInCampaign !== undefined ? sameNameAdCountInCampaign : undefined,
           platform: CHANNEL_NAMES[r.channel] || r.channel,
           channelId: r.channel,
           spend,

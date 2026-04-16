@@ -11,10 +11,40 @@ function getConfig() {
   const clientSecret = process.env.REDDIT_CLIENT_SECRET?.trim();
   const refreshToken = process.env.REDDIT_REFRESH_TOKEN?.trim();
   const adAccountId = process.env.REDDIT_AD_ACCOUNT_ID?.trim();
+  const pixelId = process.env.REDDIT_PIXEL_ID?.trim() || undefined;
   if (!clientId || !clientSecret || !refreshToken || !adAccountId) {
     throw new Error('Missing Reddit Ads credentials (REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_REFRESH_TOKEN, REDDIT_AD_ACCOUNT_ID)');
   }
-  return { clientId, clientSecret, refreshToken, adAccountId };
+  return { clientId, clientSecret, refreshToken, adAccountId, pixelId };
+}
+
+function num(v: unknown): number {
+  if (v == null) return 0;
+  const n = typeof v === 'number' ? v : parseFloat(String(v));
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Normalize a Reddit Ads report row (metrics may live on `metrics` or on the row). */
+function extractReportRow(row: Record<string, unknown>): {
+  impressions: number;
+  clicks: number;
+  spend: number;
+  conversions: number;
+  label: string;
+} {
+  const m =
+    typeof row.metrics === 'object' && row.metrics !== null
+      ? (row.metrics as Record<string, unknown>)
+      : row;
+  const impressions = num(m.impressions ?? row.impressions);
+  const clicks = num(m.clicks ?? row.clicks);
+  const spend = num(m.spend ?? row.spend);
+  const conversions = num(m.conversions ?? row.conversions);
+  const label =
+    String(
+      row.ad_name ?? m.ad_name ?? row.name ?? row.creative_name ?? row.ad_id ?? row.id ?? 'Ad'
+    ).trim() || 'Ad';
+  return { impressions, clicks, spend, conversions, label };
 }
 
 async function getAccessToken(): Promise<string> {
@@ -81,7 +111,7 @@ async function redditFetch(path: string, params: Record<string, string> = {}): P
 
 export async function GET(request: NextRequest) {
   try {
-    const { adAccountId } = getConfig();
+    const { adAccountId, pixelId: redditPixelIdEnv } = getConfig();
     const { searchParams } = new URL(request.url);
     const mode = searchParams.get('mode') || 'overview';
 
@@ -112,6 +142,69 @@ export async function GET(request: NextRequest) {
         metrics: 'impressions,clicks,spend,conversions,cpc,cpm,ctr',
       });
       return NextResponse.json({ success: true, data: data.data || [] });
+    }
+
+    if (mode === 'tracking-infra') {
+      const startDate = searchParams.get('startDate') || '2026-03-01';
+      const endDate = searchParams.get('endDate') || '2026-03-31';
+
+      const data = await redditFetch('/reports', {
+        ad_account_id: adAccountId,
+        start_date: startDate,
+        end_date: endDate,
+        level: 'AD',
+        metrics: 'impressions,clicks,spend,conversions,cpc,cpm,ctr',
+      });
+      const rowsRaw = data?.data;
+      const rows: Record<string, unknown>[] = Array.isArray(rowsRaw)
+        ? rowsRaw
+        : Array.isArray((rowsRaw as { data?: unknown })?.data)
+          ? ((rowsRaw as { data: Record<string, unknown>[] }).data)
+          : [];
+
+      let impressions = 0;
+      let clicks = 0;
+      let spend = 0;
+      let conversions = 0;
+      const perAd: { event: string; rawType: string; count: number }[] = [];
+
+      for (const r of rows) {
+        const ex = extractReportRow(r);
+        impressions += ex.impressions;
+        clicks += ex.clicks;
+        spend += ex.spend;
+        conversions += ex.conversions;
+        perAd.push({
+          event: ex.label,
+          rawType: `reddit_ad:${ex.label}`,
+          count: ex.conversions,
+        });
+      }
+      perAd.sort((a, b) => b.count - a.count);
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const days = Math.max(
+        1,
+        Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      );
+      const totalEventsPerDay = Math.round(conversions / days);
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          pixelId: redditPixelIdEnv ?? null,
+          impressions,
+          clicks,
+          spend,
+          conversions,
+          totalEventsPerDay,
+          events: perAd.slice(0, 40),
+          dateRange: { startDate, endDate },
+          note:
+            'Aggregated from Reddit Ads reports (AD level). Event rows are conversions by ad name. Set REDDIT_PIXEL_ID to show your Reddit Pixel ID.',
+        },
+      });
     }
 
     if (mode === 'overview') {
@@ -169,7 +262,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, data: me.data });
     }
 
-    return NextResponse.json({ success: false, error: 'Invalid mode. Use: overview | campaigns | ads | ad-groups | report | test' }, { status: 400 });
+    return NextResponse.json({ success: false, error: 'Invalid mode. Use: overview | campaigns | ads | ad-groups | report | tracking-infra | test' }, { status: 400 });
   } catch (error: any) {
     console.error('Reddit Ads API error:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });

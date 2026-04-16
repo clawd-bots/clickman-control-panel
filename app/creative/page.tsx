@@ -32,6 +32,71 @@ const platformsWithGoogle = ['Meta', 'TikTok', 'Reddit', 'Google'];
 /** Slugging Rate tab only — no Google (creative-focused platforms). */
 const sluggingTabPlatforms = ['All', 'Meta', 'TikTok'];
 
+const DEMOGRAPHICS_PLATFORM_KEYS = ['Meta', 'TikTok', 'Reddit'] as const;
+const DEMOGRAPHICS_GENDER_AGE_KEYS = [
+  'F 18-24', 'F 25-34', 'F 35-44', 'F 45-54', 'F 55+',
+  'M 18-24', 'M 25-34', 'M 35-44', 'M 45-54', 'M 55+',
+] as const;
+
+/** Spend by Age (Gender = All): two stacked columns per period — female vs male (side-by-side). */
+const DEMO_SPEND_BY_AGE_SPLIT = {
+  female: {
+    keys: ['F 18-24', 'F 25-34', 'F 35-44', 'F 45-54', 'F 55+'] as const,
+    colors: ['#fca5a5', '#ef4444', '#dc2626', '#b91c1c', '#7f1d1d'] as const,
+  },
+  male: {
+    keys: ['M 18-24', 'M 25-34', 'M 35-44', 'M 45-54', 'M 55+'] as const,
+    colors: ['#93c5fd', '#3b82f6', '#2563eb', '#1d4ed8', '#1e3a8a'] as const,
+  },
+} as const;
+
+/** Blend Meta / TikTok / Reddit gender×age biases for Demographics “All platforms”. */
+function blendDemographicsGenderAgeBias(
+  plat: Record<string, Record<string, number>>
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const k of DEMOGRAPHICS_GENDER_AGE_KEYS) {
+    let s = 0;
+    for (const p of DEMOGRAPHICS_PLATFORM_KEYS) {
+      s += plat[p]?.[k] ?? 1;
+    }
+    out[k] = s / DEMOGRAPHICS_PLATFORM_KEYS.length;
+  }
+  return out;
+}
+
+type PlatformDemoMult = {
+  spendMult: number;
+  convMult: number;
+  cpaMult: number;
+  roasMult: number;
+  ageBias: Record<string, number>;
+};
+
+function blendPlatformDemoMultipliers(m: Record<string, PlatformDemoMult>): PlatformDemoMult {
+  const ageKeys = new Set<string>();
+  for (const p of DEMOGRAPHICS_PLATFORM_KEYS) {
+    Object.keys(m[p].ageBias).forEach((k) => ageKeys.add(k));
+  }
+  const ageBias: Record<string, number> = {};
+  for (const ak of ageKeys) {
+    ageBias[ak] =
+      DEMOGRAPHICS_PLATFORM_KEYS.reduce((s, p) => s + (m[p].ageBias[ak] ?? 1), 0) /
+      DEMOGRAPHICS_PLATFORM_KEYS.length;
+  }
+  return {
+    spendMult:
+      DEMOGRAPHICS_PLATFORM_KEYS.reduce((s, p) => s + m[p].spendMult, 0) / DEMOGRAPHICS_PLATFORM_KEYS.length,
+    convMult:
+      DEMOGRAPHICS_PLATFORM_KEYS.reduce((s, p) => s + m[p].convMult, 0) / DEMOGRAPHICS_PLATFORM_KEYS.length,
+    cpaMult:
+      DEMOGRAPHICS_PLATFORM_KEYS.reduce((s, p) => s + m[p].cpaMult, 0) / DEMOGRAPHICS_PLATFORM_KEYS.length,
+    roasMult:
+      DEMOGRAPHICS_PLATFORM_KEYS.reduce((s, p) => s + m[p].roasMult, 0) / DEMOGRAPHICS_PLATFORM_KEYS.length,
+    ageBias,
+  };
+}
+
 const tabDescriptions: Record<string, string> = {
   'Performance': 'Overview of all active ad creatives with spend, engagement, and conversion metrics. Use this to monitor your live ads and spot issues quickly.',
   'Ad Churn': 'Shows how ad spend is distributed across creative age brackets and launch cohorts. Dark = newest ads/cohorts, lighter = older. A healthy account has a steady flow of new creative taking over spend from older creative.',
@@ -214,8 +279,10 @@ export default function CreativePage() {
   const [campaignFilter, setCampaignFilter] = useState('all');
   const [selectedCampaigns, setSelectedCampaigns] = useState<string[]>([]);
   const [genderFilter, setGenderFilter] = useState('all');
-  /** Spend-by-age chart: single gender at a time (default male). */
-  const [demoSpendGender, setDemoSpendGender] = useState<'male' | 'female'>('male');
+  /** Demographics tab only — All = blend Meta + TikTok + Reddit sample curves. */
+  const [demographicsPlatform, setDemographicsPlatform] = useState<'All' | 'Meta' | 'TikTok' | 'Reddit'>('All');
+  /** Spend-by-age chart: All = both genders stacked; else one gender’s age bands. */
+  const [demoSpendGender, setDemoSpendGender] = useState<'all' | 'male' | 'female'>('all');
   const [churnCpaMode, setChurnCpaMode] = useState<'cpa' | 'nccpa'>('cpa');
   const [churnPlatform, setChurnPlatform] = useState('Meta');
   const [sluggingPlatform, setSluggingPlatform] = useState('All');
@@ -335,6 +402,45 @@ export default function CreativePage() {
   }, [platform]);
 
   // Get campaign names for the current platform from TW ads data
+  /**
+   * Count column: distinct ad_ids that share this ad name in Triple Whale (incl. inactive/paused).
+   * “All campaigns” = count across the account; one campaign selected = count within that campaign only
+   * (e.g. same name in multiple ad sets under one campaign).
+   */
+  const getAccountControlCampaignCount = useCallback(
+    (ad: {
+      name: string;
+      platform: string;
+      campaignNames?: string[];
+      sameNameAdCountAll?: number;
+      sameNameAdCountInCampaign?: number;
+    }): number => {
+      if (twAds.length > 0) {
+        if (accountControlCampaign === 'all') {
+          if (typeof ad.sameNameAdCountAll === 'number' && ad.sameNameAdCountAll >= 0) {
+            return ad.sameNameAdCountAll;
+          }
+          const names = ad.campaignNames;
+          return names && names.length > 0 ? names.length : 1;
+        }
+        if (typeof ad.sameNameAdCountInCampaign === 'number' && ad.sameNameAdCountInCampaign >= 0) {
+          return ad.sameNameAdCountInCampaign;
+        }
+        const names = ad.campaignNames;
+        return names?.includes(accountControlCampaign) ? 1 : 0;
+      }
+      const rows = creativePerformance.filter((c) => c.platform === ad.platform && c.name === ad.name);
+      if (accountControlCampaign === 'all') {
+        return Math.max(
+          1,
+          new Set(rows.map((c) => (c as { campaignName?: string }).campaignName).filter(Boolean)).size
+        );
+      }
+      return rows.filter((c) => (c as { campaignName?: string }).campaignName === accountControlCampaign).length;
+    },
+    [twAds.length, accountControlCampaign]
+  );
+
   const accountControlCampaigns = useMemo(() => {
     if (twAds.length > 0) {
       const names = twAds
@@ -404,6 +510,9 @@ export default function CreativePage() {
         return {
           name: a.adName,
           adId: a.adId,
+          campaignNames: a.campaignNames,
+          sameNameAdCountAll: a.sameNameAdCountAll,
+          sameNameAdCountInCampaign: a.sameNameAdCountInCampaign,
           spend: a.spend,
           /** Y-axis / zone math — follows CPA vs NCCPA toggle */
           cpa: rawCpa,
@@ -597,9 +706,13 @@ export default function CreativePage() {
 
   const totalSlugging = filteredSlugging.reduce((a, b) => ({ launched: a.launched + b.launched, hits: a.hits + b.hits }), { launched: 0, hits: 0 });
 
+  /** On Demographics tab, platform picker uses `demographicsPlatform` (includes All); elsewhere uses global `platform`. */
+  const effectiveDemoPlatform =
+    activeTab === 'Demographics' ? demographicsPlatform : platform;
+
   // Demographics gender+age data — generated to match the universal date range
   const filteredDemographicsGenderAge = useMemo(() => {
-    const demoKeys = ['F 18-24', 'F 25-34', 'F 35-44', 'F 45-54', 'F 55+', 'M 18-24', 'M 25-34', 'M 35-44', 'M 45-54', 'M 55+'] as const;
+    const demoKeys = DEMOGRAPHICS_GENDER_AGE_KEYS;
     // Use the last entry from sample data as a baseline for generating values
     const baseline = demographicsGenderAge[demographicsGenderAge.length - 1];
     
@@ -630,7 +743,10 @@ export default function CreativePage() {
       Reddit: { 'F 18-24': 0.8, 'F 25-34': 1.0, 'F 35-44': 0.6, 'F 45-54': 0.3, 'F 55+': 0.1, 'M 18-24': 1.5, 'M 25-34': 1.8, 'M 35-44': 1.0, 'M 45-54': 0.5, 'M 55+': 0.2 },
       Google: { 'F 18-24': 0.7, 'F 25-34': 1.0, 'F 35-44': 1.2, 'F 45-54': 1.1, 'F 55+': 0.8, 'M 18-24': 0.6, 'M 25-34': 0.9, 'M 35-44': 1.3, 'M 45-54': 1.2, 'M 55+': 0.9 },
     };
-    const biases = platGenderAgeBias[platform] || platGenderAgeBias.Meta;
+    const biases =
+      effectiveDemoPlatform === 'All'
+        ? blendDemographicsGenderAgeBias(platGenderAgeBias)
+        : platGenderAgeBias[effectiveDemoPlatform] || platGenderAgeBias.Meta;
 
     const buckets: Array<Record<string, any>> = [];
     const cursor = new Date(start);
@@ -650,8 +766,9 @@ export default function CreativePage() {
     }
     
     return buckets;
-  }, [dateRange, demographicsGenderAge, platform]);
+  }, [dateRange, demographicsGenderAge, effectiveDemoPlatform]);
 
+  /** Male / Female only — single stacked column. Gender “All” uses `DEMO_SPEND_BY_AGE_SPLIT` + two `stackId`s instead. */
   const demoSpendChartSeries = useMemo(() => {
     if (demoSpendGender === 'male') {
       return {
@@ -659,17 +776,20 @@ export default function CreativePage() {
         colors: ['#93c5fd', '#3b82f6', '#2563eb', '#1d4ed8', '#1e3a8a'] as const,
       };
     }
-    return {
-      keys: ['F 18-24', 'F 25-34', 'F 35-44', 'F 45-54', 'F 55+'] as const,
-      colors: ['#fca5a5', '#ef4444', '#dc2626', '#b91c1c', '#7f1d1d'] as const,
-    };
+    if (demoSpendGender === 'female') {
+      return {
+        keys: ['F 18-24', 'F 25-34', 'F 35-44', 'F 45-54', 'F 55+'] as const,
+        colors: ['#fca5a5', '#ef4444', '#dc2626', '#b91c1c', '#7f1d1d'] as const,
+      };
+    }
+    return null;
   }, [demoSpendGender]);
 
   const sluggingCpaTarget = sluggingCpaMode === 'cpa' ? targetCPA : targetNCCPA;
 
   // Filter demographics data based on gender selection
   // Platform multipliers to simulate different demographic distributions per platform
-  const platformDemoMultipliers: Record<string, { spendMult: number; convMult: number; cpaMult: number; roasMult: number; ageBias: Record<string, number> }> = {
+  const platformDemoMultipliers: Record<string, PlatformDemoMult> = {
     Meta:   { spendMult: 1.0, convMult: 1.0, cpaMult: 1.0, roasMult: 1.0, ageBias: { '18-24': 0.8, '25-34': 1.2, '35-44': 1.1, '45-54': 0.9, '55-64': 0.7, '65+': 0.5 } },
     TikTok: { spendMult: 0.35, convMult: 0.3, cpaMult: 1.15, roasMult: 0.75, ageBias: { '18-24': 1.8, '25-34': 1.4, '35-44': 0.6, '45-54': 0.3, '55-64': 0.1, '65+': 0.05 } },
     Reddit: { spendMult: 0.15, convMult: 0.12, cpaMult: 1.25, roasMult: 0.65, ageBias: { '18-24': 1.3, '25-34': 1.5, '35-44': 1.0, '45-54': 0.5, '55-64': 0.3, '65+': 0.1 } },
@@ -677,7 +797,10 @@ export default function CreativePage() {
   };
 
   const getFilteredDemographicsAge = () => {
-    const platMult = platformDemoMultipliers[platform] || platformDemoMultipliers.Meta;
+    const platMult =
+      effectiveDemoPlatform === 'All'
+        ? blendPlatformDemoMultipliers(platformDemoMultipliers)
+        : platformDemoMultipliers[effectiveDemoPlatform] || platformDemoMultipliers.Meta;
     
     let data = demographicsAge.map(row => {
       const ageBias = platMult.ageBias[row.group] ?? 1.0;
@@ -706,7 +829,10 @@ export default function CreativePage() {
 
   // Platform-filtered gender data
   const getFilteredDemographicsGender = () => {
-    const platMult = platformDemoMultipliers[platform] || platformDemoMultipliers.Meta;
+    const platMult =
+      effectiveDemoPlatform === 'All'
+        ? blendPlatformDemoMultipliers(platformDemoMultipliers)
+        : platformDemoMultipliers[effectiveDemoPlatform] || platformDemoMultipliers.Meta;
     const totalMult = platMult.spendMult;
     return demographicsGender.map(row => {
       const spend = Math.round(row.spend * totalMult);
@@ -773,11 +899,38 @@ export default function CreativePage() {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs text-text-secondary font-medium shrink-0">Platform:</span>
               <div className="flex gap-1 flex-wrap">
-                {(activeTab === 'Account Control' ? platformsWithGoogle : platforms).map(p => (
-                  <button key={p} onClick={() => handlePlatformChange(p)} className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${platform === p ? 'bg-brand-blue/15 text-brand-blue-light' : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'}`}>
-                    {p}
-                  </button>
-                ))}
+                {activeTab === 'Demographics' ? (
+                  (['All', ...platforms] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() =>
+                        setDemographicsPlatform(p as 'All' | 'Meta' | 'TikTok' | 'Reddit')
+                      }
+                      className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+                        demographicsPlatform === p
+                          ? 'bg-brand-blue/15 text-brand-blue-light'
+                          : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))
+                ) : (
+                  (activeTab === 'Account Control' ? platformsWithGoogle : platforms).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => handlePlatformChange(p)}
+                      className={`px-2.5 py-1.5 rounded-md text-xs transition-colors ${
+                        platform === p
+                          ? 'bg-brand-blue/15 text-brand-blue-light'
+                          : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))
+                )}
               </div>
               {activeTab === 'Account Control' && accountControlCampaigns.length > 0 && (
                 <>
@@ -1358,13 +1511,31 @@ export default function CreativePage() {
               </div>
             </div>
             <div className="overflow-x-auto -mx-1 sm:mx-0">
-              <div className="min-w-[848px]">
+              <div className="min-w-[920px]">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="border-b border-border text-text-secondary uppercase">
                       <th className="text-left py-2 px-2 font-medium w-[70px]">Zone</th>
                       <th className="text-center py-2 px-1 font-medium w-[44px]">Preview</th>
                       <th className="text-left py-2 px-2 font-medium w-[300px] min-w-[300px] max-w-[300px]">Ad Name</th>
+                      <th
+                        className="text-center py-2 px-2 font-medium w-[56px] min-w-[56px] cursor-pointer select-none hover:text-text-primary transition-colors"
+                        onClick={() => {
+                          if (acSortKey === 'campaignCount') {
+                            setAcSortDir((d) => (d === 'desc' ? 'asc' : 'desc'));
+                          } else {
+                            setAcSortKey('campaignCount');
+                            setAcSortDir('desc');
+                          }
+                          setAcCurrentPage(1);
+                        }}
+                      >
+                        <span className="inline-flex items-center gap-1 justify-center">
+                          Count
+                          <InfoTooltip metric="Account Control Campaign Count" />
+                          {acSortKey === 'campaignCount' ? (acSortDir === 'desc' ? '↓' : '↑') : ''}
+                        </span>
+                      </th>
                       {[
                         { key: 'spend', label: 'Spend', width: 'min-w-[80px]' },
                         { key: 'cpa', label: 'CPA', width: 'min-w-[80px]' },
@@ -1395,6 +1566,27 @@ export default function CreativePage() {
                     {filteredAccountControlData
                       .filter(ad => accountControlFilter === 'all' || ad.zone === accountControlFilter)
                       .sort((a, b) => {
+                        if (acSortKey === 'campaignCount') {
+                          const ca = getAccountControlCampaignCount(
+                            a as {
+                              name: string;
+                              platform: string;
+                              campaignNames?: string[];
+                              sameNameAdCountAll?: number;
+                              sameNameAdCountInCampaign?: number;
+                            }
+                          );
+                          const cb = getAccountControlCampaignCount(
+                            b as {
+                              name: string;
+                              platform: string;
+                              campaignNames?: string[];
+                              sameNameAdCountAll?: number;
+                              sameNameAdCountInCampaign?: number;
+                            }
+                          );
+                          return acSortDir === 'desc' ? cb - ca : ca - cb;
+                        }
                         const sortVal = (row: Record<string, unknown>) => {
                           if (acSortKey === 'cpa') return Number((row as any).cpaAll ?? row.cpa) || 0;
                           if (acSortKey === 'roas') return Number((row as any).roasAll ?? row.roas) || 0;
@@ -1443,6 +1635,17 @@ export default function CreativePage() {
                           <div className="overflow-x-auto whitespace-nowrap [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]" title={ad.name}>
                             {ad.name}
                           </div>
+                        </td>
+                        <td className="py-2.5 px-2 text-center text-text-secondary tabular-nums whitespace-nowrap">
+                          {getAccountControlCampaignCount(
+                            ad as {
+                              name: string;
+                              platform: string;
+                              campaignNames?: string[];
+                              sameNameAdCountAll?: number;
+                              sameNameAdCountInCampaign?: number;
+                            }
+                          )}
                         </td>
                         <td className="py-2.5 px-2 text-right text-text-secondary whitespace-nowrap">
                           {ad.spend == null || !Number.isFinite(Number(ad.spend)) ? '—' : formatCurrencyValue(ad.spend)}
@@ -1938,10 +2141,12 @@ export default function CreativePage() {
                     ))}
                   </div>
                 </div>
-                <span className="text-xs text-text-tertiary shrink-0">{platform} Ads</span>
+                <span className="text-xs text-text-tertiary shrink-0">
+                  {effectiveDemoPlatform === 'All' ? 'All platforms' : `${effectiveDemoPlatform} Ads`}
+                </span>
               </div>
             </div>
-            {platform === 'Google' ? (
+            {effectiveDemoPlatform === 'Google' ? (
               <div className="text-center py-8 text-text-secondary">
                 <div className="text-sm font-medium mb-2">Google Ads Demographics Data</div>
                 <div className="text-xs">Demographic data not available for Google Ads platform.<br />This feature requires Google Ads demographic API integration.</div>
@@ -1975,9 +2180,11 @@ export default function CreativePage() {
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-medium text-text-primary">Performance by Gender</h3>
-              <span className="text-xs text-text-tertiary shrink-0">{platform} Ads</span>
+              <span className="text-xs text-text-tertiary shrink-0">
+                {effectiveDemoPlatform === 'All' ? 'All platforms' : `${effectiveDemoPlatform} Ads`}
+              </span>
             </div>
-            {platform === 'Google' ? (
+            {effectiveDemoPlatform === 'Google' ? (
               <div className="text-center py-8 text-text-secondary">
                 <div className="text-sm font-medium mb-2">Google Ads Demographics Data</div>
                 <div className="text-xs">Gender breakdown not available for Google Ads platform.<br />This feature requires Google Ads demographic API integration.</div>
@@ -1999,12 +2206,23 @@ export default function CreativePage() {
             )}
           </div>
 
-          {/* Gender+Age stacked bars over time — one gender at a time */}
+          {/* Spend by age over time: one stacked bar per gender, or two side-by-side when Gender = All */}
           <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
               <h3 className="text-sm font-medium text-text-primary">Spend by Age Over Time</h3>
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <div className="flex items-center gap-1 rounded-lg border border-border overflow-hidden bg-bg-elevated">
+                  <button
+                    type="button"
+                    onClick={() => setDemoSpendGender('all')}
+                    className={`px-2.5 py-1 text-[10px] sm:text-xs font-medium transition-colors ${
+                      demoSpendGender === 'all'
+                        ? 'bg-brand-blue text-white'
+                        : 'text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    All
+                  </button>
                   <button
                     type="button"
                     onClick={() => setDemoSpendGender('male')}
@@ -2028,18 +2246,60 @@ export default function CreativePage() {
                     Female
                   </button>
                 </div>
-                <span className="text-xs text-text-tertiary shrink-0">{platform} Ads</span>
+                <span className="text-xs text-text-tertiary shrink-0">
+                  {effectiveDemoPlatform === 'All' ? 'All platforms' : `${effectiveDemoPlatform} Ads`}
+                </span>
               </div>
             </div>
-            <div className="flex gap-1 sm:gap-2 mb-4 flex-wrap">
-              {demoSpendChartSeries.keys.map((key, i) => (
-                <div key={key} className="flex items-center gap-1">
-                  <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: demoSpendChartSeries.colors[i] }} />
-                  <span className="text-[10px] text-text-secondary">{key}</span>
-                </div>
-              ))}
+            <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:gap-6 flex-wrap">
+              {demoSpendGender === 'all' ? (
+                <>
+                  <div>
+                    <div className="text-[10px] font-semibold text-text-secondary mb-1.5">Female</div>
+                    <div className="flex gap-1 sm:gap-2 flex-wrap">
+                      {DEMO_SPEND_BY_AGE_SPLIT.female.keys.map((key, i) => (
+                        <div key={key} className="flex items-center gap-1">
+                          <div
+                            className="w-2.5 h-2.5 rounded-sm shrink-0"
+                            style={{ backgroundColor: DEMO_SPEND_BY_AGE_SPLIT.female.colors[i] }}
+                          />
+                          <span className="text-[10px] text-text-secondary">{key}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-semibold text-text-secondary mb-1.5">Male</div>
+                    <div className="flex gap-1 sm:gap-2 flex-wrap">
+                      {DEMO_SPEND_BY_AGE_SPLIT.male.keys.map((key, i) => (
+                        <div key={key} className="flex items-center gap-1">
+                          <div
+                            className="w-2.5 h-2.5 rounded-sm shrink-0"
+                            style={{ backgroundColor: DEMO_SPEND_BY_AGE_SPLIT.male.colors[i] }}
+                          />
+                          <span className="text-[10px] text-text-secondary">{key}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                demoSpendChartSeries && (
+                  <div className="flex gap-1 sm:gap-2 flex-wrap">
+                    {demoSpendChartSeries.keys.map((key, i) => (
+                      <div key={key} className="flex items-center gap-1">
+                        <div
+                          className="w-2.5 h-2.5 rounded-sm shrink-0"
+                          style={{ backgroundColor: demoSpendChartSeries.colors[i] }}
+                        />
+                        <span className="text-[10px] text-text-secondary">{key}</span>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
             </div>
-            {platform === 'Google' ? (
+            {effectiveDemoPlatform === 'Google' ? (
               <div className="text-center py-16 text-text-secondary min-h-[320px] flex flex-col justify-center">
                 <div className="text-sm font-medium mb-2">Google Ads Demographics Data</div>
                 <div className="text-xs">Demographic timeline data not available for Google Ads platform.<br />This feature requires Google Ads demographic API integration.</div>
@@ -2047,7 +2307,12 @@ export default function CreativePage() {
             ) : (
               <div className="min-h-[320px]" style={{ width: '100%', height: '320px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={filteredDemographicsGenderAge} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                  <BarChart
+                    data={filteredDemographicsGenderAge}
+                    margin={{ top: 10, right: 20, bottom: 10, left: 20 }}
+                    barGap={2}
+                    barCategoryGap="18%"
+                  >
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                     <XAxis dataKey="displayLabel" tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} angle={-45} textAnchor="end" height={60} interval="preserveStartEnd" />
                     <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} tickFormatter={(v) => formatCurrencyValue(v)} />
@@ -2055,15 +2320,39 @@ export default function CreativePage() {
                       contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11, color: 'var(--color-text-primary)' }}
                       formatter={(value: any, name: any) => [formatCurrencyValue(value), name]}
                     />
-                    {demoSpendChartSeries.keys.map((key, i, arr) => (
-                      <Bar
-                        key={key}
-                        dataKey={key}
-                        stackId="demo"
-                        fill={demoSpendChartSeries.colors[i]}
-                        radius={i === arr.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
-                      />
-                    ))}
+                    {demoSpendGender === 'all' ? (
+                      <>
+                        {DEMO_SPEND_BY_AGE_SPLIT.female.keys.map((key, i, arr) => (
+                          <Bar
+                            key={`f-${key}`}
+                            dataKey={key}
+                            stackId="female"
+                            fill={DEMO_SPEND_BY_AGE_SPLIT.female.colors[i]}
+                            radius={i === arr.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                          />
+                        ))}
+                        {DEMO_SPEND_BY_AGE_SPLIT.male.keys.map((key, i, arr) => (
+                          <Bar
+                            key={`m-${key}`}
+                            dataKey={key}
+                            stackId="male"
+                            fill={DEMO_SPEND_BY_AGE_SPLIT.male.colors[i]}
+                            radius={i === arr.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                          />
+                        ))}
+                      </>
+                    ) : (
+                      demoSpendChartSeries &&
+                      demoSpendChartSeries.keys.map((key, i, arr) => (
+                        <Bar
+                          key={key}
+                          dataKey={key}
+                          stackId="demo"
+                          fill={demoSpendChartSeries.colors[i]}
+                          radius={i === arr.length - 1 ? [3, 3, 0, 0] : [0, 0, 0, 0]}
+                        />
+                      ))
+                    )}
                   </BarChart>
                 </ResponsiveContainer>
               </div>

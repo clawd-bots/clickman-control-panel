@@ -23,6 +23,14 @@ export default function KPICard({ label, value, change, sparkline, target, targe
   const data = sparkline.map((v, i) => ({ v, i }));
   const { dateRange } = useDateRange();
   const comparisonEnabled = dateRange.comparisonEnabled;
+  const comparisonCaption =
+    !comparisonEnabled || dateRange.comparison === 'none'
+      ? null
+      : dateRange.comparison === 'prev-period'
+        ? 'vs previous period'
+        : dateRange.comparison === 'prev-year'
+          ? 'vs prior year'
+          : 'vs custom range';
 
   return (
     <div
@@ -65,7 +73,9 @@ export default function KPICard({ label, value, change, sparkline, target, targe
             }`}>
               {isPositive ? '↑' : '↓'} {Math.abs(change).toFixed(1)}%
             </span>
-            <span className="text-xs text-text-secondary">vs prior period</span>
+            {comparisonCaption && (
+              <span className="text-xs text-text-secondary">{comparisonCaption}</span>
+            )}
           </div>
         )}
         {target && targetAchievement !== undefined && (

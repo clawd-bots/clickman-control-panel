@@ -9,10 +9,10 @@ import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
 import { toLocalDateString } from '@/lib/dateUtils';
+import { getComparisonDateRange } from '@/lib/comparison-range';
 import {
   fetchTripleWhaleData,
   getMetric,
-  getPrevMetric,
   TWData,
   fetchTWCohorts,
   fetchTWAttributionByChannel,
@@ -38,11 +38,10 @@ function pctChange(curr: number, prev: number): number {
  * The `mer` id in this API often diverges (e.g. ~28x) and must not override ROAS.
  * Never use `blendedAttributedRoas` here (different attributed mix, can be 10x+).
  */
-function getTwBlendedRoas(data: TWData, pick: 'current' | 'previous'): number {
-  const g = pick === 'current' ? getMetric : getPrevMetric;
-  const fromRoas = g(data, 'twRoas') || g(data, 'topRoas');
+function blendedRoasFromTw(data: TWData): number {
+  const fromRoas = getMetric(data, 'twRoas') || getMetric(data, 'topRoas');
   if (fromRoas > 0) return fromRoas;
-  const mer = g(data, 'mer');
+  const mer = getMetric(data, 'mer');
   return mer > 0 ? mer : 0;
 }
 
@@ -106,6 +105,7 @@ export default function AttributionPage() {
   const { dateRange } = useDateRange();
   const [activeLayer, setActiveLayer] = useState<string>('star');
   const [twData, setTwData] = useState<TWData | null>(null);
+  const [twComparisonSummary, setTwComparisonSummary] = useState<TWData | null>(null);
   const [twLoading, setTwLoading] = useState(true);
   const [ga4Data, setGA4Data] = useState<GA4Data | null>(null);
   const [ga4Loading, setGA4Loading] = useState(true);
@@ -116,8 +116,33 @@ export default function AttributionPage() {
     setGA4Loading(true);
     const startDate = toLocalDateString(dateRange.startDate);
     const endDate = toLocalDateString(dateRange.endDate);
-    fetchTripleWhaleData(startDate, endDate, 'summary')
-      .then(setTwData)
+    const compRange = getComparisonDateRange({
+      startDate: dateRange.startDate,
+      endDate: dateRange.endDate,
+      comparison: dateRange.comparison,
+      comparisonEnabled: dateRange.comparisonEnabled,
+      comparisonCustomStart: dateRange.comparisonCustomStart,
+      comparisonCustomEnd: dateRange.comparisonCustomEnd,
+    });
+    const needComp =
+      dateRange.comparisonEnabled &&
+      dateRange.comparison !== 'none' &&
+      compRange !== null;
+
+    const mainP = fetchTripleWhaleData(startDate, endDate, 'summary');
+    const compP = needComp
+      ? fetchTripleWhaleData(
+          toLocalDateString(compRange!.start),
+          toLocalDateString(compRange!.end),
+          'summary'
+        )
+      : Promise.resolve(null);
+
+    Promise.all([mainP, compP])
+      .then(([main, comp]) => {
+        setTwData(main);
+        setTwComparisonSummary(comp);
+      })
       .catch(console.error)
       .finally(() => setTwLoading(false));
     fetchGA4Data(startDate, endDate, 'summary')
@@ -224,6 +249,13 @@ export default function AttributionPage() {
     events: { event: string; rawType: string; count: number }[];
   } | null>(null);
   const [metaTrackingIsLive, setMetaTrackingIsLive] = useState(false);
+  const [metaPixelId, setMetaPixelId] = useState<string | null>(null);
+  const [redditTrackingData, setRedditTrackingData] = useState<{
+    pixelId: string | null;
+    totalEventsPerDay: number;
+    events: { event: string; rawType: string; count: number }[];
+  } | null>(null);
+  const [redditTrackingIsLive, setRedditTrackingIsLive] = useState(false);
 
   // Fetch live Google Ads tracking data
   const fetchTrackingData = useCallback(async () => {
@@ -257,6 +289,11 @@ export default function AttributionPage() {
         `/api/meta?mode=tracking-events&startDate=${startDateStr}&endDate=${endDateStr}`
       );
       const json = await res.json();
+      const pid =
+        json.success && json.data && typeof json.data.pixelId === 'string' && json.data.pixelId.trim()
+          ? json.data.pixelId.trim()
+          : null;
+      setMetaPixelId(pid);
       if (json.success && json.data?.events && Array.isArray(json.data.events)) {
         setMetaTrackingData({
           totalEventsPerDay: Number(json.data.totalEventsPerDay) || 0,
@@ -268,6 +305,7 @@ export default function AttributionPage() {
         setMetaTrackingIsLive(false);
       }
     } catch {
+      setMetaPixelId(null);
       setMetaTrackingData(null);
       setMetaTrackingIsLive(false);
     }
@@ -276,6 +314,38 @@ export default function AttributionPage() {
   useEffect(() => {
     fetchMetaTrackingData();
   }, [fetchMetaTrackingData]);
+
+  const fetchRedditTrackingData = useCallback(async () => {
+    try {
+      const startDateStr = toLocalDateString(dateRange.startDate);
+      const endDateStr = toLocalDateString(dateRange.endDate);
+      const res = await fetch(
+        `/api/reddit?mode=tracking-infra&startDate=${startDateStr}&endDate=${endDateStr}`
+      );
+      const json = await res.json();
+      if (json.success && json.data && Array.isArray(json.data.events)) {
+        setRedditTrackingData({
+          pixelId:
+            json.data.pixelId != null && String(json.data.pixelId).trim()
+              ? String(json.data.pixelId).trim()
+              : null,
+          totalEventsPerDay: Number(json.data.totalEventsPerDay) || 0,
+          events: json.data.events as { event: string; rawType: string; count: number }[],
+        });
+        setRedditTrackingIsLive(true);
+      } else {
+        setRedditTrackingData(null);
+        setRedditTrackingIsLive(false);
+      }
+    } catch {
+      setRedditTrackingData(null);
+      setRedditTrackingIsLive(false);
+    }
+  }, [dateRange.startDate, dateRange.endDate]);
+
+  useEffect(() => {
+    fetchRedditTrackingData();
+  }, [fetchRedditTrackingData]);
 
   // Merge live Meta + Google Ads + GA4 data into tracking health array
   const trackingHealth = sampleTrackingHealth.map((item) => {
@@ -318,6 +388,34 @@ export default function AttributionPage() {
           count: ev.count,
           matchRate: 'N/A' as const,
           type: undefined as unknown as 'Multiple',
+        })),
+      };
+    }
+    if (item.system === 'Reddit Pixel' && redditTrackingData && redditTrackingIsLive) {
+      const dayCount = Math.max(
+        1,
+        Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      );
+      if (redditTrackingData.events.length === 0) {
+        return {
+          ...item,
+          events: '0/day',
+          matchRate: 'N/A' as const,
+          source: undefined as unknown as typeof item.source,
+          eventBreakdown: [],
+        };
+      }
+      return {
+        ...item,
+        events: `${redditTrackingData.totalEventsPerDay.toLocaleString()}/day`,
+        matchRate: 'N/A' as const,
+        source: undefined as unknown as typeof item.source,
+        eventBreakdown: redditTrackingData.events.map((ev) => ({
+          event: ev.event,
+          rawType: ev.rawType,
+          count: Math.round(ev.count / dayCount).toLocaleString(),
+          matchRate: 'N/A' as const,
+          type: 'Browser' as const,
         })),
       };
     }
@@ -425,9 +523,9 @@ export default function AttributionPage() {
     },
     trunk: {
       working: ['Meta Pixel + CAPI dual setup achieving 89-92% match rates', ga4Data ? `GA4 processing ${Math.round(getGA4Metric(ga4Data, 'eventCount') / Math.max(1, Math.ceil((dateRange.endDate.getTime() - dateRange.startDate.getTime()) / (1000 * 60 * 60 * 24)))).toLocaleString()} events/day with stable tracking` : 'GA4 processing 22,400 events/day with stable tracking'],
-      notWorking: ['Server-side GTM is completely down (0 events/day), losing ~15% of conversion data', 'TikTok Pixel match rate at 71%, significant data loss'],
-      doNext: ['Fix Server-side GTM immediately, this is the #1 priority before any budget decisions', 'Improve TikTok tracking with enhanced match keys (email, phone hashing)'],
-      stopDoing: ['Stop making budget allocation decisions while server-side GTM is broken'],
+      notWorking: ['TikTok Pixel match rate at 71%, significant data loss', 'Cross-check Reddit Ads conversions with Reddit Pixel events for full-funnel coverage'],
+      doNext: ['Improve TikTok tracking with enhanced match keys (email, phone hashing)', 'Verify Reddit Pixel is firing on all key conversion URLs'],
+      stopDoing: ['Stop relying on a single browser pixel without server-side backup for purchase events'],
     },
     roots: {
       working: ['Google Brand customers have 3.8x LTV:CAC, excellent unit economics', `GLP-1 product has highest LTV (${formatCurrencyValue(9200)} at 365d) driving overall retention`],
@@ -439,11 +537,11 @@ export default function AttributionPage() {
 
   // Dynamic global insights with currency conversion
   const getGlobalInsights = () => [
-    '🔑 Overall, your attribution stack is functioning but incomplete. MER is healthy (3.67x), but you\'re flying partially blind with server-side GTM down and no MMM model.',
+    '🔑 Overall, your attribution stack is functioning but incomplete. MER is healthy (3.67x), but you lack an MMM model for directional channel validation.',
     '📊 Meta drives the lion\'s share of tracked conversions but survey data suggests TikTok is under-credited by platform reporting. Run a geo-lift test to validate.',
     '⚠️ Your nMER of 1.92x means you\'re relying heavily on repeat purchases to make the economics work. This is fine if retention holds, but risky if cohort quality drops.',
     `💰 Brand Search is your most efficient channel at ${formatCurrencyValue(420)} CPA. Ensure you\'re maxing out impression share before increasing spend elsewhere.`,
-    '🛠️ Fix server-side GTM before making any major budget reallocation. You\'re missing ~15% of conversion data, which skews all analysis.',
+    '🛠️ Reconcile Reddit and TikTok pixel data with platform-reported conversions before scaling spend on those channels.',
     '📈 Consider building a simple MMM model using the past 6 months of spend + revenue data. This will give you a second opinion on channel allocation beyond surveys.',
     `🎯 Set channel-specific CPA ceilings: Meta ${formatCurrencyValue(850)}, Google ${formatCurrencyValue(500)}, TikTok ${formatCurrencyValue(600)}. Review weekly and pause anything consistently above ceiling.`,
   ];
@@ -482,7 +580,7 @@ export default function AttributionPage() {
             twRoas: getMetric(twData, 'twRoas'),
             topRoas: getMetric(twData, 'topRoas'),
             /** Blended Stats style ROAS (matches Moby / TW UI), not attributed-model ROAS */
-            blendedRoasTw: getTwBlendedRoas(twData, 'current'),
+            blendedRoasTw: blendedRoasFromTw(twData),
             blendedAttributedRoas: getMetric(twData, 'blendedAttributedRoas'),
             metaAdSpend: getMetric(twData, 'metaAdSpend'),
             googleAdSpend: getMetric(twData, 'googleAdSpend'),
@@ -516,46 +614,60 @@ export default function AttributionPage() {
 
   const insights = aiInsightOverrides[activeLayer as LayerKey] ?? getLayerInsights()[activeLayer as LayerKey];
 
-  /** Same definitions as Dashboard Daily Overview KPIs (TW summary.current / .previous). */
+  /** Same definitions as Dashboard Daily Overview KPIs; baseline from TopBar comparison window. */
   const starEfficiencyMetrics = useMemo(() => {
     if (!twData) return null;
+    const comparisonActive =
+      twComparisonSummary &&
+      dateRange.comparisonEnabled &&
+      dateRange.comparison !== 'none';
+    const comp = comparisonActive ? twComparisonSummary : null;
+    const cPrev = (key: string) => (comp ? getMetric(comp, key) : 0);
+
     const totalCosts =
       getMetric(twData, 'metaAdSpend') +
       getMetric(twData, 'googleAdSpend') +
       getMetric(twData, 'tiktokAdSpend') +
       getMetric(twData, 'redditAdSpend');
     const prevCosts =
-      getPrevMetric(twData, 'metaAdSpend') +
-      getPrevMetric(twData, 'googleAdSpend') +
-      getPrevMetric(twData, 'tiktokAdSpend') +
-      getPrevMetric(twData, 'redditAdSpend');
+      cPrev('metaAdSpend') +
+      cPrev('googleAdSpend') +
+      cPrev('tiktokAdSpend') +
+      cPrev('redditAdSpend');
 
-    const mer = getTwBlendedRoas(twData, 'current');
-    const prevMer = getTwBlendedRoas(twData, 'previous');
+    const mer = blendedRoasFromTw(twData);
+    const prevMer = comp ? blendedRoasFromTw(comp) : 0;
 
     const amer = totalCosts > 0 ? getMetric(twData, 'newCustomerRevenue') / totalCosts : 0;
-    const prevAmer = prevCosts > 0 ? getPrevMetric(twData, 'newCustomerRevenue') / prevCosts : 0;
+    const prevAmer = prevCosts > 0 ? cPrev('newCustomerRevenue') / prevCosts : 0;
 
     const ncac = getMetric(twData, 'ncpa');
-    const prevNcac = getPrevMetric(twData, 'ncpa');
+    const prevNcac = cPrev('ncpa');
 
     const blendedRoas = mer;
     const prevBlendedRoas = prevMer;
 
     return {
       mer,
-      merVsPrevPct: prevMer > 0 ? pctChange(mer, prevMer) : null,
+      merVsPrevPct:
+        comparisonActive && prevMer > 0 ? pctChange(mer, prevMer) : null,
       amer,
-      amerVsPrevPct: prevAmer > 0 ? pctChange(amer, prevAmer) : null,
+      amerVsPrevPct:
+        comparisonActive && prevAmer > 0 ? pctChange(amer, prevAmer) : null,
       ncac,
-      ncacVsPrevPct: prevNcac > 0 ? pctChange(ncac, prevNcac) : null,
+      ncacVsPrevPct:
+        comparisonActive && prevNcac > 0 ? pctChange(ncac, prevNcac) : null,
       totalCosts,
-      costsVsPrevPct: prevCosts > 0 ? pctChange(totalCosts, prevCosts) : null,
+      costsVsPrevPct:
+        comparisonActive && prevCosts > 0 ? pctChange(totalCosts, prevCosts) : null,
       blendedRoas,
-      blendedRoasVsPrevPct: prevBlendedRoas > 0 ? pctChange(blendedRoas, prevBlendedRoas) : null,
+      blendedRoasVsPrevPct:
+        comparisonActive && prevBlendedRoas > 0
+          ? pctChange(blendedRoas, prevBlendedRoas)
+          : null,
       blendedCpa: getMetric(twData, 'blendedCpa'),
     };
-  }, [twData]);
+  }, [twData, twComparisonSummary, dateRange.comparison, dateRange.comparisonEnabled]);
 
   if (twLoading || ga4Loading) {
     return (
@@ -969,12 +1081,29 @@ export default function AttributionPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-bg-elevated rounded-md p-3 gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="text-sm font-medium text-text-primary truncate">{item.system}</span>
+                    {item.system === 'Meta Pixel' && metaPixelId && (
+                      <span className="text-[10px] font-mono tabular-nums text-text-tertiary shrink-0" title="Meta Pixel ID">
+                        {metaPixelId}
+                      </span>
+                    )}
                     {item.system === 'Meta Pixel' && metaTrackingIsLive && (
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-success/20 text-success animate-pulse">
                         LIVE
                       </span>
                     )}
+                    {item.system === 'Reddit Pixel' &&
+                      redditTrackingIsLive &&
+                      redditTrackingData?.pixelId && (
+                        <span className="text-[10px] font-mono tabular-nums text-text-tertiary shrink-0" title="Reddit Pixel ID">
+                          {redditTrackingData.pixelId}
+                        </span>
+                      )}
                     {item.system === 'Google Ads Tag' && trackingIsLive && (
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-success/20 text-success animate-pulse">
+                        LIVE
+                      </span>
+                    )}
+                    {item.system === 'Reddit Pixel' && redditTrackingIsLive && (
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-success/20 text-success animate-pulse">
                         LIVE
                       </span>
@@ -994,6 +1123,7 @@ export default function AttributionPage() {
                     <span>Events: {item.events}</span>
                     {!(item.system === 'Meta Pixel' && metaTrackingIsLive) &&
                       !(item.system === 'Google Ads Tag' && trackingIsLive) &&
+                      !(item.system === 'Reddit Pixel' && redditTrackingIsLive) &&
                       !(item.system === 'GA4' && ga4Data?.summary) && (
                       <span>Match Quality: {item.matchRate}</span>
                     )}
@@ -1051,6 +1181,7 @@ export default function AttributionPage() {
                           <span>Count: {event.count}/day</span>
                           {!(item.system === 'Meta Pixel' && metaTrackingIsLive) &&
                             !(item.system === 'Google Ads Tag' && trackingIsLive) &&
+                            !(item.system === 'Reddit Pixel' && redditTrackingIsLive) &&
                             !(item.system === 'GA4' && ga4Data?.summary) &&
                             event.matchRate &&
                             event.matchRate !== 'N/A' && <span>Match Quality: {event.matchRate}</span>}
