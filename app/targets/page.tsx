@@ -22,6 +22,7 @@ import { getPromptById } from '@/lib/prompt-registry';
 import { MonthlyTargetData, loadTargets, loadTargetsFromServer, saveTargets } from '@/lib/targets';
 import {
   appendTargetHistory,
+  hydrateTargetHistoryFromServer,
   loadTargetHistory,
   type TargetHistoryEntry,
 } from '@/lib/targets-history';
@@ -184,6 +185,10 @@ export default function TargetsPage() {
       }
     });
   }, [applyTargetData]);
+
+  useEffect(() => {
+    hydrateTargetHistoryFromServer().catch(() => {});
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
