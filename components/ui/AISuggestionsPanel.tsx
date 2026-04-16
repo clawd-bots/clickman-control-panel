@@ -21,6 +21,7 @@ import {
 import { parseNumberedList } from '@/lib/parse-ai-response';
 import { toLocalDateString } from '@/lib/dateUtils';
 import {
+  hydrateAiInsightsFromServer,
   loadStoredAiInsights,
   saveStoredAiInsights,
   type InsightMoneyCurrency,
@@ -106,15 +107,23 @@ export default function AISuggestionsPanel({
 
   useEffect(() => {
     const { promptId: pid, start, end } = insightsStorageKeyScope;
-    const stored = loadStoredAiInsights(pid, start, end);
-    if (stored && stored.items.length > 0) {
-      setRawInsightLines(stored.items);
-      setRefreshMoneyCurrency(stored.refreshCurrency);
-      setInsightLineSource('ai');
-      return;
-    }
-    setRawInsightLines(suggestionsRef.current);
-    setInsightLineSource('static');
+    let cancelled = false;
+    (async () => {
+      await hydrateAiInsightsFromServer();
+      if (cancelled) return;
+      const stored = loadStoredAiInsights(pid, start, end);
+      if (stored && stored.items.length > 0) {
+        setRawInsightLines(stored.items);
+        setRefreshMoneyCurrency(stored.refreshCurrency);
+        setInsightLineSource('ai');
+        return;
+      }
+      setRawInsightLines(suggestionsRef.current);
+      setInsightLineSource('static');
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [insightsStorageKeyScope]);
 
   const reload = useCallback(() => {

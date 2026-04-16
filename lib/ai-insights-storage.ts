@@ -1,5 +1,6 @@
 /**
  * Persisted AI numbered-list insights: currency-agnostic cache key + refresh source currency for display rewriting.
+ * Local cache + Supabase (`ai_insights` in clickman_kv) when configured.
  */
 
 export type InsightMoneyCurrency = 'php' | 'usd';
@@ -51,6 +52,59 @@ function legacyKey(promptId: string, startIso: string, endIso: string, cur: 'php
 
 export function insightsStorageKey(promptId: string, startIso: string, endIso: string) {
   return `${V2_PREFIX}${promptId}:${startIso}:${endIso}`;
+}
+
+/** One fetch per page load; merges server entries into localStorage (newer savedAt wins per key). */
+let hydratePromise: Promise<void> | null = null;
+
+export function hydrateAiInsightsFromServer(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve();
+  if (!hydratePromise) {
+    hydratePromise = (async () => {
+      try {
+        const res = await fetch('/api/ai-insights', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = (await res.json()) as { entries?: Record<string, StoredAiInsights> };
+        const entries = data.entries;
+        if (!entries || typeof entries !== 'object') return;
+
+        for (const [k, v] of Object.entries(entries)) {
+          if (!v || typeof v !== 'object' || !Array.isArray(v.items) || v.items.length === 0) {
+            continue;
+          }
+          const remote: StoredAiInsights = {
+            items: v.items,
+            savedAt: typeof v.savedAt === 'number' ? v.savedAt : 0,
+            refreshCurrency:
+              v.refreshCurrency === 'usd' || v.refreshCurrency === 'php' ? v.refreshCurrency : 'php',
+          };
+          const local = safeParseV2(localStorage.getItem(k));
+          if (!local || remote.savedAt >= local.savedAt) {
+            try {
+              localStorage.setItem(k, JSON.stringify(remote));
+            } catch {
+              /* quota */
+            }
+          }
+        }
+      } catch {
+        /* offline */
+      }
+    })();
+  }
+  return hydratePromise;
+}
+
+async function syncInsightToServer(key: string, payload: StoredAiInsights): Promise<void> {
+  try {
+    await fetch('/api/ai-insights', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, payload }),
+    });
+  } catch {
+    /* fire-and-forget */
+  }
 }
 
 /** Load v2 payload, or migrate from legacy php/usd keys (pick newest savedAt). */
@@ -114,6 +168,7 @@ export function saveStoredAiInsights(
     localStorage.setItem(v2k, JSON.stringify(payload));
     localStorage.removeItem(legacyKey(promptId, startIso, endIso, 'php'));
     localStorage.removeItem(legacyKey(promptId, startIso, endIso, 'usd'));
+    void syncInsightToServer(v2k, payload);
   } catch {
     /* quota */
   }
