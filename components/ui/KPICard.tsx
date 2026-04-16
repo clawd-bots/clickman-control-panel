@@ -25,8 +25,8 @@ export default function KPICard({ label, value, change, sparkline, target, targe
   const comparisonEnabled = dateRange.comparisonEnabled;
 
   return (
-    <div 
-      className="bg-bg-surface border border-border rounded-lg p-4 flex flex-col gap-2"
+    <div
+      className="glass-card rounded-lg p-4 flex flex-col gap-2"
       data-testid={testId || `kpi-${label.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <div className="flex items-center justify-between">
@@ -43,7 +43,7 @@ export default function KPICard({ label, value, change, sparkline, target, targe
                   <Line
                     type="monotone"
                     dataKey="v"
-                    stroke={isPositive ? '#34D399' : '#EF4444'}
+                    stroke={isPositive ? '#B8E636' : '#EF4444'}
                     strokeWidth={1.5}
                     dot={false}
                   />
@@ -53,15 +53,15 @@ export default function KPICard({ label, value, change, sparkline, target, targe
           )}
         </div>
       </div>
-      <div className="text-2xl font-bold text-text-primary">{value}</div>
+      <div className="text-2xl font-extrabold text-text-primary tracking-tight">{value}</div>
       {secondary && (
         <div className="text-sm text-text-secondary">{secondary}</div>
       )}
       <div className="flex flex-col gap-1">
         {comparisonEnabled && change !== 0 && (
           <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-              isPositive ? 'bg-success/15 text-success' : 'bg-danger/15 text-danger'
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+              isPositive ? 'bg-accent/15 text-accent' : 'bg-danger/15 text-danger'
             }`}>
               {isPositive ? '↑' : '↓'} {Math.abs(change).toFixed(1)}%
             </span>
@@ -71,8 +71,8 @@ export default function KPICard({ label, value, change, sparkline, target, targe
         {target && targetAchievement !== undefined && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                targetAchievement >= 100 ? 'bg-success/15 text-success' : targetAchievement >= 80 ? 'bg-warm-gold/15 text-warm-gold' : 'bg-danger/15 text-danger'
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                targetAchievement >= 100 ? 'bg-accent/15 text-accent' : targetAchievement >= 80 ? 'bg-warm-gold/15 text-warm-gold' : 'bg-danger/15 text-danger'
               }`}>
                 {targetAchievement.toFixed(0)}% of target
               </span>
@@ -86,7 +86,7 @@ export default function KPICard({ label, value, change, sparkline, target, targe
                 }`}
                 style={{ 
                   width: `${Math.min(targetAchievement, 100)}%`,
-                  backgroundColor: targetAchievement >= 100 ? '#22C55E' : targetAchievement >= 80 ? 'var(--color-warm-gold)' : 'var(--color-danger)'
+                  backgroundColor: targetAchievement >= 100 ? '#B8E636' : targetAchievement >= 80 ? 'var(--color-warm-gold)' : 'var(--color-danger)'
                 }}
               />
             </div>

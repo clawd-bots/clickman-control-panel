@@ -86,7 +86,7 @@ export default function Sidebar() {
               onClick={handleNavClick}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                 active
-                  ? 'bg-brand-blue/15 text-brand-blue-light'
+                  ? 'bg-accent/10 text-accent-light'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'
               }`}
               title={collapsed ? label : undefined}
@@ -109,7 +109,7 @@ export default function Sidebar() {
               onClick={handleNavClick}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                 active
-                  ? 'bg-brand-blue/15 text-brand-blue-light'
+                  ? 'bg-accent/10 text-accent-light'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'
               }`}
               title={collapsed ? label : undefined}
@@ -135,7 +135,7 @@ export default function Sidebar() {
             onClick={() => setMobileOpen(false)}
           />
           {/* Slide-over panel */}
-          <aside className="absolute left-0 top-0 h-full w-64 bg-bg-surface border-r border-border flex flex-col transition-colors z-10">
+          <aside className="absolute left-0 top-0 h-full w-64 glass-panel border-r border-border flex flex-col transition-colors z-10">
             {sidebarContent}
           </aside>
         </div>
@@ -143,7 +143,7 @@ export default function Sidebar() {
 
       {/* Tablet: collapsed (icons only). Desktop: full or collapsed based on state */}
       {/* Hidden on mobile (<1024px), shown on lg+ */}
-      <aside className={`hidden lg:flex ${collapsed ? 'w-16' : 'w-56'} shrink-0 h-screen sticky top-0 bg-bg-surface border-r border-border flex-col transition-all duration-200 transition-colors`}>
+      <aside className={`hidden lg:flex ${collapsed ? 'w-16' : 'w-56'} shrink-0 h-screen sticky top-0 glass-panel border-r border-border flex-col transition-all duration-200`}>
         {sidebarContent}
       </aside>
     </>

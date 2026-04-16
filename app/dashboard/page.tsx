@@ -34,7 +34,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 
-const COLORS = ['#334FB4', '#EDBF63', '#34D399', '#EF4444', '#4A6BD6', '#94A3B8'];
+const COLORS = ['#B8E636', '#334FB4', '#EDBF63', '#34D399', '#EF4444', '#4A6BD6'];
 
 /** Triple Whale `pixel_joined_tvf` model labels (order matches UI dropdown). */
 const CHANNEL_ATTRIBUTION_MODELS = [
@@ -678,7 +678,7 @@ export default function DashboardPage() {
 
       {/* Revenue & Marketing Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="revenue-chart">
+        <div className="glass-card rounded-lg p-4 sm:p-5" data-testid="revenue-chart">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Order Revenue & Ad Spend</h3>
             <div className="flex items-center gap-2 shrink-0"><DataSource source="Triple Whale" /><LiveBadge /></div>
@@ -710,14 +710,20 @@ export default function DashboardPage() {
                   ]}
                 />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Line type="monotone" dataKey="revenue" name="Order Revenue" stroke="#34D399" strokeWidth={2.5} dot={false} />
-                <Line type="monotone" dataKey="costs" name="Ad Spend" stroke="#EDBF63" strokeWidth={2.5} dot={false} />
+                <defs>
+                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#B8E636" stopOpacity={0.15} />
+                    <stop offset="100%" stopColor="#B8E636" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Line type="monotone" dataKey="revenue" name="Order Revenue" stroke="#B8E636" strokeWidth={2.5} dot={false} />
+                <Line type="monotone" dataKey="costs" name="Ad Spend" stroke="#64748B" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="orders-chart">
+        <div className="glass-card rounded-lg p-4 sm:p-5" data-testid="orders-chart">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Net Orders & New Customers</h3>
             <div className="flex items-center gap-2 shrink-0"><DataSource source="Triple Whale" /><LiveBadge /></div>
@@ -739,7 +745,7 @@ export default function DashboardPage() {
                 />
                 <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line type="monotone" dataKey="newCustomers" name="New Customers" stroke="#EDBF63" strokeWidth={2} dot={false} />
+                <Line type="monotone" dataKey="newCustomers" name="New Customers" stroke="#B8E636" strokeWidth={2} dot={false} />
                 <Line type="monotone" dataKey="orders" name="Net Orders" stroke="#4A6BD6" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
@@ -749,7 +755,7 @@ export default function DashboardPage() {
 
       {/* Marketing Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
+        <div className="glass-card rounded-lg p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary">Marketing Insights</h3>
             <div className="flex items-center gap-2"><DataSource source="Google Analytics" /><LiveBadge variant={ga4Data ? 'live' : 'sample'} /></div>
@@ -784,7 +790,7 @@ export default function DashboardPage() {
           ))}
         </div>
 
-        <div className="lg:col-span-2 bg-bg-surface border border-border rounded-lg p-4 sm:p-5">
+        <div className="lg:col-span-2 glass-card rounded-lg p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary">Unique Sessions</h3>
             <div className="flex items-center gap-2"><DataSource source="Google Analytics" /><LiveBadge variant={ga4DailyData.length > 0 ? 'live' : 'sample'} /></div>
@@ -809,7 +815,7 @@ export default function DashboardPage() {
                   tickFormatter={(v) => v.toLocaleString()}
                 />
                 <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
-                <Bar dataKey="sessions" name="Sessions" fill="#334FB4" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="sessions" name="Sessions" fill="#B8E636" fillOpacity={0.7} radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -817,7 +823,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Channel Attribution Table */}
-      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="attribution-table">
+      <div className="glass-card rounded-lg p-4 sm:p-5" data-testid="attribution-table">
         <div className="flex flex-col gap-3 mb-4">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-sm font-medium text-text-primary">Channel Attribution</h3>
@@ -917,7 +923,7 @@ export default function DashboardPage() {
                       <td className="py-3 px-2 sm:px-3 text-right text-text-primary">{row.cv > 0 ? formatAttributionCurrency(row.cv) : '—'}</td>
                       <td className="py-3 px-2 sm:px-3 text-right text-text-secondary">{row.purchases > 0 ? row.purchases : '—'}</td>
                       <td className="py-3 px-2 sm:px-3 text-right">
-                        <span className={row.roas >= 3.5 ? 'text-success' : row.roas >= 2.5 ? 'text-warm-gold' : row.roas > 0 ? 'text-danger' : 'text-text-tertiary'}>
+                        <span className={row.roas >= 3.5 ? 'text-accent' : row.roas >= 2.5 ? 'text-warm-gold' : row.roas > 0 ? 'text-danger' : 'text-text-tertiary'}>
                           {row.roas > 0 ? `${row.roas.toFixed(2)}x` : '—'}
                         </span>
                       </td>
@@ -934,7 +940,7 @@ export default function DashboardPage() {
 
       {/* Revenue Insights */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="revenue-composition">
+        <div className="glass-card rounded-lg p-4 sm:p-5" data-testid="revenue-composition">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary truncate">Revenue Composition (NC vs RC)</h3>
             <div className="flex items-center gap-2 shrink-0"><DataSource source="Triple Whale" /><LiveBadge /></div>
@@ -999,15 +1005,15 @@ export default function DashboardPage() {
                   ]}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="nc" name="New Customer Rev" stackId="a" fill="#4A6BD6" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="rc" name="Repeat Customer Rev" stackId="a" fill="#34D399" radius={[2, 2, 0, 0]} />
+                <Bar dataKey="nc" name="New Customer Rev" stackId="a" fill="#B8E636" fillOpacity={0.8} radius={[0, 0, 0, 0]} />
+                <Bar dataKey="rc" name="Repeat Customer Rev" stackId="a" fill="#334FB4" fillOpacity={0.6} radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
             )}
           </div>
         </div>
 
-        <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5 space-y-4">
+        <div className="glass-card rounded-lg p-4 sm:p-5 space-y-4">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-sm font-medium text-text-secondary">Revenue Breakdown</h3>
             <div className="flex items-center gap-2"><DataSource source="Triple Whale" /><LiveBadge /></div>
@@ -1021,7 +1027,7 @@ export default function DashboardPage() {
               { label: 'NC Orders', value: twData ? formatNumber(getMetric(twData, 'newCustomerOrders')) : formatNumber(revenueInsights.firstPurchasePct), metric: 'NC Orders' },
               { label: 'RC Orders', value: twData ? formatNumber(getMetric(twData, 'orders') - getMetric(twData, 'newCustomerOrders')) : '—', metric: 'RC Orders' },
             ].map((item) => (
-              <div key={item.label} className="bg-bg-elevated rounded-md p-3 min-h-[70px] flex flex-col justify-between">
+              <div key={item.label} className="glass-inner rounded-md p-3 min-h-[70px] flex flex-col justify-between">
                 <div className="flex items-center text-xs text-text-secondary mb-1 gap-1">
                   <span className="truncate">{item.label}</span>
                   <InfoTooltip metric={item.metric} />
@@ -1045,8 +1051,8 @@ export default function DashboardPage() {
                         { name: 'New Customer', value: ncPct },
                         { name: 'Returning', value: rcPct },
                       ]} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value">
-                        <Cell fill="#4A6BD6" />
-                        <Cell fill="#34D399" />
+                        <Cell fill="#B8E636" />
+                        <Cell fill="#334FB4" />
                       </Pie>
                       <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                     </PieChart>
@@ -1054,11 +1060,11 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-xs text-text-secondary space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-brand-blue-light shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: '#B8E636' }} />
                     <span>New Customer: {ncPct.toFixed(1)}%</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-success shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-brand-blue shrink-0" />
                     <span>Returning: {rcPct.toFixed(1)}%</span>
                   </div>
                 </div>
@@ -1069,7 +1075,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Product KPIs */}
-      <div className="bg-bg-surface border border-border rounded-lg p-4 sm:p-5" data-testid="product-kpis">
+      <div className="glass-card rounded-lg p-4 sm:p-5" data-testid="product-kpis">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-medium text-text-primary">Product KPIs</h3>
           <div className="flex items-center gap-2">

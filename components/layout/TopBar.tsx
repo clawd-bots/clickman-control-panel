@@ -115,7 +115,7 @@ export default function TopBar() {
   }, []);
 
   return (
-    <header className="h-14 bg-bg-surface border-b border-border flex items-center justify-between px-3 md:px-6 sticky top-0 z-40 transition-colors min-w-0">
+    <header className="h-14 glass-panel border-b border-border flex items-center justify-between px-3 md:px-6 sticky top-0 z-40 min-w-0">
       {/* Left - Hamburger (mobile) + AndYou Logo + Title */}
       <div className="flex items-center gap-2 min-w-0">
         <button
@@ -231,7 +231,7 @@ export default function TopBar() {
                         }}
                         className={`w-full text-left px-3 py-2 text-xs transition-colors ${
                           dateRange.preset === p.value
-                            ? 'bg-brand-blue/15 text-brand-blue-light'
+                            ? 'bg-accent/10 text-accent-light'
                             : 'text-text-secondary hover:bg-bg-surface hover:text-text-primary'
                         }`}
                       >
@@ -267,7 +267,7 @@ export default function TopBar() {
                         }}
                         className={`w-full text-left px-3 py-2 text-xs transition-colors ${
                           dateRange.comparison === o.value
-                            ? 'bg-brand-blue/15 text-brand-blue-light'
+                            ? 'bg-accent/10 text-accent-light'
                             : 'text-text-secondary hover:bg-bg-surface hover:text-text-primary'
                         }`}
                       >

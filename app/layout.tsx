@@ -1,14 +1,21 @@
 import type { Metadata } from 'next';
+import { Urbanist } from 'next/font/google';
 import './globals.css';
 import Sidebar from '@/components/layout/Sidebar';
 import TopBar from '@/components/layout/TopBar';
-
 
 import ThemeProvider from '@/components/ThemeProvider';
 import { SidebarProvider } from '@/components/layout/SidebarContext';
 import { CurrencyProvider } from '@/components/CurrencyProvider';
 import { DateProvider } from '@/components/DateProvider';
 import ActivityLogger from '@/components/ActivityLogger';
+
+const urbanist = Urbanist({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-urbanist',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Click-Man Control Panel | &you',
@@ -26,7 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           } catch(e) {}
         ` }} />
       </head>
-      <body className="antialiased">
+      <body className={`${urbanist.variable} antialiased`}>
         <ThemeProvider>
           <CurrencyProvider>
             <DateProvider>
