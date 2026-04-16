@@ -1,4 +1,5 @@
--- Run in Supabase SQL Editor (Dashboard → SQL Editor) once per project.
+-- Run in Supabase SQL Editor: paste the SQL *statements* below, not this file path.
+-- Easiest: open `paste-in-sql-editor.sql` in this folder and copy its full contents.
 -- Stores app JSON blobs keyed by string (targets, prompts, history).
 
 create table if not exists public.clickman_kv (
