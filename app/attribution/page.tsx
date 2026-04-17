@@ -45,7 +45,7 @@ function blendedRoasFromTw(data: TWData): number {
   return mer > 0 ? mer : 0;
 }
 
-const COLORS = ['#334FB4', '#4A6BD6', '#EDBF63', '#34D399', '#EF4444', '#94A3B8'];
+const COLORS = ['#4F46E5', '#6366F1', '#EDBF63', '#34D399', '#EF4444', '#94A3B8'];
 
 /** Labels must match `/api/triple-whale/cohorts` MODEL_MAP and TW pixel_joined_tvf `model`. */
 const cohortAttributionModels = ['First Click', 'Last Click', 'Linear Paid', 'Triple Attribution'] as const;
@@ -78,8 +78,8 @@ function weightedBlendedLtv(rows: TWCohortApiRow[]): number {
 
 const treeLayers = [
   { id: 'star', label: 'MER / nCAC', icon: Star, description: 'Top-level efficiency metrics, your north star for marketing health', color: '#EDBF63' },
-  { id: 'upper', label: 'Surveys & MMM', icon: GitBranch, description: 'Directional measurement, budget allocation layer using survey data and modeling', color: '#4A6BD6' },
-  { id: 'lower', label: 'MTA & Platform', icon: Activity, description: 'Ad-level optimization, tactical decisions based on multi-touch and platform data', color: '#334FB4' },
+  { id: 'upper', label: 'Surveys & MMM', icon: GitBranch, description: 'Directional measurement, budget allocation layer using survey data and modeling', color: '#6366F1' },
+  { id: 'lower', label: 'MTA & Platform', icon: Activity, description: 'Ad-level optimization, tactical decisions based on multi-touch and platform data', color: '#4F46E5' },
   { id: 'trunk', label: 'Tracking Infra', icon: Database, description: 'The foundation, GA4, CAPI, and server-side tracking health', color: '#34D399' },
   { id: 'roots', label: 'Cohort LTV', icon: Layers, description: 'Long-term value, measuring customer quality by acquisition source', color: '#A855F7' },
 ];
@@ -1011,7 +1011,7 @@ export default function AttributionPage() {
                   formatter={(value: any, name: any) => [name === 'Spend' ? `${currency}${(convertValue(Number(value))/1000).toFixed(1)}K` : `${currency}${convertValue(value)}`, name || '']}
                   labelFormatter={(_, payload) => payload?.[0]?.payload?.name || ''}
                 />
-                <Scatter data={adScatterData.filter(d => d.platform === 'Meta')} fill="#4A6BD6" name="Meta" />
+                <Scatter data={adScatterData.filter(d => d.platform === 'Meta')} fill="#6366F1" name="Meta" />
                 <Scatter data={adScatterData.filter(d => d.platform === 'Google')} fill="#EDBF63" name="Google" />
                 <Scatter data={adScatterData.filter(d => d.platform === 'TikTok')} fill="#34D399" name="TikTok" />
               </ScatterChart>

@@ -579,8 +579,8 @@ export default function CohortsPage() {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(v: any) => `₱${Number(v).toLocaleString()}`} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="firstOrder" name="1st Order AOV" stackId="a" fill="#334FB4" />
-                <Bar dataKey="clr90" name="90d CLR" stackId="a" fill="#4A6BD6" />
+                <Bar dataKey="firstOrder" name="1st Order AOV" stackId="a" fill="#4F46E5" />
+                <Bar dataKey="clr90" name="90d CLR" stackId="a" fill="#6366F1" />
                 <Bar dataKey="clr365" name="365d CLR" stackId="a" fill="#EDBF63" />
                 <Bar dataKey="beyond365" name=">365d" stackId="a" fill="#34D399" radius={[0, 3, 3, 0]} />
               </BarChart>

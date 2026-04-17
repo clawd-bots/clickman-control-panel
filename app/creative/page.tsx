@@ -111,15 +111,15 @@ const attributionModels = ['First Click', 'Last Click', 'Linear Paid', 'Triple A
 const attributionWindows = ['1 day', '7 days', '14 days', '28 days', 'Lifetime'];
 
 // Zone colors for account control scatter
-const zoneColors: Record<string, string> = { scaling: '#10B981', zombie: '#EF4444', testing: '#4A6BD6', untapped: '#EDBF63' };
+const zoneColors: Record<string, string> = { scaling: '#10B981', zombie: '#EF4444', testing: '#6366F1', untapped: '#EDBF63' };
 const zoneLabels: Record<string, string> = { scaling: 'Scale (Winners)', zombie: 'Zombies (Kill)', testing: 'Testing', untapped: 'Untapped/Learning' };
 
 // Churn age colors (dark → light for new → old)
-const churnAgeColors = ['#1e3a5f', '#2563EB', '#4A6BD6', '#6B8DE8', '#93B4F5', '#C5D8FB'];
+const churnAgeColors = ['#1e3a5f', '#2563EB', '#6366F1', '#6B8DE8', '#93B4F5', '#C5D8FB'];
 const churnAgeKeys = ['Last 7 Days', '8-14 Days', '15-30 Days', '31-90 Days', '91-180 Days', '180+ Days'];
 
 // Cohort colors (light = old → dark = new)
-const cohortColors = { oct: '#C5D8FB', nov: '#93B4F5', dec: '#6B8DE8', jan: '#4A6BD6', feb: '#2563EB', mar: '#1e3a5f' };
+const cohortColors = { oct: '#C5D8FB', nov: '#93B4F5', dec: '#6B8DE8', jan: '#6366F1', feb: '#2563EB', mar: '#1e3a5f' };
 const cohortKeys = ['oct', 'nov', 'dec', 'jan', 'feb', 'mar'] as const;
 const cohortLabels: Record<string, string> = { oct: 'Oct Creatives', nov: 'Nov Creatives', dec: 'Dec Creatives', jan: 'Jan Creatives', feb: 'Feb Creatives', mar: 'Mar Creatives' };
 
@@ -1813,7 +1813,7 @@ export default function CreativePage() {
                 />
                 <Bar yAxisId="spend" dataKey="Last 7 Days" stackId="churn" fill="#1e3a5f" />
                 <Bar yAxisId="spend" dataKey="8-14 Days" stackId="churn" fill="#2563EB" />
-                <Bar yAxisId="spend" dataKey="15-30 Days" stackId="churn" fill="#4A6BD6" />
+                <Bar yAxisId="spend" dataKey="15-30 Days" stackId="churn" fill="#6366F1" />
                 <Bar yAxisId="spend" dataKey="31-90 Days" stackId="churn" fill="#6B8DE8" />
                 <Bar yAxisId="spend" dataKey="91-180 Days" stackId="churn" fill="#93B4F5" />
                 <Bar yAxisId="spend" dataKey="180+ Days" stackId="churn" fill="#C5D8FB" radius={[3, 3, 0, 0]} />
@@ -1859,7 +1859,7 @@ export default function CreativePage() {
                   <Area type="monotone" dataKey="oct" stackId="cohort" fill="#C5D8FB" stroke="#C5D8FB" fillOpacity={0.85} />
                   <Area type="monotone" dataKey="nov" stackId="cohort" fill="#93B4F5" stroke="#93B4F5" fillOpacity={0.85} />
                   <Area type="monotone" dataKey="dec" stackId="cohort" fill="#6B8DE8" stroke="#6B8DE8" fillOpacity={0.85} />
-                  <Area type="monotone" dataKey="jan" stackId="cohort" fill="#4A6BD6" stroke="#4A6BD6" fillOpacity={0.85} />
+                  <Area type="monotone" dataKey="jan" stackId="cohort" fill="#6366F1" stroke="#6366F1" fillOpacity={0.85} />
                   <Area type="monotone" dataKey="feb" stackId="cohort" fill="#2563EB" stroke="#2563EB" fillOpacity={0.85} />
                   <Area type="monotone" dataKey="mar" stackId="cohort" fill="#1e3a5f" stroke="#1e3a5f" fillOpacity={0.85} />
                 </AreaChart>
@@ -1955,7 +1955,7 @@ export default function CreativePage() {
                     return [value, 'Total Launched'];
                   }}
                 />
-                <Bar yAxisId="left" dataKey="launched" name="launched" fill="#4A6BD6" fillOpacity={0.25} radius={[3, 3, 0, 0]} />
+                <Bar yAxisId="left" dataKey="launched" name="launched" fill="#6366F1" fillOpacity={0.25} radius={[3, 3, 0, 0]} />
                 <Bar yAxisId="left" dataKey="hits" name="hits" fill="#1e3a5f" radius={[3, 3, 0, 0]} />
                 <Line yAxisId="right" type="monotone" dataKey="hitRate" name="hitRate" stroke="#EDBF63" strokeWidth={2.5} dot={{ fill: '#EDBF63', r: 4 }} />
               </ComposedChart>
@@ -2053,7 +2053,7 @@ export default function CreativePage() {
                       return [value, name];
                     }}
                   />
-                  <Bar yAxisId="left" dataKey="conversions" name="Conversions" fill="#4A6BD6" radius={[3, 3, 0, 0]} />
+                  <Bar yAxisId="left" dataKey="conversions" name="Conversions" fill="#6366F1" radius={[3, 3, 0, 0]} />
                   <Line yAxisId="right" type="monotone" dataKey="cumPct" name="Cumulative %" stroke="#EDBF63" strokeWidth={2} dot={{ fill: '#EDBF63', r: 4 }} />
                   <ReferenceLine yAxisId="right" y={80} stroke="#EF4444" strokeDasharray="6 4" strokeWidth={1.5} label={{ value: '80%', fill: '#EF4444', fontSize: 10, position: 'right' }} />
                 </ComposedChart>

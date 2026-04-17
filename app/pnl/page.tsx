@@ -7,7 +7,7 @@ import { SkeletonKPICard, SkeletonChart, SkeletonTable } from '@/components/ui/S
 import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/components/CurrencyProvider';
 import {
-  BarChart, Bar, LineChart, Line,
+  BarChart, Bar, LineChart, Line, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts';
 
@@ -70,7 +70,7 @@ function getRowStyle(row: PnlRowData): { bg: string; text: string; font: string;
 // Color indicator dot for contribution margin rows
 function getIndicatorColor(label: string): string | null {
   if (label === 'Net Revenue') return '#34D399';
-  if (label === 'CM1') return '#4A6BD6';
+  if (label === 'CM1') return '#6366F1';
   if (label === 'CM2') return '#EDBF63';
   if (label === 'CM3') return '#F97316';
   if (label === 'EBITDA') return '#8B5CF6';
@@ -287,7 +287,7 @@ export default function PnLPage() {
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   <Bar dataKey="Net Revenue" fill="#34D399" radius={[2, 2, 0, 0]} />
-                  <Bar dataKey="CM1" fill="#4A6BD6" radius={[2, 2, 0, 0]} />
+                  <Bar dataKey="CM1" fill="#6366F1" radius={[2, 2, 0, 0]} />
                   <Bar dataKey="CM2" fill="#EDBF63" radius={[2, 2, 0, 0]} />
                   <Bar dataKey="CM3" fill="#F97316" radius={[2, 2, 0, 0]} />
                   <Bar dataKey="EBITDA" fill="#8B5CF6" radius={[2, 2, 0, 0]} />
@@ -309,7 +309,25 @@ export default function PnLPage() {
           {sheetLoading ? <SkeletonChart /> : (
             <div className="min-h-[300px]">
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={marginChartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                <AreaChart data={marginChartData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                  <defs>
+                    <linearGradient id="gradientCM1" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366F1" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#6366F1" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="gradientCM2" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#EDBF63" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#EDBF63" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="gradientCM3" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#F97316" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#F97316" stopOpacity={0.02} />
+                    </linearGradient>
+                    <linearGradient id="gradientEBITDA" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.02} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
                   <XAxis dataKey="month" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
                   <YAxis
@@ -321,11 +339,11 @@ export default function PnLPage() {
                     formatter={(value: any) => [`${Number(value).toFixed(1)}%`, '']}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="CM1 %" stroke="#4A6BD6" strokeWidth={2} dot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="CM2 %" stroke="#EDBF63" strokeWidth={2} dot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="CM3 %" stroke="#F97316" strokeWidth={2} dot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="EBITDA %" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 4 }} />
-                </LineChart>
+                  <Area type="monotone" dataKey="CM1 %" stroke="#6366F1" strokeWidth={2} dot={{ r: 4 }} fill="url(#gradientCM1)" />
+                  <Area type="monotone" dataKey="CM2 %" stroke="#EDBF63" strokeWidth={2} dot={{ r: 4 }} fill="url(#gradientCM2)" />
+                  <Area type="monotone" dataKey="CM3 %" stroke="#F97316" strokeWidth={2} dot={{ r: 4 }} fill="url(#gradientCM3)" />
+                  <Area type="monotone" dataKey="EBITDA %" stroke="#8B5CF6" strokeWidth={2} dot={{ r: 4 }} fill="url(#gradientEBITDA)" />
+                </AreaChart>
               </ResponsiveContainer>
             </div>
           )}

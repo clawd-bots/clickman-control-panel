@@ -407,7 +407,7 @@ export default function CashFlowPage() {
           </div>
           <div className="flex flex-wrap gap-4 text-xs text-text-secondary mb-3">
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#4A6BD6]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#6366F1]" />
               <span>New Customer (One-time)</span>
             </div>
             <div className="flex items-center gap-2">
@@ -443,7 +443,7 @@ export default function CashFlowPage() {
                 label={{ value: `Revenue (${currency}M)`, angle: -90, position: 'insideLeft', style: { fill: 'var(--color-text-tertiary)', fontSize: 11 } }} 
               />
               <Tooltip contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
-              <Area type="monotone" dataKey="new" name="New (One-time)" stackId="1" fill="#4A6BD6" stroke="#4A6BD6" fillOpacity={0.6} />
+              <Area type="monotone" dataKey="new" name="New (One-time)" stackId="1" fill="#6366F1" stroke="#6366F1" fillOpacity={0.6} />
               <Area type="monotone" dataKey="repeat" name="Repeat (One-time)" stackId="1" fill="#34D399" stroke="#34D399" fillOpacity={0.6} />
               <Area type="monotone" dataKey="subscription" name="Subscription" stackId="1" fill="#EDBF63" stroke="#EDBF63" fillOpacity={0.6} />
             </AreaChart>
