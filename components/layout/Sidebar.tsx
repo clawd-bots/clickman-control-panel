@@ -86,7 +86,7 @@ export default function Sidebar() {
               onClick={handleNavClick}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                 active
-                  ? 'bg-accent/10 text-accent-light'
+                  ? 'bg-brand-blue/10 text-brand-blue dark:bg-accent/10 dark:text-accent-light'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'
               }`}
               title={collapsed ? label : undefined}
@@ -109,7 +109,7 @@ export default function Sidebar() {
               onClick={handleNavClick}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors ${
                 active
-                  ? 'bg-accent/10 text-accent-light'
+                  ? 'bg-brand-blue/10 text-brand-blue dark:bg-accent/10 dark:text-accent-light'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-elevated'
               }`}
               title={collapsed ? label : undefined}

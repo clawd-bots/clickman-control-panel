@@ -251,7 +251,7 @@ export default function TopBar() {
                         }}
                         className={`w-full text-left px-3 py-2 text-xs transition-colors ${
                           dateRange.preset === p.value
-                            ? 'bg-accent/10 text-accent-light'
+                            ? 'bg-brand-blue/10 text-brand-blue dark:bg-accent/10 dark:text-accent-light'
                             : 'text-text-secondary hover:bg-bg-surface hover:text-text-primary'
                         }`}
                       >
@@ -292,7 +292,7 @@ export default function TopBar() {
                         }}
                         className={`w-full text-left px-3 py-2 text-xs transition-colors ${
                           dateRange.comparison === o.value
-                            ? 'bg-accent/10 text-accent-light'
+                            ? 'bg-brand-blue/10 text-brand-blue dark:bg-accent/10 dark:text-accent-light'
                             : 'text-text-secondary hover:bg-bg-surface hover:text-text-primary'
                         }`}
                       >
