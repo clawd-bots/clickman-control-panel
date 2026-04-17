@@ -2,7 +2,6 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
-import { targets as initialTargets, targetTrend, targetAISuggestions } from '@/lib/sample-data';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { filterByDateRange, formatDateLabel, toLocalDateString } from '@/lib/dateUtils';
 import {
@@ -16,9 +15,9 @@ import {
 } from 'lucide-react';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
+import { useCachedFetch } from '@/components/DataCacheProvider';
 import { useTargets } from '@/lib/useTargets';
 import { fetchTripleWhaleData, getMetric, type TWData } from '@/lib/triple-whale-client';
-import { getPromptById } from '@/lib/prompt-registry';
 import { MonthlyTargetData, loadTargets, loadTargetsFromServer, saveTargets } from '@/lib/targets';
 import {
   appendTargetHistory,
@@ -138,6 +137,7 @@ const monthLabels = ['Apr 26', 'May 26', 'Jun 26', 'Jul 26', 'Aug 26', 'Sep 26',
 const HISTORY_PAGE_SIZE = 10;
 
 export default function TargetsPage() {
+  const cachedFetch = useCachedFetch();
   const { currency, convertValue, exchangeRate } = useCurrency();
   const { dateRange } = useDateRange();
   const { getTarget } = useTargets();
@@ -194,7 +194,7 @@ export default function TargetsPage() {
     let cancelled = false;
     const start = toLocalDateString(dateRange.startDate);
     const end = toLocalDateString(dateRange.endDate);
-    fetchTripleWhaleData(start, end, 'summary')
+    fetchTripleWhaleData(start, end, 'summary', cachedFetch)
       .then((d) => {
         if (!cancelled) setTwSummary(d);
       })
@@ -204,7 +204,7 @@ export default function TargetsPage() {
     return () => {
       cancelled = true;
     };
-  }, [dateRange.startDate, dateRange.endDate]);
+  }, [dateRange.startDate, dateRange.endDate, cachedFetch]);
 
   useEffect(() => {
     if (!showHistoryModal) return;
@@ -543,37 +543,6 @@ export default function TargetsPage() {
     ]
   );
 
-  // Dynamic AI suggestions with historical data analysis linked to prompt templates
-  const getDynamicTargetIntelligence = () => {
-    const targetPrompt = getPromptById('target-intelligence');
-    const basePrompt = targetPrompt?.prompt || '';
-    
-    // Generate specific suggestions based on current data and linked prompt
-    return [
-      `${basePrompt.split('.')[0]}: Current revenue run rate ${formatCurrencyValue(322000)}/day suggests April target should be ${formatCurrencyValue(2800000)} (vs typical ${formatCurrencyValue(2500000)}).`,
-      `Historical seasonality: Q4 typically sees 15-20% lift. December targets should reflect holiday season boost in spend and conversions.`,
-      `90-day moving average shows nCAC improving 8% MoM. Set progressive reduction targets: Apr ${formatCurrencyValue(780)} → Dec ${formatCurrencyValue(650)}.`,
-      `365-day cohort data indicates March-May launches perform 25% better. Increase Q2 new customer targets by corresponding amount.`,
-      `Year-over-year comparison: 2025 Q4 was 18% higher than Q3. Apply similar seasonal multipliers to 2026 targets for realistic goal setting.`,
-    ];
-  };
-
-  const getDynamicTargetVsActualIntelligence = () => {
-    const tpl = getPromptById('target-vs-actual-intelligence');
-    const lead = tpl?.prompt?.split('\n')?.[0] || 'Target vs actual';
-    const revT = getTarget('Net Revenue');
-    const revA = twSummary ? getMetric(twSummary, 'orderRevenue') : null;
-    return [
-      `${lead} Compare the targets grid to tripleWhaleActuals in DATA for the same window.`,
-      revT != null && revA != null
-        ? `Example: Net Revenue actual ${formatCurrencyValue(revA)} vs prorated target from grid ${formatCurrencyValue(revT)} (verify proration in app logic).`
-        : `When TW loads, use tripleWhaleActuals.orderRevenue against Net Revenue cells for overlapping months.`,
-      `Classify each row: on track (90%+), at risk (70 to 89%), behind (below 70%) using achievement = actual divided by target.`,
-      `For gaps, explain acquisition vs spend mix using ncCAC and marketing spend from DATA.`,
-      `End with 2 to 3 concrete actions (budget, creative, or target revision), not generic advice.`,
-    ];
-  };
-
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="px-1">
@@ -866,14 +835,14 @@ export default function TargetsPage() {
       {/* Target Intelligence */}
       <div className="px-1 space-y-6">
         <AISuggestionsPanel 
-          suggestions={getDynamicTargetIntelligence()} 
+          suggestions={[]}
           title="Target Intelligence"
           promptId="target-intelligence"
           pageLabel="Targets & Goals"
           analysisContext={targetsAnalysisContext}
         />
         <AISuggestionsPanel 
-          suggestions={getDynamicTargetVsActualIntelligence()} 
+          suggestions={[]}
           title="Target vs Actual Performance"
           promptId="target-vs-actual-intelligence"
           pageLabel="Targets & Goals"

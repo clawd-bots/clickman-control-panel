@@ -49,9 +49,15 @@ export interface MetaOverview {
   dateRange: { startDate: string; endDate: string };
 }
 
-export async function fetchMetaOverview(startDate: string, endDate: string): Promise<MetaOverview | null> {
+type FetchLike = typeof fetch;
+
+export async function fetchMetaOverview(
+  startDate: string,
+  endDate: string,
+  fetchImpl: FetchLike = fetch
+): Promise<MetaOverview | null> {
   try {
-    const res = await fetch(`/api/meta?mode=overview&startDate=${startDate}&endDate=${endDate}`);
+    const res = await fetchImpl(`/api/meta?mode=overview&startDate=${startDate}&endDate=${endDate}`);
     const json = await res.json();
     if (json.success) return json.data;
     console.error('Meta API error:', json.error);

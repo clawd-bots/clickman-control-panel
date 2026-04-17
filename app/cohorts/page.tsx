@@ -9,6 +9,7 @@ import { useDateRange } from '@/components/DateProvider';
 import { formatCurrency } from '@/lib/utils';
 import { toLocalDateString } from '@/lib/dateUtils';
 import AISuggestionsPanel from '@/components/ui/AISuggestionsPanel';
+import { useCachedFetch } from '@/components/DataCacheProvider';
 import { fetchTripleWhaleData, fetchTWCohorts, getMetric, TWData, TWCohortApiRow } from '@/lib/triple-whale-client';
 import { clvExtension, productComparison } from '@/lib/sample-data';
 import { getHeatmapClass } from '@/lib/utils';
@@ -21,6 +22,7 @@ const COHORT_MONTH_KEYS = Array.from({ length: 13 }, (_, i) => `M${i}`);
 type CohortMetric = 'LTV' | 'Total sales' | 'Number of customers' | 'Retention rate';
 
 export default function CohortsPage() {
+  const cachedFetch = useCachedFetch();
   const { currency, convertValue } = useCurrency();
   const { dateRange } = useDateRange();
   const [twData, setTwData] = useState<TWData | null>(null);
@@ -38,19 +40,19 @@ export default function CohortsPage() {
     const startDate = toLocalDateString(start);
     const endDate = toLocalDateString(end);
 
-    fetchTripleWhaleData(startDate, endDate, 'summary')
+    fetchTripleWhaleData(startDate, endDate, 'summary', cachedFetch)
       .then(setTwData)
       .catch(console.error)
       .finally(() => setTwLoading(false));
 
-    fetchTWCohorts(startDate, endDate, 'Triple Attribution', 'Lifetime')
+    fetchTWCohorts(startDate, endDate, 'Triple Attribution', 'Lifetime', false, cachedFetch)
       .then(setTwCohortRows)
       .catch((e) => {
         console.error(e);
         setTwCohortRows([]);
       })
       .finally(() => setCohortGridLoading(false));
-  }, []);
+  }, [cachedFetch]);
 
   const [activeTab, setActiveTab] = useState<'analysis' | 'comparison'>('analysis');
   const [metric, setMetric] = useState<CohortMetric>('LTV');
@@ -76,18 +78,6 @@ export default function CohortsPage() {
 
   const formatCohortPct = (value: number): string => {
     return `${value.toFixed(2)}%`;
-  };
-
-  const getDynamicAISuggestions = () => {
-    return [
-      'Scale Meta spend +15%: Oct to Dec cohorts show consistently improving M1 retention (28.5% to 32.8%), suggesting recent targeting improvements are working.',
-      'Maintain Google Brand: Lowest CAC channel with best LTV. Max out impression share before expanding elsewhere.',
-      `Cap TikTok at current levels: March cohort has lowest first-order AOV (${formatCurrencyValue(1850)} isn't bad but TikTok LTV:CAC needs monitoring before scaling).`,
-      'Jan 2026 cohort dipped: M1 retention dropped to 29.8% from Dec\'s 32.8%. Could be post-holiday buyer quality or seasonal effects. Monitor closely.',
-      'GLP-1 is the retention engine: 51.8% 90-day repeat rate and 3.1 avg orders. Its recurring nature makes it the ideal subscription candidate.',
-      `First-order AOV trending up: ${formatCurrencyValue(1580)} (Sep) to ${formatCurrencyValue(1850)} (Mar) = +17% improvement. Better targeting or product mix shift toward GLP-1.`,
-      'Launch subscription for GLP-1 (highest repeat rate product) and send targeted re-engagement to Nov cohort (highest 30d repeat potential).',
-    ];
   };
 
   const displayCohortRows: TWCohortApiRow[] = useMemo(() => {
@@ -540,7 +530,7 @@ export default function CohortsPage() {
           {/* AI Suggestions */}
           <div className="px-1">
             <AISuggestionsPanel 
-              suggestions={getDynamicAISuggestions()} 
+              suggestions={[]} 
               title="Retention Intelligence"
               promptId="cohorts-intelligence"
               pageLabel="Cohorts"

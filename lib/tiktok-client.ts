@@ -49,9 +49,15 @@ export interface TikTokOverview {
   dateRange: { startDate: string; endDate: string };
 }
 
-export async function fetchTikTokOverview(startDate: string, endDate: string): Promise<TikTokOverview | null> {
+type FetchLike = typeof fetch;
+
+export async function fetchTikTokOverview(
+  startDate: string,
+  endDate: string,
+  fetchImpl: FetchLike = fetch
+): Promise<TikTokOverview | null> {
   try {
-    const res = await fetch(`/api/tiktok?mode=overview&startDate=${startDate}&endDate=${endDate}`);
+    const res = await fetchImpl(`/api/tiktok?mode=overview&startDate=${startDate}&endDate=${endDate}`);
     const json = await res.json();
     if (json.success) return json.data;
     console.error('TikTok API error:', json.error);

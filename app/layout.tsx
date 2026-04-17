@@ -8,6 +8,7 @@ import ThemeProvider from '@/components/ThemeProvider';
 import { SidebarProvider } from '@/components/layout/SidebarContext';
 import { CurrencyProvider } from '@/components/CurrencyProvider';
 import { DateProvider } from '@/components/DateProvider';
+import { DataCacheProvider } from '@/components/DataCacheProvider';
 import ActivityLogger from '@/components/ActivityLogger';
 
 const urbanist = Urbanist({
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider>
           <CurrencyProvider>
             <DateProvider>
+              <DataCacheProvider>
               <SidebarProvider>
               <div className="flex min-h-screen">
                 <Sidebar />
@@ -52,6 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
               <ActivityLogger />
               </SidebarProvider>
+              </DataCacheProvider>
             </DateProvider>
           </CurrencyProvider>
         </ThemeProvider>

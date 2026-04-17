@@ -1,109 +1,138 @@
 /**
- * API Response Cache using Vercel Blob.
- * 
+ * API response cache — Supabase `api_cache` table when configured; otherwise no server cache.
+ *
  * Pattern: Check cache → if fresh, return cached → otherwise fetch live, cache, return.
- * Default TTL: 24 hours. Configurable per source via /api/cache-config.
+ * Per-source TTL: defaults below; overrides via `cache_config` in clickman_kv (/api/cache-config).
  */
-import { put, head } from '@vercel/blob';
+import { createSupabaseAdmin, isSupabaseConfigured } from '@/lib/supabase/admin';
+import { kvGet, kvUpsert } from '@/lib/supabase/kv';
+import { KV_KEYS } from '@/lib/supabase/kv-keys';
 
-const CACHE_PREFIX = 'cache/';
-const CONFIG_PATH = 'cache/config.json';
+const CONFIG_TTL_KEY = KV_KEYS.CACHE_CONFIG;
 
 // Default TTL in minutes per data source
 const DEFAULT_TTLS: Record<string, number> = {
-  'triple-whale': 1440, // 24 hours
-  'ga4': 1440,
-  'meta': 1440,
-  'google-sheets': 1440,
+  'triple-whale': 1440,
+  ga4: 1440,
+  meta: 1440,
+  'google-sheets': 720,
   'google-ads': 1440,
-  'tiktok': 1440,
-  'reddit': 1440,
+  tiktok: 1440,
+  reddit: 1440,
+  'tw-ads': 1440,
+  'tw-attribution': 1440,
+  'tw-cohorts': 1440,
 };
-
-interface CacheEntry {
-  data: any;
-  cachedAt: number; // timestamp ms
-  source: string;
-  ttlMinutes: number;
-}
 
 interface CacheConfig {
   ttls: Record<string, number>;
   lastCleared?: number;
 }
 
-// ─── Config ───
+function normalizeCacheKey(params: string): string {
+  return params.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 200);
+}
+
+// ─── Config (KV, same Supabase project) ───
 
 export async function getCacheConfig(): Promise<CacheConfig> {
   try {
-    const blob = await head(CONFIG_PATH);
-    if (!blob) return { ttls: DEFAULT_TTLS };
-    const res = await fetch(blob.url, { cache: 'no-store' });
-    return await res.json();
+    if (!isSupabaseConfigured()) {
+      return { ttls: { ...DEFAULT_TTLS } };
+    }
+    const row = await kvGet<CacheConfig>(CONFIG_TTL_KEY);
+    if (!row || typeof row !== 'object' || !row.ttls || typeof row.ttls !== 'object') {
+      return { ttls: { ...DEFAULT_TTLS } };
+    }
+    return {
+      ttls: { ...DEFAULT_TTLS, ...row.ttls },
+      lastCleared: row.lastCleared,
+    };
   } catch {
-    return { ttls: DEFAULT_TTLS };
+    return { ttls: { ...DEFAULT_TTLS } };
   }
 }
 
 export async function saveCacheConfig(config: CacheConfig): Promise<void> {
-  await put(CONFIG_PATH, JSON.stringify(config, null, 2), {
-    access: 'public',
-    addRandomSuffix: false,
-      allowOverwrite: true,
-    contentType: 'application/json',
-  });
+  if (!isSupabaseConfigured()) return;
+  await kvUpsert(CONFIG_TTL_KEY, config);
 }
 
-// ─── Cache Read/Write ───
+// ─── Cache Read/Write (Supabase) ───
 
-function getCacheKey(source: string, params: string): string {
-  // Create a deterministic key from source + params
-  const hash = params.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 100);
-  return `${CACHE_PREFIX}${source}/${hash}.json`;
-}
+export async function getCached(source: string, params: string): Promise<unknown | null> {
+  if (!isSupabaseConfigured()) return null;
 
-export async function getCached(source: string, params: string): Promise<any | null> {
-  const key = getCacheKey(source, params);
+  const cacheKey = normalizeCacheKey(params);
   try {
-    const blob = await head(key);
-    if (!blob) return null;
-    const res = await fetch(blob.url, { cache: 'no-store' });
-    const entry: CacheEntry = await res.json();
-    
-    // Check TTL
+    const supabase = createSupabaseAdmin();
+    const { data, error } = await supabase
+      .from('api_cache')
+      .select('data, cached_at, ttl_minutes')
+      .eq('source', source)
+      .eq('cache_key', cacheKey)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
     const config = await getCacheConfig();
     const ttlMinutes = config.ttls[source] ?? DEFAULT_TTLS[source] ?? 1440;
-    const ageMs = Date.now() - entry.cachedAt;
-    const ttlMs = ttlMinutes * 60 * 1000;
+    const rowTtl = typeof data.ttl_minutes === 'number' ? data.ttl_minutes : ttlMinutes;
+    const effectiveTtl = rowTtl;
+    const cachedAt = new Date(data.cached_at as string).getTime();
+    if (Number.isNaN(cachedAt)) return null;
+    const ageMs = Date.now() - cachedAt;
+    const ttlMs = effectiveTtl * 60 * 1000;
+    if (ageMs > ttlMs) return null;
 
-    if (ageMs > ttlMs) {
-      return null; // Expired
-    }
-
-    return entry.data;
+    return data.data;
   } catch {
-    return null; // Cache miss
+    return null;
   }
 }
 
-export async function setCache(source: string, params: string, data: any): Promise<void> {
-  const key = getCacheKey(source, params);
+export async function setCache(source: string, params: string, data: unknown): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+
+  const cacheKey = normalizeCacheKey(params);
   const config = await getCacheConfig();
   const ttlMinutes = config.ttls[source] ?? DEFAULT_TTLS[source] ?? 1440;
 
-  const entry: CacheEntry = {
-    data,
-    cachedAt: Date.now(),
-    source,
-    ttlMinutes,
-  };
+  try {
+    const supabase = createSupabaseAdmin();
+    const { error } = await supabase.from('api_cache').upsert(
+      {
+        source,
+        cache_key: cacheKey,
+        data: data as object,
+        cached_at: new Date().toISOString(),
+        ttl_minutes: ttlMinutes,
+      },
+      { onConflict: 'source,cache_key' }
+    );
+    if (error) {
+      console.error('[api_cache] set', source, error.message);
+    }
+  } catch (e) {
+    console.error('[api_cache] set', source, e);
+  }
+}
 
-  await put(key, JSON.stringify(entry), {
-    access: 'public',
-    addRandomSuffix: false,
-      allowOverwrite: true,
-    contentType: 'application/json',
-  });
+/** Remove all rows (used by cache admin / clear). */
+export async function clearAllApiCacheRows(): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  try {
+    const supabase = createSupabaseAdmin();
+    const { error } = await supabase.from('api_cache').delete().neq('source', '');
+    if (error) {
+      console.error('[api_cache] clearAll', error.message);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('[api_cache] clearAll', e);
+    return false;
+  }
 }
 
 // ─── Helper: cached fetch pattern ───
@@ -117,17 +146,13 @@ export async function cachedFetch<T>(
   if (!forceRefresh) {
     const cached = await getCached(source, params);
     if (cached !== null) {
-      return { data: cached, fromCache: true, cachedAt: cached.cachedAt };
+      return { data: cached as T, fromCache: true, cachedAt: Date.now() };
     }
   }
 
-  // Fetch fresh data
   const data = await fetchFn();
 
-  // Cache in background (don't block response)
-  setCache(source, params, data).catch(err => 
-    console.error(`Failed to cache ${source}:`, err)
-  );
+  setCache(source, params, data).catch((err) => console.error(`Failed to cache ${source}:`, err));
 
   return { data, fromCache: false, cachedAt: Date.now() };
 }

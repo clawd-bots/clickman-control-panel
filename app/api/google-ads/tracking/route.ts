@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleAdsApi } from 'google-ads-api';
+import { getCached, setCache } from '@/lib/api-cache';
 
 function getClient() {
   const clientId = process.env.GOOGLE_ADS_CLIENT_ID;
@@ -39,6 +40,15 @@ export async function GET(request: NextRequest) {
         { error: 'startDate and endDate query params required (YYYY-MM-DD)' },
         { status: 400 }
       );
+    }
+
+    const forceRefresh = request.nextUrl.searchParams.get('refresh') === 'true';
+    const cacheParams = `tracking_${startDate}_${endDate}`;
+    if (!forceRefresh) {
+      const cached = await getCached('google-ads', cacheParams);
+      if (cached !== null) {
+        return NextResponse.json({ ...(cached as Record<string, unknown>), _fromCache: true });
+      }
     }
 
     const customer = getClient();
@@ -149,7 +159,7 @@ export async function GET(request: NextRequest) {
     // Sort events by count descending
     events.sort((a, b) => Number(b.count) - Number(a.count));
 
-    return NextResponse.json({
+    const payload = {
       success: true,
       source: 'google-ads-tracking',
       data: {
@@ -157,7 +167,9 @@ export async function GET(request: NextRequest) {
         status,
         events,
       },
-    });
+    };
+    setCache('google-ads', cacheParams, payload).catch(() => {});
+    return NextResponse.json(payload);
   } catch (error: unknown) {
     const err = error as { errors?: Array<{ message: string }>; message?: string };
     console.error('Google Ads Tracking API error:', err);

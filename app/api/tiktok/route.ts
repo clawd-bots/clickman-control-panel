@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getCached, setCache } from '@/lib/api-cache';
 
 const TT_BASE = 'https://business-api.tiktok.com/open_api/v1.3';
 
@@ -41,11 +42,21 @@ async function ttFetchAll(endpoint: string, params: Record<string, string>, toke
 
 export async function GET(request: NextRequest) {
   try {
-    const { accessToken, advertiserId } = getConfig();
     const { searchParams } = new URL(request.url);
     const mode = searchParams.get('mode') || 'overview';
     const startDate = searchParams.get('startDate') || '2026-03-01';
     const endDate = searchParams.get('endDate') || '2026-03-31';
+    const forceRefresh = searchParams.get('refresh') === 'true';
+    const cacheParams = `${startDate}_${endDate}_${mode}`;
+
+    if (!forceRefresh) {
+      const hit = await getCached('tiktok', cacheParams);
+      if (hit !== null) {
+        return NextResponse.json({ ...(hit as Record<string, unknown>), _fromCache: true });
+      }
+    }
+
+    const { accessToken, advertiserId } = getConfig();
 
     if (mode === 'campaigns') {
       // Get all campaigns
@@ -54,7 +65,9 @@ export async function GET(request: NextRequest) {
         fields: JSON.stringify(['campaign_id', 'campaign_name', 'operation_status', 'objective_type', 'budget', 'create_time']),
       }, accessToken);
 
-      return NextResponse.json({ success: true, data: campaigns });
+      const body = { success: true, data: campaigns };
+      setCache('tiktok', cacheParams, body).catch(() => {});
+      return NextResponse.json(body);
     }
 
     if (mode === 'ads') {
@@ -64,7 +77,9 @@ export async function GET(request: NextRequest) {
         fields: JSON.stringify(['ad_id', 'ad_name', 'campaign_id', 'campaign_name', 'adgroup_name', 'operation_status', 'create_time']),
       }, accessToken);
 
-      return NextResponse.json({ success: true, data: ads });
+      const body = { success: true, data: ads };
+      setCache('tiktok', cacheParams, body).catch(() => {});
+      return NextResponse.json(body);
     }
 
     if (mode === 'ad-performance') {
@@ -83,7 +98,9 @@ export async function GET(request: NextRequest) {
         end_date: endDate,
       }, accessToken);
 
-      return NextResponse.json({ success: true, data: report });
+      const body = { success: true, data: report };
+      setCache('tiktok', cacheParams, body).catch(() => {});
+      return NextResponse.json(body);
     }
 
     if (mode === 'daily') {
@@ -101,7 +118,9 @@ export async function GET(request: NextRequest) {
         end_date: endDate,
       }, accessToken);
 
-      return NextResponse.json({ success: true, data: report });
+      const body = { success: true, data: report };
+      setCache('tiktok', cacheParams, body).catch(() => {});
+      return NextResponse.json(body);
     }
 
     if (mode === 'overview') {
@@ -167,7 +186,7 @@ export async function GET(request: NextRequest) {
       const totalImpressions = mergedAds.reduce((s: number, a: any) => s + a.impressions, 0);
       const totalClicks = mergedAds.reduce((s: number, a: any) => s + a.clicks, 0);
 
-      return NextResponse.json({
+      const body = {
         success: true,
         data: {
           summary: {
@@ -191,7 +210,9 @@ export async function GET(request: NextRequest) {
           ads: mergedAds,
           dateRange: { startDate, endDate },
         },
-      });
+      };
+      setCache('tiktok', cacheParams, body).catch(() => {});
+      return NextResponse.json(body);
     }
 
     return NextResponse.json({ success: false, error: 'Invalid mode. Use: overview | campaigns | ads | ad-performance | daily' }, { status: 400 });

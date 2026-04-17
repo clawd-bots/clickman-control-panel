@@ -31,6 +31,8 @@ export interface TWResponse {
   error?: string;
 }
 
+type FetchLike = typeof fetch;
+
 /**
  * Fetch Triple Whale data for a date range.
  * @param startDate YYYY-MM-DD
@@ -40,10 +42,11 @@ export interface TWResponse {
 export async function fetchTripleWhaleData(
   startDate: string,
   endDate: string,
-  mode: 'summary' | 'daily' | 'all' = 'all'
+  mode: 'summary' | 'daily' | 'all' = 'all',
+  fetchImpl: FetchLike = fetch
 ): Promise<TWData> {
   const params = new URLSearchParams({ startDate, endDate, mode });
-  const res = await fetch(`/api/triple-whale?${params.toString()}`);
+  const res = await fetchImpl(`/api/triple-whale?${params.toString()}`);
   const json: TWResponse = await res.json();
 
   if (!json.success) {
@@ -128,11 +131,12 @@ export async function fetchTWAds(
   endDate: string,
   model: string = 'Linear All',
   window: string = 'Lifetime',
-  platform?: string
+  platform?: string,
+  fetchImpl: FetchLike = fetch
 ): Promise<TWAd[]> {
   const params = new URLSearchParams({ startDate, endDate, model, window });
   if (platform) params.set('platform', platform);
-  const res = await fetch(`/api/triple-whale/ads?${params.toString()}`);
+  const res = await fetchImpl(`/api/triple-whale/ads?${params.toString()}`);
   const json: TWAdsResponse = await res.json();
   if (!json.success) {
     throw new Error(json.error || 'Failed to fetch TW ad data');
@@ -172,11 +176,12 @@ export async function fetchTWCohorts(
   endDate: string,
   model: string = 'Triple Attribution',
   window: string = 'Lifetime',
-  refresh: boolean = false
+  refresh: boolean = false,
+  fetchImpl: FetchLike = fetch
 ): Promise<TWCohortApiRow[]> {
   const params = new URLSearchParams({ startDate, endDate, model, window });
   if (refresh) params.set('refresh', 'true');
-  const res = await fetch(`/api/triple-whale/cohorts?${params.toString()}`);
+  const res = await fetchImpl(`/api/triple-whale/cohorts?${params.toString()}`);
   const json: TWCohortsResponse = await res.json();
   if (!json.success) {
     throw new Error(json.error || 'Failed to fetch TW cohort data');
@@ -219,10 +224,11 @@ export async function fetchTWAttributionByChannel(
   startDate: string,
   endDate: string,
   model: string = 'Triple Attribution',
-  window: string = 'Lifetime'
+  window: string = 'Lifetime',
+  fetchImpl: FetchLike = fetch
 ): Promise<TWAttributionChannelRow[]> {
   const params = new URLSearchParams({ startDate, endDate, model, window });
-  const res = await fetch(`/api/triple-whale/attribution?${params.toString()}`);
+  const res = await fetchImpl(`/api/triple-whale/attribution?${params.toString()}`);
   const json: TWAttributionResponse = await res.json();
   if (!json.success) {
     throw new Error(json.error || 'Failed to fetch TW attribution by channel');
@@ -253,11 +259,12 @@ export interface TWProductsResponse {
 export async function fetchTWProductKpis(
   startDate: string,
   endDate: string,
-  refresh: boolean = false
+  refresh: boolean = false,
+  fetchImpl: FetchLike = fetch
 ): Promise<TWProductKpiRow[]> {
   const params = new URLSearchParams({ startDate, endDate });
   if (refresh) params.set('refresh', 'true');
-  const res = await fetch(`/api/triple-whale/products?${params.toString()}`);
+  const res = await fetchImpl(`/api/triple-whale/products?${params.toString()}`);
   const json: TWProductsResponse = await res.json();
   if (!json.success) {
     throw new Error(json.error || 'Failed to fetch TW product KPIs');

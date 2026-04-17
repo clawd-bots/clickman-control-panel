@@ -6,6 +6,7 @@ import { LiveBadge } from '@/components/ui/LiveBadge';
 import { SkeletonKPICard, SkeletonChart, SkeletonTable } from '@/components/ui/Skeleton';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/components/CurrencyProvider';
+import { useCachedFetch } from '@/components/DataCacheProvider';
 import {
   BarChart, Bar, LineChart, Line, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -79,6 +80,7 @@ function getIndicatorColor(label: string): string | null {
 }
 
 export default function PnLPage() {
+  const cachedFetch = useCachedFetch();
   const { currency, convertValue } = useCurrency();
   const [sheetData, setSheetData] = useState<SheetData | null>(null);
   const [sheetLoading, setSheetLoading] = useState(true);
@@ -87,7 +89,7 @@ export default function PnLPage() {
 
   useEffect(() => {
     setSheetLoading(true);
-    fetch('/api/google-sheets')
+    cachedFetch('/api/google-sheets')
       .then(res => res.json())
       .then(json => {
         if (json.success) {
@@ -99,7 +101,7 @@ export default function PnLPage() {
       })
       .catch(err => setSheetError(err.message))
       .finally(() => setSheetLoading(false));
-  }, []);
+  }, [cachedFetch]);
 
   const fmt = (value: number) => formatCurrency(convertValue(value), currency);
 

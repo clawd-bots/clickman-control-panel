@@ -10,13 +10,14 @@ import { fetchTripleWhaleData, getMetric, TWData, fetchTWAds, TWAd } from '@/lib
 import { fetchTikTokOverview, classifyAdZone, TikTokOverview } from '@/lib/tiktok-client';
 import { fetchMetaOverview, classifyMetaAdZone, MetaOverview } from '@/lib/meta-client';
 import {
-  creativePerformance, creativeAISuggestions,
+  creativePerformance,
   accountControlData, adChurnDataByPlatform, adChurnCampaigns, creativeChurnCohorts,
   productionSlugging, demographicsAge, demographicsGender, demographicsGenderAge, creativeChurnCohortsByPlatform,
 } from '@/lib/sample-data';
 import { useTargets } from '@/lib/useTargets';
 import { formatCurrency } from '@/lib/utils';
 import { useCurrency } from '@/components/CurrencyProvider';
+import { useCachedFetch } from '@/components/DataCacheProvider';
 import { filterByDateRange, formatDateLabel, toLocalDateString, getAccountControlReportRange } from '@/lib/dateUtils';
 import { ChevronDown } from 'lucide-react';
 import AdThumbnail from '@/components/ui/AdThumbnail';
@@ -149,6 +150,7 @@ function getAIPromptId(tab: string): string {
 }
 
 export default function CreativePage() {
+  const cachedFetch = useCachedFetch();
   const { currency, convertValue } = useCurrency();
   const { dateRange } = useDateRange();
   const { getTarget, targets } = useTargets();
@@ -168,19 +170,19 @@ export default function CreativePage() {
     setMetaLoading(true);
     const startDate = toLocalDateString(dateRange.startDate);
     const endDate = toLocalDateString(dateRange.endDate);
-    fetchTripleWhaleData(startDate, endDate, 'summary')
+    fetchTripleWhaleData(startDate, endDate, 'summary', cachedFetch)
       .then(setTwData)
       .catch(console.error)
       .finally(() => setTwLoading(false));
-    fetchTikTokOverview(startDate, endDate)
+    fetchTikTokOverview(startDate, endDate, cachedFetch)
       .then(setTtData)
       .catch(console.error)
       .finally(() => setTtLoading(false));
-    fetchMetaOverview(startDate, endDate)
+    fetchMetaOverview(startDate, endDate, cachedFetch)
       .then(setMetaData)
       .catch(console.error)
       .finally(() => setMetaLoading(false));
-  }, [dateRange]);
+  }, [dateRange, cachedFetch]);
 
   // Platform-level metrics from TW
   const twPlatformMetrics = useMemo(() => {
@@ -258,7 +260,7 @@ export default function CreativePage() {
     let cancelled = false;
     setTwAds([]);
     setTwAdsLoading(true);
-    fetchTWAds(twAdsStart, twAdsEnd, attrModel, attrWindow)
+    fetchTWAds(twAdsStart, twAdsEnd, attrModel, attrWindow, undefined, cachedFetch)
       .then((data) => {
         if (!cancelled) setTwAds(data);
       })
@@ -269,7 +271,7 @@ export default function CreativePage() {
     return () => {
       cancelled = true;
     };
-  }, [activeTab, attrModel, attrWindow, twAdsStart, twAdsEnd]);
+  }, [activeTab, attrModel, attrWindow, twAdsStart, twAdsEnd, cachedFetch]);
   const [accountControlFilter, setAccountControlFilter] = useState('all');
   const [accountControlCampaign, setAccountControlCampaign] = useState('all');
   const [acPageSize, setAcPageSize] = useState(10);
@@ -341,56 +343,6 @@ export default function CreativePage() {
     const v = value == null || !Number.isFinite(Number(value)) ? 0 : Number(value);
     return formatCurrency(convertValue(v), currency);
   };
-
-  // Memoized AI suggestions with currency conversion - tab specific
-  const getDynamicAISuggestions = useCallback(() => {
-    const suggestions: Record<string, string[]> = {
-      'Performance': [
-        `Hair Before/After Carousel has the best ROAS at 3.47x with a low CPA of ${formatCurrencyValue(577)}. Scale spend by 30% this week.`,
-        `"Doc Consultation UGC" CTR dropped from 1.8% to 1.3% over 2 weeks. Creative fatigue likely, queue replacement creative.`,
-        `${platform} platform currently selected shows ${filtered.length} active creatives. Top performer has 3.47x ROAS.`,
-        `Average CPA across ${platform} is ${formatCurrencyValue(650)}. Consider pausing ads above ${formatCurrencyValue(800)} CPA.`,
-        'Performance tab shows real-time creative health. Monitor daily for fatigue signals and scaling opportunities.',
-      ],
-      'Ad Churn': [
-        'March shows healthy creative rotation with newer ads (dark bars) gaining spend share from older creatives.',
-        'Legacy creatives (180+ days) should represent <20% of total spend. If higher, creative fatigue risk is building.',
-        'Dark cohorts (newer launches) taking over spend is positive. Light cohorts dominating spend signals staleness.',
-        'Aim for 60% of spend in last 30 days of creative launches. This indicates fresh creative pipeline.',
-        'Creative churn analysis helps predict performance drops before they happen in your metrics.',
-      ],
-      'Account Control': [
-        `Bottom-right quadrant (high spend, low CPA) contains your scaling winners. Top performers under ${formatCurrencyValue(700)} CPA.`,
-        `Top-right "zombie" quadrant burns budget at high CPA. Pause any ads consistently above ${formatCurrencyValue(850)}.`,
-        'Bottom-left testing quadrant shows new ads with potential. Scale winners that maintain CPA under target.',
-        'Account Control Chart requires ad identification. Bubble colors should map to specific creative names below.',
-        `Horizontal CPA/NCCPA targets follow Targets (NC = 2× CPA). Vertical spend threshold is 2× the active target (All CPA or NC CPA from the toggle).`,
-      ],
-      'Slugging Rate': [
-        'Production rate tracking shows creative "at bats" vs "hits" - launches vs successful scaling.',
-        'Overall slugging rate should target 30% according to Curtis Howland methodology.',
-        'Dark sections show scaled creatives (>$10K spend at profitable CPA). Light sections show failed tests.',
-        'If launching 20+ ads monthly but <10% scale, you have creative strategy issues, not media buying problems.',
-        'February launched 25 ads with 6 hits (24% rate). March tracking shows improved hit rate trending upward.',
-      ],
-      'Pareto': [
-        'Current data shows top 20% of creatives drive 68% of conversions - healthy Pareto distribution.',
-        'Avoid spreading budget too thin. Focus 80% of new spend on top performing creative concepts.',
-        'Identify the 3-5 winning creative themes and produce more variants within those proven concepts.',
-        'Pareto analysis reveals creative concentration risk. Top 3 ads drive 48% of total volume.',
-        'Diversify creative pipeline within winning themes to reduce concentration dependency.',
-      ],
-      'Demographics': [
-        `Women 25-44 drive 62% of conversions at lowest CPA (${formatCurrencyValue(613)}-${formatCurrencyValue(656)}). Align creative production to this buying audience.`,
-        'Demographics mismatch is expensive. Producing Gen Z TikTok content for millennial women wastes budget.',
-        'Spend allocation should follow conversion demographics, not general platform demographics.',
-        `Female segments show consistently better ROAS across age groups. Male 25-34 is ${formatCurrencyValue(715)} CPA vs Female 25-34 at ${formatCurrencyValue(613)}.`,
-        'Creative production queue should be 70% women-focused based on actual conversion performance.',
-      ],
-    };
-    
-    return suggestions[activeTab] || suggestions['Performance'];
-  }, [activeTab, platform, campaignFilter, formatCurrencyValue, targetCPA, targetNCCPA]);
 
   // Get active campaign names for the selected platform
   const activeCampaigns = useMemo(() => {
@@ -2374,7 +2326,7 @@ export default function CreativePage() {
       {/* AI Suggestions */}
       <div className="px-1">
         <AISuggestionsPanel 
-          suggestions={getDynamicAISuggestions()} 
+          suggestions={[]} 
           title={getAITitle(activeTab)}
           promptId={getAIPromptId(activeTab)}
           pageLabel="Creative & MTA"

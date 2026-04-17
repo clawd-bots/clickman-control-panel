@@ -23,6 +23,7 @@ import {
 import { fetchGA4Data, getGA4Metric, GA4Data } from '@/lib/ga4-client';
 import { useTargets } from '@/lib/useTargets';
 import { filterAttributionChannelRows } from '@/lib/attribution-filters';
+import { useCachedFetch } from '@/components/DataCacheProvider';
 
 import { kpiCards, dailyMetrics, revenueInsights } from '@/lib/sample-data';
 import { formatCurrency, formatCurrencyWhole, formatNumber } from '@/lib/utils';
@@ -50,6 +51,7 @@ function pctChange(curr: number, prev: number) {
 }
 
 export default function DashboardPage() {
+  const cachedFetch = useCachedFetch();
   const { currency, convertValue, exchangeRate } = useCurrency();
   const { dateRange } = useDateRange();
   const { getTarget, getTargetAchievement } = useTargets();
@@ -87,12 +89,13 @@ export default function DashboardPage() {
       dateRange.comparison !== 'none' &&
       compRange !== null;
 
-    const mainP = fetchTripleWhaleData(startDate, endDate, 'all');
+    const mainP = fetchTripleWhaleData(startDate, endDate, 'all', cachedFetch);
     const compP = needComp
       ? fetchTripleWhaleData(
           toLocalDateString(compRange!.start),
           toLocalDateString(compRange!.end),
-          'summary'
+          'summary',
+          cachedFetch
         )
       : Promise.resolve(null);
 
@@ -105,8 +108,8 @@ export default function DashboardPage() {
       .finally(() => setTwLoading(false));
     // Fetch GA4 summary + daily in parallel (reporting timezone comes from GA4 Data API metadata)
     Promise.all([
-      fetchGA4Data(startDate, endDate, 'summary'),
-      fetch(`/api/ga4?startDate=${startDate}&endDate=${endDate}&mode=daily`)
+      fetchGA4Data(startDate, endDate, 'summary', cachedFetch),
+      cachedFetch(`/api/ga4?startDate=${startDate}&endDate=${endDate}&mode=daily`)
         .then((r) => r.json())
         .catch(() => ({ success: false })),
     ]).then(([ga4, dailyRes]) => {
@@ -127,7 +130,7 @@ export default function DashboardPage() {
       })));
     }).catch(console.error)
       .finally(() => setGA4Loading(false));
-  }, [dateRange]);
+  }, [dateRange, cachedFetch]);
 
   // Channel attribution: always from TW SQL (model + window); never mix in summary-channel fallback
   useEffect(() => {
@@ -136,7 +139,7 @@ export default function DashboardPage() {
     setAttrError(null);
     const startDate = toLocalDateString(dateRange.startDate);
     const endDate = toLocalDateString(dateRange.endDate);
-    fetch(`/api/triple-whale/attribution?startDate=${startDate}&endDate=${endDate}&model=${encodeURIComponent(attributionModel)}&window=${encodeURIComponent(attributionWindow)}`)
+    cachedFetch(`/api/triple-whale/attribution?startDate=${startDate}&endDate=${endDate}&model=${encodeURIComponent(attributionModel)}&window=${encodeURIComponent(attributionWindow)}`)
       .then((res) => res.json())
       .then((json) => {
         if (cancelled) return;
@@ -160,7 +163,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [dateRange, attributionModel, attributionWindow]);
+  }, [dateRange, attributionModel, attributionWindow, cachedFetch]);
 
   useEffect(() => {
     let cancelled = false;
@@ -168,7 +171,7 @@ export default function DashboardPage() {
     setProductKpiError(null);
     const startDate = toLocalDateString(dateRange.startDate);
     const endDate = toLocalDateString(dateRange.endDate);
-    fetchTWProductKpis(startDate, endDate)
+    fetchTWProductKpis(startDate, endDate, false, cachedFetch)
       .then((rows) => {
         if (!cancelled) setProductKpiRows(rows);
       })
@@ -184,7 +187,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [dateRange]);
+  }, [dateRange, cachedFetch]);
 
   // Helper function to format currency with current context
   const formatCurrencyValue = (value: number) => {
@@ -534,32 +537,6 @@ export default function DashboardPage() {
     }),
     [dateRange, aggregatedData, twData, ga4Data, visibleAttrData, attributionModel, attributionWindow, productKpiRows, getTarget]
   );
-
-  // Comprehensive cross-page AI analysis
-  const getCrossPageInsights = () => {
-    return [
-      {
-        type: 'success',
-        title: 'Strong Performance',
-        insight: `MER at 3.67x exceeds the healthy 3.5x threshold with nCAC improving 2.6% MoM to ${formatCurrencyValue(787)}. Meta remains your highest-performing channel at 3.91x ROAS. Oct-Dec cohorts show improving M1 retention (28.5% to 32.8%), validating recent targeting changes.`
-      },
-      {
-        type: 'warning', 
-        title: 'Watch',
-        insight: `aMER at ${kpiCards.nmer.value}x shows heavy reliance on repeat purchases. Server-side GTM is down (0 events/day), losing ~15% of conversion data. Creative fatigue detected in "Doc Consultation UGC" with CTR dropping from 1.8% to 1.3%.`
-      },
-      {
-        type: 'action',
-        title: 'Immediate Actions',
-        insight: `Scale Meta spend +15% (Hair Before/After creative at ${formatCurrencyValue(577)} CPA is top performer). Fix server-side GTM before budget reallocation. Launch subscription for GLP-1 (highest repeat rate at 51.8%). Cap TikTok at current levels until LTV:CAC improves above 2.0x.`
-      },
-      {
-        type: 'strategic',
-        title: 'Strategic Opportunities', 
-        insight: `Revenue is 90% of target with 2 weeks remaining - achievable at current ${formatCurrencyValue(322000)} daily run rate. Consider MMM model using past 6 months data for channel validation. TikTok CPCs 60% lower than Meta - test creative format migration for cheaper reach.`
-      }
-    ];
-  };
 
   if (twLoading || ga4Loading) {
     return (
@@ -1179,7 +1156,7 @@ export default function DashboardPage() {
       {/* Summary AI Analysis with full controls */}
       <div>
         <AISuggestionsPanel 
-          suggestions={getCrossPageInsights().map((item, i) => `${item.title}: ${item.insight}`)}
+          suggestions={[]}
           title="Daily Summary & Intelligence"
           promptId="dashboard-intelligence"
           pageLabel="Dashboard"

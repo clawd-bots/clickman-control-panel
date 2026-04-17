@@ -68,16 +68,19 @@ export interface GA4Response {
   error?: string;
 }
 
+type FetchLike = typeof fetch;
+
 /**
  * Fetch GA4 data for a date range.
  */
 export async function fetchGA4Data(
   startDate: string,
   endDate: string,
-  mode: 'summary' | 'daily' | 'traffic' | 'all' = 'all'
+  mode: 'summary' | 'daily' | 'traffic' | 'all' = 'all',
+  fetchImpl: FetchLike = fetch
 ): Promise<GA4Data> {
   const params = new URLSearchParams({ startDate, endDate, mode });
-  const res = await fetch(`/api/ga4?${params.toString()}`);
+  const res = await fetchImpl(`/api/ga4?${params.toString()}`);
   const json: GA4Response = await res.json();
 
   if (!json.success) {
@@ -98,10 +101,11 @@ export interface GA4EventRow {
  */
 export async function fetchGA4EventBreakdown(
   startDate: string,
-  endDate: string
+  endDate: string,
+  fetchImpl: FetchLike = fetch
 ): Promise<GA4EventRow[]> {
   const params = new URLSearchParams({ startDate, endDate, mode: 'events' });
-  const res = await fetch(`/api/ga4?${params.toString()}`);
+  const res = await fetchImpl(`/api/ga4?${params.toString()}`);
   const json = (await res.json()) as {
     success: boolean;
     data?: { events?: GA4EventRow[] };

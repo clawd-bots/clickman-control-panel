@@ -7,6 +7,7 @@ import { SkeletonMetricCard, SkeletonChart, SkeletonTable } from '@/components/u
 import AIIntelligenceControls, { type LayerInsights } from '@/components/ui/AIIntelligenceControls';
 import { useCurrency } from '@/components/CurrencyProvider';
 import { useDateRange } from '@/components/DateProvider';
+import { useCachedFetch } from '@/components/DataCacheProvider';
 import { formatCurrency } from '@/lib/utils';
 import { toLocalDateString } from '@/lib/dateUtils';
 import { getComparisonDateRange } from '@/lib/comparison-range';
@@ -101,6 +102,7 @@ function quadrantStorageKey(layer: LayerKey, startIso: string, endIso: string, c
 }
 
 export default function AttributionPage() {
+  const cachedFetch = useCachedFetch();
   const { currency, convertValue } = useCurrency();
   const { dateRange } = useDateRange();
   const [activeLayer, setActiveLayer] = useState<string>('star');
@@ -129,12 +131,13 @@ export default function AttributionPage() {
       dateRange.comparison !== 'none' &&
       compRange !== null;
 
-    const mainP = fetchTripleWhaleData(startDate, endDate, 'summary');
+    const mainP = fetchTripleWhaleData(startDate, endDate, 'summary', cachedFetch);
     const compP = needComp
       ? fetchTripleWhaleData(
           toLocalDateString(compRange!.start),
           toLocalDateString(compRange!.end),
-          'summary'
+          'summary',
+          cachedFetch
         )
       : Promise.resolve(null);
 
@@ -145,14 +148,14 @@ export default function AttributionPage() {
       })
       .catch(console.error)
       .finally(() => setTwLoading(false));
-    fetchGA4Data(startDate, endDate, 'summary')
+    fetchGA4Data(startDate, endDate, 'summary', cachedFetch)
       .then(setGA4Data)
       .catch(console.error)
       .finally(() => setGA4Loading(false));
-    fetchGA4EventBreakdown(startDate, endDate)
+    fetchGA4EventBreakdown(startDate, endDate, cachedFetch)
       .then(setGa4EventRows)
       .catch(() => setGa4EventRows([]));
-  }, [dateRange]);
+  }, [dateRange, cachedFetch]);
   const [cohortAttrModel, setCohortAttrModel] = useState<string>('Triple Attribution');
   const [cohortAttrWindow, setCohortAttrWindow] = useState<string>('Lifetime');
   const [cohortLtvRows, setCohortLtvRows] = useState<TWCohortApiRow[]>([]);
@@ -167,8 +170,8 @@ export default function AttributionPage() {
     const startDate = toLocalDateString(dateRange.startDate);
     const endDate = toLocalDateString(dateRange.endDate);
     Promise.all([
-      fetchTWCohorts(startDate, endDate, cohortAttrModel, cohortAttrWindow),
-      fetchTWAttributionByChannel(startDate, endDate, cohortAttrModel, cohortAttrWindow),
+      fetchTWCohorts(startDate, endDate, cohortAttrModel, cohortAttrWindow, false, cachedFetch),
+      fetchTWAttributionByChannel(startDate, endDate, cohortAttrModel, cohortAttrWindow, cachedFetch),
     ])
       .then(([rows, channels]) => {
         if (cancelled) return;
@@ -187,7 +190,7 @@ export default function AttributionPage() {
     return () => {
       cancelled = true;
     };
-  }, [dateRange.startDate, dateRange.endDate, cohortAttrModel, cohortAttrWindow]);
+  }, [dateRange.startDate, dateRange.endDate, cohortAttrModel, cohortAttrWindow, cachedFetch]);
 
   const [aiInsightOverrides, setAiInsightOverrides] = useState<Partial<Record<LayerKey, LayerInsights>>>({});
   const [expandedSystems, setExpandedSystems] = useState<Set<string>>(new Set());
@@ -262,7 +265,7 @@ export default function AttributionPage() {
     try {
       const startDateStr = toLocalDateString(dateRange.startDate);
       const endDateStr = toLocalDateString(dateRange.endDate);
-      const res = await fetch(`/api/google-ads/tracking?startDate=${startDateStr}&endDate=${endDateStr}`);
+      const res = await cachedFetch(`/api/google-ads/tracking?startDate=${startDateStr}&endDate=${endDateStr}`);
       const json = await res.json();
       if (json.success && json.data) {
         setLiveTrackingData(json.data);
@@ -275,7 +278,7 @@ export default function AttributionPage() {
       setLiveTrackingData(null);
       setTrackingIsLive(false);
     }
-  }, [dateRange.startDate, dateRange.endDate]);
+  }, [dateRange.startDate, dateRange.endDate, cachedFetch]);
 
   useEffect(() => {
     fetchTrackingData();
@@ -285,7 +288,7 @@ export default function AttributionPage() {
     try {
       const startDateStr = toLocalDateString(dateRange.startDate);
       const endDateStr = toLocalDateString(dateRange.endDate);
-      const res = await fetch(
+      const res = await cachedFetch(
         `/api/meta?mode=tracking-events&startDate=${startDateStr}&endDate=${endDateStr}`
       );
       const json = await res.json();
@@ -309,7 +312,7 @@ export default function AttributionPage() {
       setMetaTrackingData(null);
       setMetaTrackingIsLive(false);
     }
-  }, [dateRange.startDate, dateRange.endDate]);
+  }, [dateRange.startDate, dateRange.endDate, cachedFetch]);
 
   useEffect(() => {
     fetchMetaTrackingData();
@@ -319,7 +322,7 @@ export default function AttributionPage() {
     try {
       const startDateStr = toLocalDateString(dateRange.startDate);
       const endDateStr = toLocalDateString(dateRange.endDate);
-      const res = await fetch(
+      const res = await cachedFetch(
         `/api/reddit?mode=tracking-infra&startDate=${startDateStr}&endDate=${endDateStr}`
       );
       const json = await res.json();
@@ -341,7 +344,7 @@ export default function AttributionPage() {
       setRedditTrackingData(null);
       setRedditTrackingIsLive(false);
     }
-  }, [dateRange.startDate, dateRange.endDate]);
+  }, [dateRange.startDate, dateRange.endDate, cachedFetch]);
 
   useEffect(() => {
     fetchRedditTrackingData();

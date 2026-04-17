@@ -23,6 +23,7 @@ import { toLocalDateString } from '@/lib/dateUtils';
 import {
   hydrateAiInsightsFromServer,
   loadStoredAiInsights,
+  loadLatestStoredAiInsights,
   saveStoredAiInsights,
   type InsightMoneyCurrency,
 } from '@/lib/ai-insights-storage';
@@ -40,6 +41,12 @@ export interface AISuggestionsPanelProps {
 function buildDateRangeLabel(start: Date, end: Date): string {
   const opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
   return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', opts)}`;
+}
+
+function buildDateRangeLabelFromIso(startIso: string, endIso: string): string {
+  const start = new Date(`${startIso}T12:00:00`);
+  const end = new Date(`${endIso}T12:00:00`);
+  return buildDateRangeLabel(start, end);
 }
 
 export default function AISuggestionsPanel({
@@ -62,8 +69,12 @@ export default function AISuggestionsPanel({
   const [history, setHistory] = useState<PromptHistoryEntry[]>([]);
   /** Raw lines from Refresh (immutable until next refresh); static placeholders when never refreshed. */
   const [rawInsightLines, setRawInsightLines] = useState<string[]>(suggestions);
-  /** `ai` = from Refresh or restored cache (money substrings can be rewritten for display); `static` = page placeholders. */
-  const [insightLineSource, setInsightLineSource] = useState<'static' | 'ai'>('static');
+  /** `ai` = exact date-range hit; `latest` = most recent run for another range; `static` = parent placeholders; `empty` = none. */
+  const [insightLineSource, setInsightLineSource] = useState<'static' | 'ai' | 'latest' | 'empty'>(
+    'static',
+  );
+  /** When showing `latest`, label for the chip (analysis date range). */
+  const [latestRangeLabel, setLatestRangeLabel] = useState<string | null>(null);
   /** Currency symbol mode used when Refresh ran — drives ₱ ↔ $ rewriting only. */
   const [refreshMoneyCurrency, setRefreshMoneyCurrency] = useState<InsightMoneyCurrency>('php');
   const [refreshError, setRefreshError] = useState<string | null>(null);
@@ -82,7 +93,7 @@ export default function AISuggestionsPanel({
   );
 
   const displayLines = useMemo(() => {
-    if (insightLineSource === 'static') {
+    if (insightLineSource === 'static' || insightLineSource === 'empty') {
       return rawInsightLines;
     }
     return mapInsightLinesForDisplayCurrency(
@@ -116,10 +127,24 @@ export default function AISuggestionsPanel({
         setRawInsightLines(stored.items);
         setRefreshMoneyCurrency(stored.refreshCurrency);
         setInsightLineSource('ai');
+        setLatestRangeLabel(null);
+        return;
+      }
+      const latest = loadLatestStoredAiInsights(pid);
+      if (latest && latest.items.length > 0) {
+        setRawInsightLines(latest.items);
+        setRefreshMoneyCurrency(latest.refreshCurrency);
+        setInsightLineSource('latest');
+        setLatestRangeLabel(
+          latest.analysisRangeStartIso && latest.analysisRangeEndIso
+            ? buildDateRangeLabelFromIso(latest.analysisRangeStartIso, latest.analysisRangeEndIso)
+            : null,
+        );
         return;
       }
       setRawInsightLines(suggestionsRef.current);
-      setInsightLineSource('static');
+      setLatestRangeLabel(null);
+      setInsightLineSource(suggestionsRef.current.length > 0 ? 'static' : 'empty');
     })();
     return () => {
       cancelled = true;
@@ -212,6 +237,7 @@ export default function AISuggestionsPanel({
           setRawInsightLines(items);
           setInsightLineSource('ai');
           setRefreshMoneyCurrency(rc);
+          setLatestRangeLabel(null);
           saveStoredAiInsights(pid, start, end, {
             items,
             savedAt: Date.now(),
@@ -287,8 +313,24 @@ export default function AISuggestionsPanel({
         <p className="text-xs text-danger mb-3" role="alert">{refreshError}</p>
       )}
 
+      {visible && insightLineSource === 'latest' && latestRangeLabel && (
+        <p className="text-[11px] text-text-tertiary mb-2">
+          <span className="inline-flex items-center rounded-md border border-border bg-bg-elevated px-2 py-0.5 text-text-secondary">
+            Last analysis: {latestRangeLabel}
+          </span>
+        </p>
+      )}
+
       {visible && (
         <div className="space-y-3">
+          {displayLines.length === 0 &&
+            !refreshing &&
+            (insightLineSource === 'empty' ||
+              (insightLineSource === 'static' && suggestionsRef.current.length === 0)) && (
+              <p className="text-sm text-text-secondary">
+                No analysis run yet for this date range. Click Refresh to generate insights.
+              </p>
+            )}
           {displayLines.map((s, i) => (
             <div key={i} className="flex gap-3 text-sm text-text-secondary leading-relaxed">
               <span className="shrink-0 w-5 h-5 rounded-full bg-brand-blue/20 text-brand-blue-light text-xs flex items-center justify-center font-medium mt-0.5">{i + 1}</span>
