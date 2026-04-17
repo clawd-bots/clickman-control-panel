@@ -33,7 +33,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 
-const COLORS = ['#B8E636', '#6366F1', '#EDBF63', '#34D399', '#EF4444', '#818CF8'];
+const COLORS = ['#34D399', '#6366F1', '#EDBF63', '#34D399', '#EF4444', '#818CF8'];
 
 /** Triple Whale `pixel_joined_tvf` model labels (order matches UI dropdown). */
 const CHANNEL_ATTRIBUTION_MODELS = [
@@ -726,8 +726,8 @@ export default function DashboardPage() {
               <AreaChart data={chartData} margin={{ top: 10, right: 20, bottom: 40, left: 20 }}>
                 <defs>
                   <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#B8E636" stopOpacity={0.28} />
-                    <stop offset="100%" stopColor="#B8E636" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#34D399" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="#34D399" stopOpacity={0.02} />
                   </linearGradient>
                   <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#6366F1" stopOpacity={0.22} />
@@ -758,7 +758,7 @@ export default function DashboardPage() {
                   ]}
                 />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Area type="monotone" dataKey="revenue" name="Order Revenue" stroke="#B8E636" strokeWidth={2.5} fill="url(#revenueGrad)" dot={false} />
+                <Area type="monotone" dataKey="revenue" name="Order Revenue" stroke="#34D399" strokeWidth={2.5} fill="url(#revenueGrad)" dot={false} />
                 <Area type="monotone" dataKey="costs" name="Ad Spend" stroke="#6366F1" strokeWidth={1.5} fill="url(#spendGrad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
@@ -775,8 +775,8 @@ export default function DashboardPage() {
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="ncGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#B8E636" stopOpacity={0.28} />
-                    <stop offset="100%" stopColor="#B8E636" stopOpacity={0.02} />
+                    <stop offset="0%" stopColor="#34D399" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="#34D399" stopOpacity={0.02} />
                   </linearGradient>
                   <linearGradient id="ordersGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#818CF8" stopOpacity={0.22} />
@@ -797,7 +797,7 @@ export default function DashboardPage() {
                 />
                 <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Area type="monotone" dataKey="newCustomers" name="New Customers" stroke="#B8E636" strokeWidth={2} fill="url(#ncGrad)" dot={false} />
+                <Area type="monotone" dataKey="newCustomers" name="New Customers" stroke="#34D399" strokeWidth={2} fill="url(#ncGrad)" dot={false} />
                 <Area type="monotone" dataKey="orders" name="Net Orders" stroke="#818CF8" strokeWidth={2} fill="url(#ordersGrad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
@@ -867,7 +867,7 @@ export default function DashboardPage() {
                   tickFormatter={(v) => v.toLocaleString()}
                 />
                 <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
-                <Bar dataKey="sessions" name="Sessions" fill="#B8E636" fillOpacity={0.7} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="sessions" name="Sessions" fill="#34D399" fillOpacity={0.7} radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -1057,7 +1057,7 @@ export default function DashboardPage() {
                   ]}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="nc" name="New Customer Rev" stackId="a" fill="#B8E636" fillOpacity={0.8} radius={[0, 0, 0, 0]} />
+                <Bar dataKey="nc" name="New Customer Rev" stackId="a" fill="#34D399" fillOpacity={0.8} radius={[0, 0, 0, 0]} />
                 <Bar dataKey="rc" name="Repeat Customer Rev" stackId="a" fill="#6366F1" fillOpacity={0.6} radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -1103,7 +1103,7 @@ export default function DashboardPage() {
                         { name: 'New Customer', value: ncPct },
                         { name: 'Returning', value: rcPct },
                       ]} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value">
-                        <Cell fill="#B8E636" />
+                        <Cell fill="#34D399" />
                         <Cell fill="#6366F1" />
                       </Pie>
                       <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
@@ -1112,7 +1112,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="text-xs text-text-secondary space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: '#B8E636' }} />
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: '#34D399' }} />
                     <span>New Customer: {ncPct.toFixed(1)}%</span>
                   </div>
                   <div className="flex items-center gap-2">

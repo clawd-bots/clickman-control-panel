@@ -51,7 +51,7 @@ export default function KPICard({ label, value, change, sparkline, target, targe
                   <Line
                     type="monotone"
                     dataKey="v"
-                    stroke={isPositive ? '#B8E636' : '#EF4444'}
+                    stroke={isPositive ? '#34D399' : '#EF4444'}
                     strokeWidth={1.5}
                     dot={false}
                   />
@@ -96,7 +96,7 @@ export default function KPICard({ label, value, change, sparkline, target, targe
                 }`}
                 style={{ 
                   width: `${Math.min(targetAchievement, 100)}%`,
-                  backgroundColor: targetAchievement >= 100 ? '#B8E636' : targetAchievement >= 80 ? 'var(--color-warm-gold)' : 'var(--color-danger)'
+                  backgroundColor: targetAchievement >= 100 ? '#34D399' : targetAchievement >= 80 ? 'var(--color-warm-gold)' : 'var(--color-danger)'
                 }}
               />
             </div>
