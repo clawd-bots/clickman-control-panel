@@ -33,7 +33,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 
-const COLORS = ['#B8E636', '#334FB4', '#EDBF63', '#34D399', '#EF4444', '#4A6BD6'];
+const COLORS = ['#B8E636', '#6366F1', '#EDBF63', '#34D399', '#EF4444', '#818CF8'];
 
 /** Triple Whale `pixel_joined_tvf` model labels (order matches UI dropdown). */
 const CHANNEL_ATTRIBUTION_MODELS = [
@@ -723,22 +723,32 @@ export default function DashboardPage() {
           </div>
           <div className="min-h-[240px]">
             <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 40, left: 20 }}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 20, bottom: 40, left: 20 }}>
+                <defs>
+                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#B8E636" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="#B8E636" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6366F1" stopOpacity={0.22} />
+                    <stop offset="100%" stopColor="#6366F1" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis 
-                  dataKey="displayDate" 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }} 
+                <XAxis
+                  dataKey="displayDate"
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 9 }}
                   angle={-30}
                   textAnchor="end"
                   height={50}
                   interval={0}
                 />
-                <YAxis 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
+                <YAxis
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }}
                   tickFormatter={(v) => formatCurrencyValueWhole(Number(v))}
                   width={60}
                 />
-                <Tooltip 
+                <Tooltip
                   content={ChartTooltipContent}
                   itemSorter={(item) => (item.dataKey === 'revenue' ? 0 : item.dataKey === 'costs' ? 1 : 2)}
                   contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 11, color: 'var(--color-text-primary)' }}
@@ -748,15 +758,9 @@ export default function DashboardPage() {
                   ]}
                 />
                 <Legend wrapperStyle={{ fontSize: 10 }} />
-                <defs>
-                  <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#B8E636" stopOpacity={0.15} />
-                    <stop offset="100%" stopColor="#B8E636" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <Line type="monotone" dataKey="revenue" name="Order Revenue" stroke="#B8E636" strokeWidth={2.5} dot={false} />
-                <Line type="monotone" dataKey="costs" name="Ad Spend" stroke="#64748B" strokeWidth={1.5} dot={false} strokeDasharray="4 2" />
-              </LineChart>
+                <Area type="monotone" dataKey="revenue" name="Order Revenue" stroke="#B8E636" strokeWidth={2.5} fill="url(#revenueGrad)" dot={false} />
+                <Area type="monotone" dataKey="costs" name="Ad Spend" stroke="#6366F1" strokeWidth={1.5} fill="url(#spendGrad)" dot={false} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -768,24 +772,34 @@ export default function DashboardPage() {
           </div>
           <div className="min-h-[260px]">
             <ResponsiveContainer width="100%" height={260}>
-              <LineChart data={chartData}>
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="ncGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#B8E636" stopOpacity={0.28} />
+                    <stop offset="100%" stopColor="#B8E636" stopOpacity={0.02} />
+                  </linearGradient>
+                  <linearGradient id="ordersGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#818CF8" stopOpacity={0.22} />
+                    <stop offset="100%" stopColor="#818CF8" stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-                <XAxis 
-                  dataKey="displayDate" 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }} 
+                <XAxis
+                  dataKey="displayDate"
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 10 }}
                   angle={-45}
                   textAnchor="end"
                   height={60}
                   interval="preserveStartEnd"
                 />
-                <YAxis 
-                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} 
+                <YAxis
+                  tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }}
                 />
                 <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line type="monotone" dataKey="newCustomers" name="New Customers" stroke="#B8E636" strokeWidth={2} dot={false} />
-                <Line type="monotone" dataKey="orders" name="Net Orders" stroke="#4A6BD6" strokeWidth={2} dot={false} />
-              </LineChart>
+                <Area type="monotone" dataKey="newCustomers" name="New Customers" stroke="#B8E636" strokeWidth={2} fill="url(#ncGrad)" dot={false} />
+                <Area type="monotone" dataKey="orders" name="Net Orders" stroke="#818CF8" strokeWidth={2} fill="url(#ordersGrad)" dot={false} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -1044,7 +1058,7 @@ export default function DashboardPage() {
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="nc" name="New Customer Rev" stackId="a" fill="#B8E636" fillOpacity={0.8} radius={[0, 0, 0, 0]} />
-                <Bar dataKey="rc" name="Repeat Customer Rev" stackId="a" fill="#334FB4" fillOpacity={0.6} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="rc" name="Repeat Customer Rev" stackId="a" fill="#6366F1" fillOpacity={0.6} radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
             )}
@@ -1090,7 +1104,7 @@ export default function DashboardPage() {
                         { name: 'Returning', value: rcPct },
                       ]} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value">
                         <Cell fill="#B8E636" />
-                        <Cell fill="#334FB4" />
+                        <Cell fill="#6366F1" />
                       </Pie>
                       <Tooltip content={ChartTooltipContent} contentStyle={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border)', borderRadius: 8, fontSize: 12, color: 'var(--color-text-primary)' }} />
                     </PieChart>
@@ -1102,7 +1116,7 @@ export default function DashboardPage() {
                     <span>New Customer: {ncPct.toFixed(1)}%</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-brand-blue shrink-0" />
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: '#6366F1' }} />
                     <span>Returning: {rcPct.toFixed(1)}%</span>
                   </div>
                 </div>

@@ -29,11 +29,11 @@ button, [role="button"], a, select, input[type="checkbox"], input[type="radio"],
 
 /* ─── Dark Mode ─── */
 .dark {
-  --color-bg-primary: #101312;
-  --color-bg-surface: #1A1D1B;
-  --color-bg-elevated: #232724;
+  --color-bg-primary: #0B1120;
+  --color-bg-surface: #111827;
+  --color-bg-elevated: #1A2236;
   --color-brand-blue: #334FB4;
-  --color-brand-blue-light: #4A6BD6;
+  --color-brand-blue-light: #6366F1;
   --color-warm-gold: #EDBF63;
   --color-warm-gold-light: #FFDF85;
   --color-warm-gold-dark: #C69346;
@@ -43,10 +43,10 @@ button, [role="button"], a, select, input[type="checkbox"], input[type="radio"],
   --color-accent-muted: #8FB82A;
   --color-success: #34D399;
   --color-danger: #EF4444;
-  --color-text-primary: #F1F5F9;
-  --color-text-secondary: #94A3B8;
-  --color-text-tertiary: #64748B;
-  --color-border: #2A2E2B;
+  --color-text-primary: #F0F4FF;
+  --color-text-secondary: #8B9CC8;
+  --color-text-tertiary: #4B5A7A;
+  --color-border: #1E2D4A;
 }
 
 * {
@@ -64,8 +64,8 @@ body {
 /* Ambient gradient gives glass surfaces something to refract against */
 .dark body {
   background:
-    radial-gradient(ellipse 800px 500px at 5% 0%, rgba(184, 230, 54, 0.03) 0%, transparent 100%),
-    radial-gradient(ellipse 600px 400px at 90% 80%, rgba(51, 79, 180, 0.035) 0%, transparent 100%),
+    radial-gradient(ellipse 900px 600px at 0% 0%, rgba(99, 102, 241, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 600px 400px at 100% 100%, rgba(184, 230, 54, 0.03) 0%, transparent 60%),
     var(--color-bg-primary);
 }
 
@@ -82,11 +82,11 @@ body {
 }
 
 .dark .glass-card {
-  background: rgba(26, 29, 27, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(17, 24, 39, 0.6);
+  border: 1px solid rgba(99, 102, 241, 0.12);
   box-shadow:
     inset 0 1px 0 0 rgba(255, 255, 255, 0.04),
-    0 4px 24px -4px rgba(0, 0, 0, 0.25);
+    0 4px 32px -4px rgba(0, 0, 0, 0.4);
 }
 
 .glass-card:hover {
